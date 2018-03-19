@@ -6,7 +6,7 @@ import cxf.FileTransferException;
 
 public interface TransferProvider {
 
-    Transfer createTransfer(String requestId, ChecksumType checksumType) throws FileTransferException;
+    TransferImpl createTransfer(String requestId, ChecksumType checksumType) throws FileTransferException;
 
-    Transfer getTransfer(String transferId) throws FileTransferException;
+    TransferImpl getTransfer(String transferId) throws FileTransferException;
 }

@@ -30,7 +30,7 @@ public interface TransferAcceptor {
     /**
      * Transfer aborted callback.
      */
-    void onTransferAborted();
+    void onTransferCanceled();
 
     /**
      * Transfer failed callback.

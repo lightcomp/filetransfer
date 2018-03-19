@@ -21,7 +21,7 @@ import com.lightcomp.ft.xsd.v1.Item;
 
 import cxf.FileTransferException;
 
-public class Transfer implements TransferInfo {
+public class TransferImpl implements TransferInfo {
 
     private final TransferStatusImpl status = new TransferStatusImpl();
 
@@ -35,7 +35,7 @@ public class Transfer implements TransferInfo {
 
     private TransferWorker currentWorker;
 
-    public Transfer(TransferAcceptor acceptor, String requestId, ChecksumType checksumType) {
+    public TransferImpl(TransferAcceptor acceptor, String requestId, ChecksumType checksumType) {
         this.acceptor = acceptor;
         this.requestId = requestId;
         this.checksumType = checksumType;
@@ -50,17 +50,17 @@ public class Transfer implements TransferInfo {
     public String getRequestId() {
         return requestId;
     }
-    
+
     @Override
-    public boolean isAborted() {
+    public boolean isCanceled() {
         // TODO Auto-generated method stub
         return false;
     }
-    
+
     public TransferStatus getTransferStatus() {
         return status.copy();
     }
-    
+
     public FileTransferStatus createFileTransferStatus() {
 
         FileTransferStatus fts = new FileTransferStatus();
@@ -142,9 +142,9 @@ public class Transfer implements TransferInfo {
     public synchronized void abort() throws FileTransferException {
 
     }
-    
-    public synchronized boolean cancel() {
-        
+
+    public synchronized void cancel() {
+
     }
 
     void onSourceFileProcessed(SourceFile sourceFile);
@@ -186,7 +186,7 @@ public class Transfer implements TransferInfo {
                 .setCode(ErrorCode.FATAL).addParam("requestPhase", requestPhase).addParam("receiverPhase", phase).build();
     }
 
-    public boolean abortIfInactive() {
+    public boolean cancelIfInactive() {
         // TODO Auto-generated method stub
         return false;
     }

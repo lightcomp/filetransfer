@@ -87,7 +87,6 @@
 									<wsdl>src/main/resources/wsdl/file-transfer-v1.wsdl</wsdl>
 									<bindingFiles>
 										<bindingFile>src/main/resources/wsdl/file-transfer-v1-bindings.xml</bindingFile>
-
 									</bindingFiles>
 									<markGenerated>false</markGenerated>
 									<extraargs>

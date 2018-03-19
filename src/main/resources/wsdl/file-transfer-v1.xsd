@@ -73,6 +73,7 @@
 	</xs:complexType>
 	<xs:simpleType name="FileTransferState">
 		<xs:restriction base="xs:string">
+			<xs:enumeration value="ABORTED"/>
 			<xs:enumeration value="ACTIVE"/>
 			<xs:enumeration value="COMMITTED"/>
 			<xs:enumeration value="FAILED"/>
@@ -86,6 +87,7 @@
 	</xs:complexType>
 	<xs:simpleType name="ErrorCode">
 		<xs:restriction base="xs:string">
+			<xs:enumeration value="ABORTED"/>
 			<xs:enumeration value="BUSY"/>
 			<xs:enumeration value="FATAL"/>
 		</xs:restriction>

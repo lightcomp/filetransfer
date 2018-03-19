@@ -1,5 +1,7 @@
 package com.lightcomp.ft.receiver;
 
+import com.lightcomp.ft.exception.TransferException;
+
 /**
  * Receiver service dispatching all transfer requests.
  */
@@ -21,8 +23,11 @@ public interface ReceiverService {
     void stop();
 
     /**
-     * Abort transfer. When async transfer aborted
-     * {@link TransferAcceptor#onTransferAborted()} is called.
+     * Cancel transfer. Caller will wait if the transfer is processing commit. When
+     * canceled {@link TransferAcceptor#onTransferCanceled()} is called.
+     * 
+     * @throws TransferException
+     *             When transfer already committed.
      */
     void cancelTransfer(String transferId);
 }

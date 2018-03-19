@@ -93,9 +93,8 @@ public class TransferImpl implements Runnable, Transfer, TransferContext {
             try {
                 wait();
             } catch (InterruptedException e) {
-                // set interrupted status and exit
                 Thread.currentThread().interrupt();
-                return;
+                throw new RuntimeException(e);
             }
         }
         if (status.getState().equals(TransferState.COMMITTED)) {
@@ -149,11 +148,12 @@ public class TransferImpl implements Runnable, Transfer, TransferContext {
     private synchronized void sleepForRecovery() {
         long ms = senderConfig.getRecoveryDelay() * 1000;
         try {
+            // no need to wait if canceled
             if (!isCanceled()) {
                 wait(ms);
             }
         } catch (InterruptedException e) {
-            // interrupt will be handled as transfer failure
+            // by default handled as transfer failure
             throw new RuntimeException(e);
         }
     }
@@ -206,7 +206,6 @@ public class TransferImpl implements Runnable, Transfer, TransferContext {
         }
         logger.error(te.getMessage(), te);
         sendAbort();
-
         if (canceled) {
             request.onTransferCanceled();
         } else {

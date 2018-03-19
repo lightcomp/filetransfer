@@ -1,12 +1,14 @@
 package com.lightcomp.ft.receiver.impl;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.lightcomp.ft.common.ChecksumType;
 import com.lightcomp.ft.exception.TransferExceptionBuilder;
@@ -26,7 +28,9 @@ public class ReceiverServiceImpl implements ReceiverService, TransferProvider {
         INIT, RUNNING, STOPPING, TERMINATED
     }
 
-    private final Map<String, Transfer> transferIdMap = new HashMap<>();
+    private static final Logger logger = LoggerFactory.getLogger(ReceiverServiceImpl.class);
+
+    private final Map<String, TransferImpl> transferIdMap = new HashMap<>();
 
     private final BeginTransferListener beginTransferListener;
 
@@ -65,7 +69,8 @@ public class ReceiverServiceImpl implements ReceiverService, TransferProvider {
                 try {
                     wait(100);
                 } catch (InterruptedException e) {
-                    // we cannot recover, finish termination
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException(e);
                 }
             }
         }
@@ -73,49 +78,47 @@ public class ReceiverServiceImpl implements ReceiverService, TransferProvider {
 
     @Override
     public void cancelTransfer(String transferId) {
-        Transfer transfer;
+        TransferImpl t;
         synchronized (this) {
             Validate.isTrue(state == State.RUNNING);
-            transfer = transferIdMap.get(transferId);
-            if (transfer == null) {
-                throw TransferExceptionBuilder.from("Transfer not found").addParam("transferId", transferId).build();
-            }
+            t = transferIdMap.get(transferId);
         }
-        if (!transfer.cancel()) {
-            throw TransferExceptionBuilder.from("Committed transfer cannot be aborted").setTransfer(transfer).build();
+        if (t == null) {
+            throw TransferExceptionBuilder.from("Transfer not found").addParam("transferId", transferId).build();
         }
+        t.cancel();
     }
 
     /* transfer provider methods */
 
     @Override
-    public synchronized Transfer getTransfer(String transferId) throws FileTransferException {
+    public synchronized TransferImpl getTransfer(String transferId) throws FileTransferException {
         checkReceiverRunning();
 
-        Transfer tc = transferIdMap.get(transferId);
-        if (tc == null) {
+        TransferImpl t = transferIdMap.get(transferId);
+        if (t == null) {
             throw TransferExceptionBuilder.from("Transfer not found").addParam("transferId", transferId).setCode(ErrorCode.FATAL)
                     .buildFault();
         }
-        return tc;
+        return t;
     }
 
     @Override
-    public Transfer createTransfer(String requestId, ChecksumType checksumType) throws FileTransferException {
+    public TransferImpl createTransfer(String requestId, ChecksumType checksumType) throws FileTransferException {
         checkReceiverRunning();
 
-        TransferAcceptor ta = beginTransferListener.onTransferBegin(requestId);
+        TransferAcceptor acceptor = beginTransferListener.onTransferBegin(requestId);
         try {
             synchronized (this) {
                 checkReceiverRunning();
-                Transfer tc = new Transfer(ta, requestId, checksumType);
-                if (transferIdMap.putIfAbsent(tc.getTransferId(), tc) != null) {
-                    throw TransferExceptionBuilder.from("Transfer id already exists").setTransfer(tc).setCode(ErrorCode.FATAL).buildFault();
+                TransferImpl t = new TransferImpl(acceptor, requestId, checksumType);
+                if (transferIdMap.putIfAbsent(t.getTransferId(), t) != null) {
+                    throw TransferExceptionBuilder.from("Transfer id already exists").setTransfer(t).setCode(ErrorCode.FATAL).buildFault();
                 }
-                return tc;
+                return t;
             }
         } catch (FileTransferException fte) {
-            ta.onTransferFailed(fte);
+            acceptor.onTransferFailed(fte);
             throw fte;
         }
     }
@@ -130,38 +133,54 @@ public class ReceiverServiceImpl implements ReceiverService, TransferProvider {
 
     private void run() {
         while (true) {
-            List<Transfer> transfers;
+            List<TransferImpl> transfers;
             synchronized (this) {
                 if (state != State.RUNNING) {
                     state = State.TERMINATED;
                     // notify stopping thread
                     notify();
+                    // exit manager thread loop
                     break;
                 }
-                transfers = new ArrayList<>(transferIdMap.values());
+                transfers = new LinkedList<>(transferIdMap.values());
             }
-            // try abort all inactive transfers
-            Iterator<Transfer> it = transfers.iterator();
+            // try cancel all inactive transfers
+            Iterator<TransferImpl> it = transfers.iterator();
             while (it.hasNext()) {
-                Transfer t = it.next();
-                if (!t.abortIfInactive()) {
+                TransferImpl t = it.next();
+                if (!t.cancelIfInactive()) {
                     it.remove();
                 }
             }
             synchronized (this) {
-                // remove all aborted transfers
-                transfers.forEach(tc -> transferIdMap.remove(tc.getTransferId()));
-                // wait for timeout or notify by stop()
+                // remove all canceled transfers
+                transfers.forEach(t -> transferIdMap.remove(t.getTransferId()));
+                // wait for timeout or notify by stopping thread
                 try {
                     wait(1000);
                 } catch (InterruptedException e) {
-                    // NOP - continue
+                    // with respect to the interruption, we have to end the service
+                    state = State.TERMINATED;
+                    break;
                 }
             }
         }
-        // clear all transfers after terminated
-        // thread-safe, nobody else can touch transferIdMap at this state
-        transferIdMap.values().forEach(Transfer::abort);
+        // no one can access transferIdMap in terminated state thus thread-safe
+        cleanTransfers();
+    }
+
+    /**
+     * Clear all transfers, each remaining transfer is aborted first. Method must be
+     * synchronized by caller.
+     */
+    private void cleanTransfers() {
+        for (TransferImpl transfer : transferIdMap.values()) {
+            try {
+                transfer.cancel();
+            } catch (Throwable t) {
+                logger.warn("Unable to cancel transfer after service termination", t);
+            }
+        }
         transferIdMap.clear();
     }
 }

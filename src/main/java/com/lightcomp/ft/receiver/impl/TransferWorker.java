@@ -4,13 +4,13 @@ import com.lightcomp.ft.receiver.TransferState;
 
 class TransferWorker implements Runnable {
 
-    private final Transfer context;
+    private final TransferImpl context;
 
     private final Runnable task;
 
     private final TransferState nextState;
 
-    public TransferWorker(Transfer context, Runnable task, TransferState nextState) {
+    public TransferWorker(TransferImpl context, Runnable task, TransferState nextState) {
         this.context = context;
         this.task = task;
         this.nextState = nextState;

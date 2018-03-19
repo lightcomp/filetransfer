@@ -19,39 +19,39 @@ public class FileTransferServiceImpl implements FileTransferService {
 
     @Override
     public void abort(String transferId) throws FileTransferException {
-        Transfer tc = transferProvider.getTransfer(transferId);
+        TransferImpl tc = transferProvider.getTransfer(transferId);
         tc.abort();
     }
 
     @Override
     public void commit(String transferId) throws FileTransferException {
-        Transfer tc = transferProvider.getTransfer(transferId);
+        TransferImpl tc = transferProvider.getTransfer(transferId);
         tc.commit();
     }
 
     @Override
     public String begin(String requestId, FileTransfer fileTransfer) throws FileTransferException {
         ChecksumType cht = ChecksumType.fromValue(fileTransfer.getChecksumType());
-        Transfer tc = transferProvider.createTransfer(requestId, cht);
+        TransferImpl tc = transferProvider.createTransfer(requestId, cht);
         tc.begin(fileTransfer.getItems());
         return tc.getTransferId();
     }
 
     @Override
     public void prepare(String transferId, FileChecksums fileChecksums) throws FileTransferException {
-        Transfer tc = transferProvider.getTransfer(transferId);
+        TransferImpl tc = transferProvider.getTransfer(transferId);
         tc.prepare(fileChecksums.getList());
     }
 
     @Override
     public void send(String transferId, Frame frame) throws FileTransferException {
-        Transfer tc = transferProvider.getTransfer(transferId);
+        TransferImpl tc = transferProvider.getTransfer(transferId);
         tc.process(frame);
     }
 
     @Override
     public FileTransferStatus getStatus(String transferId) throws FileTransferException {
-        Transfer tc = transferProvider.getTransfer(transferId);
+        TransferImpl tc = transferProvider.getTransfer(transferId);
         return tc.createFileTransferStatus();
     }
 }
