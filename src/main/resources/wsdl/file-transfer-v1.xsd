@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema targetNamespace="http://www.lightcomp.com/ft/xsd/v1" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ft="http://www.lightcomp.com/ft/xsd/v1" xmlns:xmime="http://www.w3.org/2005/05/xmlmime">
+	<xs:complexType name="FileTransfer">
+		<xs:sequence>
+			<xs:element name="item" type="ft:Item" minOccurs="1" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:attribute name="checksumType" use="required" type="xs:string">
+			<xs:annotation>
+				<xs:documentation>Implementation have to support: SHA-256, SHA-384, SHA-512</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="Dir">
+		<xs:complexContent>
+			<xs:extension base="ft:Item">
+				<xs:sequence>
+					<xs:element name="item" type="ft:Item" minOccurs="0" maxOccurs="unbounded"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="File">
+		<xs:complexContent>
+			<xs:extension base="ft:Item">
+				<xs:sequence/>
+				<xs:attribute name="fileId" use="required" type="xs:string"/>
+				<xs:attribute name="lastModified" use="required" type="xs:long">
+					<xs:annotation>
+						<xs:documentation>Value in milliseconds, since the epoch 1970-01-01T00:00:00Z.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="size" use="required" type="xs:long"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="Frame">
+		<xs:sequence>
+			<xs:element name="data" type="xs:base64Binary" xmime:expectedContentTypes="application/octet-stream" minOccurs="1" maxOccurs="1"/>
+			<xs:element name="fileChunks" type="ft:FileChunks" minOccurs="1" maxOccurs="1"/>
+		</xs:sequence>
+		<xs:attribute name="frameId" use="required" type="xs:string"/>
+		<xs:attribute name="size" use="required" type="xs:long"/>
+	</xs:complexType>
+	<xs:complexType name="FileChunk">
+		<xs:sequence/>
+		<xs:attribute name="fileId" use="required" type="xs:string"/>
+		<xs:attribute name="frameOffset" use="required" type="xs:long"/>
+		<xs:attribute name="offset" use="required" type="xs:long"/>
+		<xs:attribute name="size" use="optional" type="xs:long"/>
+	</xs:complexType>
+	<xs:complexType name="FileChecksums">
+		<xs:sequence>
+			<xs:element name="fileChecksum" type="ft:FileChecksum" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="FileChecksum">
+		<xs:sequence/>
+		<xs:attribute name="checksum" use="required" type="xs:string"/>
+		<xs:attribute name="fileId" use="required" type="xs:string"/>
+	</xs:complexType>
+	<xs:complexType name="FileTransferStatus">
+		<xs:sequence/>
+		<xs:attribute name="lastReceivedFrameId" use="optional" type="xs:string"/>
+		<xs:attribute name="state" use="required" type="ft:FileTransferState"/>
+	</xs:complexType>
+	<xs:complexType name="ErrorDescription">
+		<xs:sequence/>
+		<xs:attribute name="errorCode" use="optional" type="ft:ErrorCode">
+			<xs:annotation>
+				<xs:documentation>Missing error code is equal to FATAL.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:simpleType name="FileTransferState">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="ACTIVE"/>
+			<xs:enumeration value="COMMITTED"/>
+			<xs:enumeration value="FAILED"/>
+			<xs:enumeration value="PREPARED"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="FileChunks">
+		<xs:sequence>
+			<xs:element name="fileChunk" type="ft:FileChunk" minOccurs="1" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:simpleType name="ErrorCode">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="BUSY"/>
+			<xs:enumeration value="FATAL"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="Item">
+		<xs:sequence/>
+		<xs:attribute name="name" use="required" type="xs:string"/>
+	</xs:complexType>
+</xs:schema>

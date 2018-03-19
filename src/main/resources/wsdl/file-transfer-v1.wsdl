@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wsdl:definitions name="FileTransferService" xmlns:ft="http://www.lightcomp.com/ft/xsd/v1" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+	<wsdl:import namespace="http://www.lightcomp.com/ft/xsd/v1" location="file-transfer-v1.xsd"/>
+	<wsdl:types/>
+	<wsdl:message name="BeginRequest">
+		<wsdl:part name="requestId" type="xs:string"/>
+		<wsdl:part name="fileTransfer" type="ft:FileTransfer"/>
+	</wsdl:message>
+	<wsdl:message name="Send">
+		<wsdl:part name="transferId" type="xs:string"/>
+		<wsdl:part name="frame" type="ft:Frame"/>
+	</wsdl:message>
+	<wsdl:message name="Prepare">
+		<wsdl:part name="transferId" type="xs:string"/>
+		<wsdl:part name="fileChecksums" type="ft:FileChecksums"/>
+	</wsdl:message>
+	<wsdl:message name="FileTransferException">
+		<wsdl:part name="errorDescription" type="ft:ErrorDescription"/>
+	</wsdl:message>
+	<wsdl:message name="EmptyMessage">
+		<wsdl:documentation>Empty message is used in function without return value to prevent asynchronous processing.</wsdl:documentation>
+	</wsdl:message>
+	<wsdl:message name="StatusResponse">
+		<wsdl:part name="status" type="ft:FileTransferStatus"/>
+	</wsdl:message>
+	<wsdl:message name="TransferId">
+		<wsdl:part name="transferId" type="xs:string"/>
+	</wsdl:message>
+	<wsdl:portType name="FileTransferService">
+		<wsdl:operation name="Begin">
+			<wsdl:input name="beginRequest" message="BeginRequest"/>
+			<wsdl:output name="transferId" message="TransferId"/>
+			<wsdl:fault name="fileTransferException" message="FileTransferException"/>
+		</wsdl:operation>
+		<wsdl:operation name="Send">
+			<wsdl:input name="send" message="Send"/>
+			<wsdl:output name="emptyMessage" message="EmptyMessage"/>
+			<wsdl:fault name="fileTransferException" message="FileTransferException"/>
+		</wsdl:operation>
+		<wsdl:operation name="Prepare">
+			<wsdl:input name="prepare" message="Prepare"/>
+			<wsdl:output name="emptyMessage" message="EmptyMessage"/>
+			<wsdl:fault name="fileTransferException" message="FileTransferException"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetStatus">
+			<wsdl:input name="transferId" message="TransferId"/>
+			<wsdl:output name="statusResponse" message="StatusResponse"/>
+			<wsdl:fault name="fileTransferException" message="FileTransferException"/>
+		</wsdl:operation>
+		<wsdl:operation name="Abort">
+			<wsdl:input name="transferId" message="TransferId"/>
+			<wsdl:output name="emptyMessage" message="EmptyMessage"/>
+			<wsdl:fault name="fileTransferException" message="FileTransferException"/>
+		</wsdl:operation>
+		<wsdl:operation name="Commit">
+			<wsdl:input name="transferId" message="TransferId"/>
+			<wsdl:output name="emptyMessage" message="EmptyMessage"/>
+			<wsdl:fault name="fileTransferException" message="FileTransferException"/>
+		</wsdl:operation>
+	</wsdl:portType>
+	<wsdl:binding name="FileTransferService" type="FileTransferService">
+		<soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+		<wsdl:operation name="Abort">
+			<soap:operation soapAction="Abort" style="document"/>
+			<wsdl:input name="transferId">
+				<soap:body use="literal"/>
+			</wsdl:input>
+			<wsdl:output name="emptyMessage">
+				<soap:body use="literal"/>
+			</wsdl:output>
+			<wsdl:fault name="fileTransferException">
+				<soap:fault name="fileTransferException" use="literal"/>
+			</wsdl:fault>
+		</wsdl:operation>
+		<wsdl:operation name="Begin">
+			<soap:operation soapAction="Begin" style="document"/>
+			<wsdl:input name="beginRequest">
+				<soap:body use="literal"/>
+			</wsdl:input>
+			<wsdl:output name="transferId">
+				<soap:body use="literal"/>
+			</wsdl:output>
+			<wsdl:fault name="fileTransferException">
+				<soap:fault name="fileTransferException" use="literal"/>
+			</wsdl:fault>
+		</wsdl:operation>
+		<wsdl:operation name="Commit">
+			<soap:operation soapAction="Commit" style="document"/>
+			<wsdl:input name="transferId">
+				<soap:body use="literal"/>
+			</wsdl:input>
+			<wsdl:output name="emptyMessage">
+				<soap:body use="literal"/>
+			</wsdl:output>
+			<wsdl:fault name="fileTransferException">
+				<soap:fault name="fileTransferException" use="literal"/>
+			</wsdl:fault>
+		</wsdl:operation>
+		<wsdl:operation name="Prepare">
+			<soap:operation soapAction="Prepare" style="document"/>
+			<wsdl:input name="prepare">
+				<soap:body use="literal"/>
+			</wsdl:input>
+			<wsdl:output name="emptyMessage">
+				<soap:body use="literal"/>
+			</wsdl:output>
+			<wsdl:fault name="fileTransferException">
+				<soap:fault name="fileTransferException" use="literal"/>
+			</wsdl:fault>
+		</wsdl:operation>
+		<wsdl:operation name="GetStatus">
+			<soap:operation soapAction="GetStatus" style="document"/>
+			<wsdl:input name="transferId">
+				<soap:body use="literal"/>
+			</wsdl:input>
+			<wsdl:output name="statusResponse">
+				<soap:body use="literal"/>
+			</wsdl:output>
+			<wsdl:fault name="fileTransferException">
+				<soap:fault name="fileTransferException" use="literal"/>
+			</wsdl:fault>
+		</wsdl:operation>
+		<wsdl:operation name="Send">
+			<soap:operation soapAction="Send" style="document"/>
+			<wsdl:input name="send">
+				<soap:body use="literal"/>
+			</wsdl:input>
+			<wsdl:output name="emptyMessage">
+				<soap:body use="literal"/>
+			</wsdl:output>
+			<wsdl:fault name="fileTransferException">
+				<soap:fault name="fileTransferException" use="literal"/>
+			</wsdl:fault>
+		</wsdl:operation>
+	</wsdl:binding>
+	<wsdl:service name="FileTransferService">
+		<wsdl:port name="FileTransferService" binding="FileTransferService">
+			<soap:address location="http://www.lightcomp.com/ft/ws/v1"/>
+		</wsdl:port>
+	</wsdl:service>
+</wsdl:definitions>

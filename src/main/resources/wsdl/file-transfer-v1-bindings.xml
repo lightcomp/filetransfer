@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<bindings version="2.1" xmlns="http://java.sun.com/xml/ns/jaxb"
+	xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc">
+
+	<jaxws:bindings xmlns:jaxws="http://java.sun.com/xml/ns/jaxws">
+		<jaxws:enableWrapperStyle>false</jaxws:enableWrapperStyle> <!-- force bare methods (do not unwrap) -->
+	</jaxws:bindings>
+
+	<globalBindings>
+		<xjc:simple /> <!-- make collection names plural -->
+		<serializable uid="1" /> <!-- implements java.io.Serializable -->
+		<xjc:javaType name="java.time.ZonedDateTime" xmlType="xsd:dateTime"
+			adapter="com.lightcomp.ft.xml.DateTimeXmlAdapter" /> <!-- use Java 8 date instead of XmlGregCal -->
+	</globalBindings>
+
+	<!-- naming policy adjustment -->
+	<bindings schemaLocation="file-transfer-v1.xsd">
+		<bindings node="./xsd:complexType[@name='FileChecksums']">
+			<bindings node="//xsd:element[@name='fileChecksum']">
+				<property name="list" />
+			</bindings>
+		</bindings>
+		<bindings node="./xsd:complexType[@name='FileChunks']">
+			<bindings node="//xsd:element[@name='fileChunk']">
+				<property name="list" />
+			</bindings>
+		</bindings>
+	</bindings>
+
+</bindings>
