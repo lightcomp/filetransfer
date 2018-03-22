@@ -30,9 +30,9 @@ public class TransferExceptionBuilder {
         if (requestId != null) {
             messageParts.add(new MessageParam("requestId", requestId, 2));
         }
-        boolean canceled = errorInfo.isCanceled();
-        if (canceled) {
-            messageParts.add(new MessageParam("canceled", Boolean.TRUE, 4));
+        boolean cp = errorInfo.isCancelPending();
+        if (cp) {
+            messageParts.add(new MessageParam("cancelPending", Boolean.TRUE, 4));
         }
         return this;
     }
@@ -80,7 +80,7 @@ public class TransferExceptionBuilder {
         return new FileTransferException(message, errorDesc, cause);
     }
 
-    private String buildMessage() {
+    public String buildMessage() {
         StringBuilder sb = new StringBuilder();
 
         Collections.sort(messageParts);

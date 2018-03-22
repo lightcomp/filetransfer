@@ -1,17 +1,19 @@
 package com.lightcomp.ft.receiver.impl;
 
+import com.lightcomp.ft.exception.CanceledException;
 import com.lightcomp.ft.receiver.TransferState;
+import com.lightcomp.ft.receiver.impl.tasks.Task;
 
 class TransferWorker implements Runnable {
 
-    private final TransferImpl context;
+    private final TransferImpl transfer;
 
-    private final Runnable task;
+    private final Task task;
 
     private final TransferState nextState;
 
-    public TransferWorker(TransferImpl context, Runnable task, TransferState nextState) {
-        this.context = context;
+    public TransferWorker(TransferImpl transfer, Task task, TransferState nextState) {
+        this.transfer = transfer;
         this.task = task;
         this.nextState = nextState;
     }
@@ -19,10 +21,13 @@ class TransferWorker implements Runnable {
     @Override
     public void run() {
         try {
+            if (transfer.isCancelPending()) {
+                throw new CanceledException();
+            }
             task.run();
-            context.workerFinished(nextState);
+            transfer.workerFinished(nextState);
         } catch (Throwable t) {
-            context.workerFailed(t);
+            transfer.workerFailed(t);
         }
     }
 }

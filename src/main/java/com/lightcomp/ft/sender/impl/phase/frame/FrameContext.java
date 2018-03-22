@@ -61,7 +61,7 @@ public class FrameContext {
         Validate.isTrue(offset >= 0);
         Validate.isTrue(length > 0);
 
-        if (transferCtx.isCanceled()) {
+        if (transferCtx.isCancelPending()) {
             throw new CanceledException();
         }
 

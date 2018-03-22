@@ -19,6 +19,10 @@ public class TransferStatusImpl implements TransferStatus {
 
     private long transferedSize;
 
+    private String lastReceivedFrameId;
+
+    private Throwable failureCause;
+
     public TransferStatusImpl() {
         state = TransferState.INITIALIZED;
     }
@@ -32,6 +36,8 @@ public class TransferStatusImpl implements TransferStatus {
         lastTransferTime = source.lastTransferTime;
         totalTransferSize = source.totalTransferSize;
         transferedSize = source.transferedSize;
+        lastReceivedFrameId = source.lastReceivedFrameId;
+        failureCause = source.failureCause;
     }
 
     @Override
@@ -59,17 +65,32 @@ public class TransferStatusImpl implements TransferStatus {
         return transferedSize;
     }
 
+    public String getLastReceivedFrameId() {
+        return lastReceivedFrameId;
+    }
+
+    public Throwable getFailureCause() {
+        return failureCause;
+    }
+
     public void addTotalTransferSize(long size) {
         Validate.isTrue(size >= 0);
 
         totalTransferSize += size;
     }
 
-    public void addTransferedSize(long size) {
+    public void addTransferedFrame(String frameId, long size) {
+        Validate.notEmpty(frameId);
         Validate.isTrue(size >= 0);
 
+        lastReceivedFrameId = frameId;
         transferedSize += size;
         lastTransferTime = LocalDateTime.now();
+    }
+
+    public void changeStateToFailed(Throwable cause) {
+        changeState(TransferState.FAILED);
+        failureCause = cause;
     }
 
     public void changeState(TransferState nextState) {

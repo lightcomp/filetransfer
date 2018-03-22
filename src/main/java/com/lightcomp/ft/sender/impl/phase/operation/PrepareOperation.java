@@ -23,7 +23,7 @@ public class PrepareOperation implements Operation {
         String transferId = preparePhase.getTransferInfo().getTransferId();
 
         FileChecksums fileChecksums = preparePhase.createFileChecksums();
-        service.prepare(transferId, fileChecksums);
+        service.prepare(fileChecksums, transferId);
     }
 
     @Override
@@ -37,8 +37,8 @@ public class PrepareOperation implements Operation {
                     case PREPARED:
                         return false; // success
                     default:
-                        throw TransferExceptionBuilder.from("Cannot send prepare operation").setTransfer(preparePhase.getTransferInfo())
-                                .addParam("recieverState", status.getState()).build();
+                        throw TransferExceptionBuilder.from("Cannot send prepare operation")
+                                .setTransfer(preparePhase.getTransferInfo()).addParam("recieverState", status.getState()).build();
                 }
             }
         };

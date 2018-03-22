@@ -19,21 +19,21 @@ public final class SenderConfig {
 
     /**
      * @param address
-     *            receiver service address
+     *            receiver address
      */
     public SenderConfig(String address) {
         this.address = Validate.notEmpty(address);
     }
 
     /**
-     * @return Receiver service address.
+     * @return Receiver address.
      */
     public String getAddress() {
         return address;
     }
 
     /**
-     * @return Number of possible running transfers in parallel.
+     * @return Maximum of simultaneously running transfers.
      */
     public int getThreadPoolSize() {
         return threadPoolSize;
@@ -41,7 +41,8 @@ public final class SenderConfig {
 
     /**
      * @param threadPoolSize
-     *            number of possible running transfers in parallel
+     *            maximum of simultaneously running transfers, must be greater than
+     *            zero
      */
     public void setThreadPoolSize(int threadPoolSize) {
         Validate.isTrue(threadPoolSize > 0);
@@ -49,7 +50,7 @@ public final class SenderConfig {
     }
 
     /**
-     * @return Receiver request timeout (seconds).
+     * @return Receiver request timeout in seconds.
      */
     public int getRequestTimeout() {
         return requestTimeout;
@@ -57,7 +58,7 @@ public final class SenderConfig {
 
     /**
      * @param requestTimeout
-     *            receiver request timeout (seconds)
+     *            receiver request timeout in seconds, cannot be negative
      */
     public void setRequestTimeout(int requestTimeout) {
         Validate.isTrue(requestTimeout >= 0);
@@ -65,7 +66,7 @@ public final class SenderConfig {
     }
 
     /**
-     * @return Recovery delay (seconds).
+     * @return Delay before transfer recovery in seconds.
      */
     public int getRecoveryDelay() {
         return recoveryDelay;
@@ -73,10 +74,10 @@ public final class SenderConfig {
 
     /**
      * @param recoveryDelay
-     *            recovery delay (seconds)
+     *            delay before transfer recovery in seconds, cannot be negative
      */
     public void setRecoveryDelay(int recoveryDelay) {
-        Validate.isTrue(recoveryDelay > 0);
+        Validate.isTrue(recoveryDelay >= 0);
         this.recoveryDelay = recoveryDelay;
     }
 
@@ -89,7 +90,7 @@ public final class SenderConfig {
 
     /**
      * @param maxFrameSize
-     *            maximum frame size (kB)
+     *            maximum frame size (kB), must be greater than zero
      */
     public void setMaxFrameSize(long maxFrameSize) {
         Validate.isTrue(maxFrameSize > 0);

@@ -30,7 +30,7 @@ public class BeginPhase implements Phase {
 
         try {
             FileTransfer fileTransfer = createFileTransfer();
-            String transferId = service.begin(requestId, fileTransfer);
+            String transferId = service.begin(fileTransfer, requestId);
             transferCtx.setTransferId(transferId);
         } catch (CanceledException ae) {
             throw ae;

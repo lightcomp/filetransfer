@@ -25,13 +25,15 @@ public class TransferImpl implements Runnable, Transfer, TransferContext {
 
     private static final Logger logger = LoggerFactory.getLogger(TransferImpl.class);
 
+    private final TransferStatusImpl status = new TransferStatusImpl();
+
     private final TransferRequest request;
 
     private final SenderConfig senderConfig;
 
     private final FileTransferService service;
 
-    private final TransferStatusImpl status = new TransferStatusImpl();
+    private volatile boolean cancelPending;
 
     private String transferId;
 
@@ -77,42 +79,17 @@ public class TransferImpl implements Runnable, Transfer, TransferContext {
     }
 
     @Override
+    public boolean isCancelPending() {
+        return cancelPending;
+    }
+
+    @Override
     public synchronized TransferStatus getStatus() {
         return status.copy();
     }
 
     @Override
-    public synchronized boolean isCanceled() {
-        return status.getState().equals(TransferState.CANCELED);
-    }
-
-    @Override
-    public synchronized void cancel() {
-        // if prepared wait until transfer thread commits or fails
-        while (status.getState().equals(TransferState.PREPARED)) {
-            try {
-                wait();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException(e);
-            }
-        }
-        if (status.getState().equals(TransferState.COMMITTED)) {
-            throw TransferExceptionBuilder.from("Committed transfer cannot be canceled").setTransfer(this).build();
-        }
-        // do not override state if already failed
-        if (!status.getState().equals(TransferState.FAILED)) {
-            status.changeState(TransferState.CANCELED);
-        }
-        // notify transfer thread if sleeps for recovery
-        notify();
-    }
-
-    @Override
     public synchronized void onFilePrepared(long size) {
-        if (isCanceled()) {
-            return; // ignore callback, allow phase to cancel
-        }
         status.addTotalTransferSize(size);
     }
 
@@ -120,9 +97,6 @@ public class TransferImpl implements Runnable, Transfer, TransferContext {
     public void onDataSent(long size) {
         TransferStatus ts;
         synchronized (this) {
-            if (isCanceled()) {
-                return; // ignore callback, allow phase to cancel
-            }
             status.addTransferedSize(size);
             // copy status in synch block
             ts = status.copy();
@@ -134,22 +108,22 @@ public class TransferImpl implements Runnable, Transfer, TransferContext {
     public void onTransferRecovery() {
         TransferStatus ts;
         synchronized (this) {
-            if (isCanceled()) {
-                return; // ignore callback, allow phase to cancel
-            }
             status.incrementRecoveryCount();
             // copy status in synch block
             ts = status.copy();
         }
         request.onTransferProgress(ts);
-        sleepForRecovery();
     }
 
-    private synchronized void sleepForRecovery() {
-        long ms = senderConfig.getRecoveryDelay() * 1000;
+    @Override
+    public synchronized void sleep(long ms, boolean ignoreCancel) {
+        if (cancelPending && !ignoreCancel) {
+            return;
+        }
         try {
-            // no need to wait if canceled
-            if (!isCanceled()) {
+            if (ignoreCancel) {
+                Thread.sleep(ms);
+            } else {
                 wait(ms);
             }
         } catch (InterruptedException e) {
@@ -159,73 +133,96 @@ public class TransferImpl implements Runnable, Transfer, TransferContext {
     }
 
     @Override
+    public synchronized void cancel() {
+        cancelPending = true;
+
+        // wake up transfer thread if waiting
+        notifyAll();
+
+        TransferState ts = status.getState();
+        while (!ts.equals(TransferState.CANCELED)) {
+            if (ts == TransferState.COMMITTED) {
+                throw TransferExceptionBuilder.from("Commited transfer cannot be canceled").setTransfer(this).build();
+            }
+            if (ts == TransferState.FAILED) {
+                throw TransferExceptionBuilder.from("Failed transfer cannot be canceled").setTransfer(this).build();
+            }
+            try {
+                wait(100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
+            }
+            ts = status.getState();
+        }
+    }
+
+    @Override
     public void run() {
         try {
             Phase phase = new BeginPhase(this);
             while (phase != null) {
                 phase.process();
-                phase = prepareNextPhase(phase);
+                phase = prepareNextPhase(phase.getNextPhase(), phase.getNextState());
             }
-            request.onTransferSuccess();
-        } catch (CanceledException ce) {
-            handleCancellation();
-        } catch (TransferException te) {
-            handleFailure(te);
         } catch (Throwable t) {
-            TransferException te = TransferExceptionBuilder.from("File transfer failed").setTransfer(this).setCause(t).build();
-            handleFailure(te);
+            handleTransferFailure(t);
         }
     }
 
-    private Phase prepareNextPhase(Phase phase) throws CanceledException {
-        TransferStatus ts;
+    private Phase prepareNextPhase(Phase nextPhase, TransferState nextState) throws CanceledException {
+        TransferStatus ts = null;
         synchronized (this) {
-            if (isCanceled()) {
-                throw new CanceledException();
+            // not committed transfers can be canceled
+            if (nextState != TransferState.COMMITTED) {
+                if (cancelPending) {
+                    throw new CanceledException();
+                }
+                // copy status in synch block
+                ts = status.copy();
             }
-            status.changeState(phase.getNextState());
-            // copy status in synch block
-            ts = status.copy();
-            // notify canceling thread about status
-            notify();
+            status.changeState(nextState);
+            // notify canceling threads
+            notifyAll();
+        }
+        if (nextState == TransferState.COMMITTED) {
+            Validate.isTrue(nextPhase == null);
+            request.onTransferSuccess();
+            return null;
         }
         request.onTransferProgress(ts);
-        return phase.getNextPhase();
+        return nextPhase;
     }
 
-    private void handleFailure(TransferException te) {
+    private void handleTransferFailure(Throwable cause) {
         boolean canceled;
         synchronized (this) {
-            canceled = isCanceled();
-            // do not override state if already canceled
-            if (!canceled) {
+            // cancel when canceled exception is thrown and cancel is pending
+            canceled = cancelPending && cause instanceof CanceledException;
+            if (canceled) {
+                status.changeState(TransferState.CANCELED);
+            } else {
                 status.changeState(TransferState.FAILED);
-                // notify canceling thread about status
-                notify();
             }
+            // notify canceling threads
+            notifyAll();
         }
-        logger.error(te.getMessage(), te);
-        sendAbort();
+        abortReceiver();
         if (canceled) {
             request.onTransferCanceled();
         } else {
+            TransferException te = TransferExceptionBuilder.from("Transfer failed").setTransfer(this).setCause(cause).build();
+            logger.error(te.getMessage(), te.getCause());
             request.onTransferFailed(te);
         }
     }
 
-    private void handleCancellation() {
-        // in current impl isCancel() is only source of cancellation
-        Validate.isTrue(isCanceled());
-        sendAbort();
-        request.onTransferCanceled();
-    }
-
-    private void sendAbort() {
+    private void abortReceiver() {
         try {
             service.abort(transferId);
         } catch (Throwable t) {
-            TransferException te = TransferExceptionBuilder.from("Unable to abort transfer").setTransfer(this).setCause(t).build();
-            logger.error(te.getMessage(), te.getCause());
+            String msg = TransferExceptionBuilder.from("Unable to abort receiver").setTransfer(this).buildMessage();
+            logger.error(msg, t);
         }
     }
 }

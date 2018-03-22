@@ -9,15 +9,11 @@ public enum TransferState {
      */
     INITIALIZED,
     /**
-     * Data are transferring.
+     * Data is transferring.
      */
     STARTED,
     /**
-     * Data transfered, waiting for validation.
-     */
-    TRANSFERED,
-    /**
-     * Data are validated, first phase of two-phase commit.
+     * Data is transfered, waiting for validation.
      */
     PREPARED,
     /**
@@ -25,11 +21,11 @@ public enum TransferState {
      */
     COMMITTED,
     /**
-     * File transfer failed.
+     * File transfer is failed.
      */
     FAILED,
     /**
-     * File transfer canceled.
+     * File transfer is canceled.
      */
-    CANCELED
+    CANCELED;
 }

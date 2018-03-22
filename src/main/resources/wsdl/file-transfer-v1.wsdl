@@ -2,58 +2,66 @@
 <wsdl:definitions name="FileTransferService" xmlns:ft="http://www.lightcomp.com/ft/xsd/v1" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
 	<wsdl:import namespace="http://www.lightcomp.com/ft/xsd/v1" location="file-transfer-v1.xsd"/>
 	<wsdl:types/>
-	<wsdl:message name="BeginRequest">
-		<wsdl:part name="requestId" type="xs:string"/>
-		<wsdl:part name="fileTransfer" type="ft:FileTransfer"/>
-	</wsdl:message>
-	<wsdl:message name="Send">
-		<wsdl:part name="transferId" type="xs:string"/>
-		<wsdl:part name="frame" type="ft:Frame"/>
-	</wsdl:message>
 	<wsdl:message name="Prepare">
-		<wsdl:part name="transferId" type="xs:string"/>
 		<wsdl:part name="fileChecksums" type="ft:FileChecksums"/>
+		<wsdl:part name="transferId" type="xs:string"/>
 	</wsdl:message>
 	<wsdl:message name="FileTransferException">
 		<wsdl:part name="errorDescription" type="ft:ErrorDescription"/>
 	</wsdl:message>
+	<wsdl:message name="Send">
+		<wsdl:part name="frame" type="ft:Frame"/>
+		<wsdl:part name="transferId" type="xs:string"/>
+	</wsdl:message>
 	<wsdl:message name="EmptyMessage">
 		<wsdl:documentation>Empty message is used in function without return value to prevent asynchronous processing.</wsdl:documentation>
+	</wsdl:message>
+	<wsdl:message name="BeginRequest">
+		<wsdl:part name="fileTransfer" type="ft:FileTransfer"/>
+		<wsdl:part name="requestId" type="xs:string"/>
 	</wsdl:message>
 	<wsdl:message name="StatusResponse">
 		<wsdl:part name="status" type="ft:FileTransferStatus"/>
 	</wsdl:message>
 	<wsdl:message name="TransferId">
+		<wsdl:documentation>Transfer id, uniqueness is guaranteed by receiver.</wsdl:documentation>
 		<wsdl:part name="transferId" type="xs:string"/>
 	</wsdl:message>
 	<wsdl:portType name="FileTransferService">
+		<wsdl:documentation>Služba pro přenos souborů. API je tvořeno pěti přenosovými metodami a šestou pro zjištění stavu přenosu (GetStatus).</wsdl:documentation>
+		<wsdl:operation name="Abort">
+			<wsdl:documentation>Odesílatel pošle požadavek na přerušení. Pro úspěšné přerušení musí být přenos aktivní a nesmí být dokončena první fáze commitu (state PREPARED). Po přerušení nelze pokračovat v přenosu dat.</wsdl:documentation>
+			<wsdl:input name="transferId" message="TransferId"/>
+			<wsdl:output name="emptyMessage" message="EmptyMessage"/>
+			<wsdl:fault name="fileTransferException" message="FileTransferException"/>
+		</wsdl:operation>
 		<wsdl:operation name="Begin">
+			<wsdl:documentation>Odesílatel pošle požadavek na zahájení přenosu. Příjemce musí držet tento přenos aktivní dokud nebude dokončen, neselže, nebo nedojde k vypršení časových limitů.</wsdl:documentation>
 			<wsdl:input name="beginRequest" message="BeginRequest"/>
 			<wsdl:output name="transferId" message="TransferId"/>
 			<wsdl:fault name="fileTransferException" message="FileTransferException"/>
 		</wsdl:operation>
-		<wsdl:operation name="Send">
-			<wsdl:input name="send" message="Send"/>
+		<wsdl:operation name="Commit">
+			<wsdl:documentation>Druhá fáze dvoufázového commitu. Po úspěšném dokončení příjemce negarantuje existenci daného přenosu.</wsdl:documentation>
+			<wsdl:input name="transferId" message="TransferId"/>
 			<wsdl:output name="emptyMessage" message="EmptyMessage"/>
 			<wsdl:fault name="fileTransferException" message="FileTransferException"/>
 		</wsdl:operation>
 		<wsdl:operation name="Prepare">
+			<wsdl:documentation>První fáze dvoufázového commitu. Během operace jsou porovnávány kontrolní součty přenesených souborů.</wsdl:documentation>
 			<wsdl:input name="prepare" message="Prepare"/>
 			<wsdl:output name="emptyMessage" message="EmptyMessage"/>
 			<wsdl:fault name="fileTransferException" message="FileTransferException"/>
 		</wsdl:operation>
 		<wsdl:operation name="GetStatus">
+			<wsdl:documentation>Získání stavu přenosu od příjemce. Lze také využít jako ping metodu při obnovení spojení (např. při kódu výjimky BUSY).</wsdl:documentation>
 			<wsdl:input name="transferId" message="TransferId"/>
 			<wsdl:output name="statusResponse" message="StatusResponse"/>
 			<wsdl:fault name="fileTransferException" message="FileTransferException"/>
 		</wsdl:operation>
-		<wsdl:operation name="Abort">
-			<wsdl:input name="transferId" message="TransferId"/>
-			<wsdl:output name="emptyMessage" message="EmptyMessage"/>
-			<wsdl:fault name="fileTransferException" message="FileTransferException"/>
-		</wsdl:operation>
-		<wsdl:operation name="Commit">
-			<wsdl:input name="transferId" message="TransferId"/>
+		<wsdl:operation name="Send">
+			<wsdl:documentation>Odeslání dat. Každý rámec je reprezentován streamem dat a popisem pozic přenášených souborů. </wsdl:documentation>
+			<wsdl:input name="send" message="Send"/>
 			<wsdl:output name="emptyMessage" message="EmptyMessage"/>
 			<wsdl:fault name="fileTransferException" message="FileTransferException"/>
 		</wsdl:operation>

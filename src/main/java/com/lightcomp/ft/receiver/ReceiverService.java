@@ -23,11 +23,17 @@ public interface ReceiverService {
     void stop();
 
     /**
-     * Cancel transfer. Caller will wait if the transfer is processing commit. When
-     * canceled {@link TransferAcceptor#onTransferCanceled()} is called.
+     * Returns current transfer status.
+     */
+    TransferStatus getTransferStatus(String transferId);
+
+    /**
+     * Cancel transfer. Caller will wait for termination if the transfer is active.
+     * When canceled {@link TransferAcceptor#onTransferCanceled()} is called.
+     * 
      * 
      * @throws TransferException
-     *             When transfer already committed.
+     *             When transfer already committed or failed.
      */
     void cancelTransfer(String transferId);
 }

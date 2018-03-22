@@ -13,11 +13,11 @@ public interface Transfer {
     TransferStatus getStatus();
 
     /**
-     * Cancel transfer. Caller will wait if the transfer is processing commit. When
-     * canceled {@link TransferRequest#onTransferCanceled()} is called.
+     * Cancel transfer. Caller will wait for termination if the transfer is active.
+     * When canceled {@link TransferRequest#onTransferCanceled()} is called.
      * 
      * @throws TransferException
-     *             When transfer already committed.
+     *             When transfer already committed or failed.
      */
     void cancel();
 }

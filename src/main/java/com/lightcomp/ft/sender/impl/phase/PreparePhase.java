@@ -53,7 +53,7 @@ public class PreparePhase extends RecoverablePhase {
         List<FileChecksum> list = fchs.getList();
 
         for (FileProvider fp : fileProviders) {
-            if (transferCtx.isCanceled()) {
+            if (transferCtx.isCancelPending()) {
                 throw new CanceledException();
             }
             FileChecksum fch = createFileChecksum(fp);

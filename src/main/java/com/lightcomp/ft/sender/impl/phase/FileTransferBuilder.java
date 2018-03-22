@@ -56,7 +56,7 @@ public class FileTransferBuilder {
 
     private void convertDirItems(DirItems dis) throws CanceledException {
         for (SourceItem si : dis.sourceItems) {
-            if (transferCtx.isCanceled()) {
+            if (transferCtx.isCancelPending()) {
                 throw new CanceledException();
             }
             Item item;

@@ -22,7 +22,7 @@ public abstract class RecoverablePhase implements Phase {
         Operation op = null;
 
         while (true) {
-            if (transferCtx.isCanceled()) {
+            if (transferCtx.isCancelPending()) {
                 throw new CanceledException();
             }
             try {
@@ -75,6 +75,11 @@ public abstract class RecoverablePhase implements Phase {
             op = createRecovery(error);
         }
         transferCtx.onTransferRecovery();
+        // delay transfer before recovery operation
+        int delay = transferCtx.getSenderConfig().getRecoveryDelay();
+        if (delay > 0) {
+            transferCtx.sleep(delay * 1000, false);
+        }
         return op;
     }
 }

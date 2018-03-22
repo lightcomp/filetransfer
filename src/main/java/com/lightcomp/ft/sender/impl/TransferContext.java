@@ -19,6 +19,8 @@ public interface TransferContext extends TransferInfo {
 
     FileTransferService getService();
 
+    void sleep(long ms, boolean ignoreCancel);
+
     void setTransferId(String transferId);
 
     void onFilePrepared(long size);
