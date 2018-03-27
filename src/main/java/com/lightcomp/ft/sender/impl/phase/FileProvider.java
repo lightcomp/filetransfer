@@ -2,12 +2,12 @@ package com.lightcomp.ft.sender.impl.phase;
 
 import java.io.IOException;
 import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.SeekableByteChannel;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 
 import com.lightcomp.ft.common.ChecksumGenerator;
+import com.lightcomp.ft.common.ChecksumReadableByteChannel;
 import com.lightcomp.ft.common.ChecksumType;
 import com.lightcomp.ft.sender.SourceFile;
 
@@ -17,14 +17,14 @@ public class FileProvider {
 
     private final SourceFile sourceFile;
 
-    private final ChecksumGenerator checksumGenerator;
+    private final ChecksumGenerator chsg;
 
     private String checksum;
 
     private FileProvider(String fileId, SourceFile sourceFile, ChecksumGenerator checksumGenerator, String checksum) {
         this.fileId = fileId;
         this.sourceFile = sourceFile;
-        this.checksumGenerator = checksumGenerator;
+        this.chsg = checksumGenerator;
         this.checksum = checksum;
     }
 
@@ -39,21 +39,21 @@ public class FileProvider {
     public String getChecksum() {
         if (checksum == null) {
             // check if generator is complete
-            Validate.isTrue(checksumGenerator.getByteSize() == getSize());
+            Validate.isTrue(chsg.getNumProcessed() == getSize());
             // generate file checksum
-            checksum = checksumGenerator.generate();
+            checksum = chsg.getHexString();
         }
         return checksum;
     }
 
     public ReadableByteChannel openChannel(long position) throws IOException {
         try {
-            SeekableByteChannel sbch = sourceFile.openChannel();
-            sbch.position(position);
-            if (checksumGenerator != null) {
-                return new ChecksumByteChannel(sbch, checksumGenerator, position);
+            ReadableByteChannel rbch = sourceFile.openChannel(position);
+            if (chsg != null) {
+                chsg.setStreamPos(position);
+                return new ChecksumReadableByteChannel(rbch, chsg);
             }
-            return sbch;
+            return rbch;
         } catch (IOException e) {
             throw new IOException("Failed to open source file, name:" + sourceFile.getName(), e);
         }

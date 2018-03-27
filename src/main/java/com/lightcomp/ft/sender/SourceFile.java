@@ -1,8 +1,7 @@
 package com.lightcomp.ft.sender;
 
 import java.io.IOException;
-import java.nio.channels.SeekableByteChannel;
-import java.nio.file.attribute.FileTime;
+import java.nio.channels.ReadableByteChannel;
 
 /**
  * Transfer source file.
@@ -11,9 +10,9 @@ public interface SourceFile extends SourceItem {
 
     long getSize();
 
-    FileTime getLastModified();
+    long getLastModified();
 
     String getChecksum();
 
-    SeekableByteChannel openChannel() throws IOException;
+    ReadableByteChannel openChannel(long position) throws IOException;
 }

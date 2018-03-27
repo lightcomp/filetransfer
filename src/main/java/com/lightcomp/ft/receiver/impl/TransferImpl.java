@@ -1,11 +1,15 @@
 package com.lightcomp.ft.receiver.impl;
 
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +25,7 @@ import com.lightcomp.ft.receiver.impl.tasks.BeginTask;
 import com.lightcomp.ft.receiver.impl.tasks.FrameTask;
 import com.lightcomp.ft.receiver.impl.tasks.PrepareTask;
 import com.lightcomp.ft.receiver.impl.tasks.Task;
-import com.lightcomp.ft.sender.SourceFile;
+import com.lightcomp.ft.receiver.impl.tasks.TransferFile;
 import com.lightcomp.ft.xsd.v1.ErrorCode;
 import com.lightcomp.ft.xsd.v1.FileChecksum;
 import com.lightcomp.ft.xsd.v1.FileTransfer;
@@ -31,7 +35,24 @@ import cxf.FileTransferException;
 
 public class TransferImpl implements TransferContext {
 
+    public enum ActivityStatus {
+        /**
+         * Last activity doesn't reached timeout. Transfer can be in any state.
+         */
+        ACTIVE,
+        /**
+         * Activity of transfer timed out.
+         */
+        TIMEOUT,
+        /**
+         * Activity of terminated transfer timed out.
+         */
+        TIMEOUT_TERMINATED
+    }
+
     private static final Logger logger = LoggerFactory.getLogger(TransferImpl.class);
+
+    private final Map<String, TransferFile> fileIdMap = new HashMap<>();
 
     private final TransferStatusImpl status = new TransferStatusImpl();
 
@@ -43,7 +64,8 @@ public class TransferImpl implements TransferContext {
 
     private final ReceiverConfig receiverConfig;
 
-    private volatile boolean cancelPending;
+    // flag if cancel was requested
+    private volatile boolean cancelRequested;
 
     private TransferWorker currentWorker;
 
@@ -64,17 +86,17 @@ public class TransferImpl implements TransferContext {
     }
 
     @Override
-    public boolean isCancelPending() {
-        return cancelPending;
+    public Path getTransferDir() {
+        return acceptor.getTransferDir();
+    }
+
+    @Override
+    public boolean isCancelRequested() {
+        return cancelRequested;
     }
 
     public synchronized TransferStatusImpl getStatus() {
         return status.copy();
-    }
-
-    @Override
-    public synchronized void onSourceFileProcessed(SourceFile sourceFile) {
-        status.addTotalTransferSize(sourceFile.getSize());
     }
 
     @Override
@@ -88,21 +110,47 @@ public class TransferImpl implements TransferContext {
         acceptor.onTransferProgress(ts);
     }
 
+    @Override
+    public int getFileCount() {
+        return fileIdMap.size();
+    }
+
+    @Override
+    public void addFile(TransferFile file) {
+        String fileId = Validate.notEmpty(file.getFileId());
+        if (fileIdMap.putIfAbsent(fileId, file) != null) {
+            throw TransferExceptionBuilder.from("Duplicate file id").addParam("fileId", fileId).setTransfer(this).build();
+        }
+        synchronized (this) {
+            status.addTotalTransferSize(file.getSize());
+        }
+    }
+
+    @Override
+    public TransferFile getFile(String fileId) {
+        TransferFile file = fileIdMap.get(fileId);
+        if (file == null) {
+            throw TransferExceptionBuilder.from("File not found").addParam("fileId", fileId).setTransfer(this).build();
+        }
+        return file;
+    }
+
     public void workerFinished(TransferState nextState) throws CanceledException {
         TransferStatus ts = null;
         synchronized (this) {
             // reset current worker
             Validate.notNull(currentWorker);
             currentWorker = null;
+            // update current state
+            status.changeState(nextState);
             // not committed transfers can be canceled
             if (nextState != TransferState.COMMITTED) {
-                if (cancelPending) {
+                if (cancelRequested) {
                     throw new CanceledException();
                 }
                 // copy status in synch block
                 ts = status.copy();
             }
-            status.changeState(nextState);
             // notify canceling threads
             notifyAll();
         }
@@ -120,7 +168,7 @@ public class TransferImpl implements TransferContext {
             Validate.notNull(currentWorker);
             currentWorker = null;
             // cancel when canceled exception is thrown and cancel is pending
-            canceled = cancelPending && cause instanceof CanceledException;
+            canceled = cancelRequested && cause instanceof CanceledException;
             if (canceled) {
                 status.changeState(TransferState.CANCELED);
             } else {
@@ -139,27 +187,27 @@ public class TransferImpl implements TransferContext {
     }
 
     public synchronized void begin(FileTransfer fileTransfer) throws FileTransferException {
-        Task beginTask = new BeginTask(fileTransfer);
-        setTransferWorker(beginTask, TransferState.STARTED);
+        Task beginTask = new BeginTask(fileTransfer, this);
+        setTransferWorker(beginTask, TransferState.STARTED, TransferState.INITIALIZED);
         executor.execute(currentWorker);
     }
 
     public synchronized void process(Frame frame) throws FileTransferException {
-        Task frameTask = new FrameTask(frame);
-        setTransferWorker(frameTask, TransferState.STARTED);
+        Task frameTask = new FrameTask(frame, this);
+        setTransferWorker(frameTask, TransferState.TRANSFERING, TransferState.STARTED, TransferState.TRANSFERING);
         currentWorker.run();
         // we must throw exception if failed/canceled for synch method
         checkAbnormalTermination();
     }
 
     public synchronized void prepare(Collection<FileChecksum> fileChecksums) throws FileTransferException {
-        Task prepareTask = new PrepareTask(fileChecksums);
-        setTransferWorker(prepareTask, TransferState.PREPARED);
+        Task prepareTask = new PrepareTask(fileChecksums, this);
+        setTransferWorker(prepareTask, TransferState.PREPARED, TransferState.TRANSFERING);
         executor.execute(currentWorker);
     }
 
     public synchronized void commit() throws FileTransferException {
-        setTransferWorker(null, TransferState.COMMITTED);
+        setTransferWorker(null, TransferState.COMMITTED, TransferState.PREPARED);
         executor.execute(acceptor::onTransferSuccess);
     }
 
@@ -167,17 +215,19 @@ public class TransferImpl implements TransferContext {
      * Sets current transfer worker. Transfer state needs to be checked first.
      * Caller must ensure synchronization.
      */
-    private void setTransferWorker(Task task, TransferState nextState) throws FileTransferException {
+    private void setTransferWorker(Task task, TransferState nextState, TransferState... acceptableStates)
+            throws FileTransferException {
         if (currentWorker != null) {
             throw TransferExceptionBuilder.from("Receiver is busy").setTransfer(this).setCode(ErrorCode.BUSY).buildFault();
         }
         // check if transfer failed/canceled
         checkAbnormalTermination();
-        // we are expecting linear progression
-        TransferState ts = status.getState();
-        if (nextState.ordinal() != ts.ordinal() + 1) {
-            throw TransferExceptionBuilder.from("Receiver cannot process request").setTransfer(this).addParam("receiverState", ts)
-                    .addParam("requestState", nextState).setCode(ErrorCode.FATAL).buildFault();
+        // check if current state is acceptable
+        boolean validState = ArrayUtils.contains(acceptableStates, status.getState());
+        if (!validState) {
+            throw TransferExceptionBuilder.from("Receiver cannot proceed to next state").setTransfer(this)
+                    .addParam("currentState", status.getState()).addParam("nextState", nextState).setCode(ErrorCode.FATAL)
+                    .buildFault();
         }
         // initialize worker
         if (task != null) {
@@ -200,19 +250,23 @@ public class TransferImpl implements TransferContext {
         }
     }
 
-    public synchronized boolean isInactive() {
-        LocalDateTime last = status.getLastTransferTime();
+    public synchronized ActivityStatus getActivityStatus() {
+        LocalDateTime last = status.getLastActivity();
         int timeout = receiverConfig.getInactiveTimeout();
         LocalDateTime limit = LocalDateTime.now().minus(timeout, ChronoUnit.SECONDS);
-        if (limit.isAfter(last)) {
-            cancelPending = true;
-            return true;
+        if (!limit.isAfter(last)) {
+            return ActivityStatus.ACTIVE;
         }
-        return false;
+        TransferState ts = status.getState();
+        if (ts.ordinal() >= TransferState.COMMITTED.ordinal()) {
+            return ActivityStatus.TIMEOUT_TERMINATED;
+        }
+        return ActivityStatus.TIMEOUT;
+
     }
 
     public synchronized void abort() throws FileTransferException {
-        cancelPending = true;
+        cancelRequested = true;
 
         TransferState ts = status.getState();
         while (!ts.equals(TransferState.CANCELED)) {
@@ -234,7 +288,7 @@ public class TransferImpl implements TransferContext {
     }
 
     public synchronized void cancel() {
-        cancelPending = true;
+        cancelRequested = true;
 
         TransferState ts = status.getState();
         while (!ts.equals(TransferState.CANCELED)) {

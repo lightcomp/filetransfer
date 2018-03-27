@@ -10,10 +10,10 @@ import javax.activation.DataSource;
 
 public class FrameReadableDataSource implements DataSource {
 
-    private final Collection<FrameBlockContext> blockCtxList;
+    private final Collection<FrameBlockContext> blocks;
 
-    public FrameReadableDataSource(Collection<FrameBlockContext> blockCtxList) {
-        this.blockCtxList = blockCtxList;
+    public FrameReadableDataSource(Collection<FrameBlockContext> blocks) {
+        this.blocks = blocks;
     }
 
     @Override
@@ -23,7 +23,7 @@ public class FrameReadableDataSource implements DataSource {
 
     @Override
     public InputStream getInputStream() throws IOException {
-        FrameReadableByteChannel frbch = new FrameReadableByteChannel(blockCtxList);
+        FrameReadableByteChannel frbch = new FrameReadableByteChannel(blocks);
         InputStream is = Channels.newInputStream(frbch);
         return is;
     }

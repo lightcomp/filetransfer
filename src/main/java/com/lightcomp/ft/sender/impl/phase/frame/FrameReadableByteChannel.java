@@ -7,27 +7,24 @@ import java.nio.channels.ReadableByteChannel;
 import java.util.Collection;
 import java.util.Iterator;
 
-import org.apache.commons.lang3.Validate;
-
 public class FrameReadableByteChannel implements ReadableByteChannel {
 
-    private final Iterator<FrameBlockContext> blockCtxIt;
+    private final Iterator<FrameBlockContext> blockIt;
 
-    private ReadableByteChannel openChannel;
+    private ReadableByteChannel currChannel;
 
     private boolean closed;
 
-    public FrameReadableByteChannel(Collection<FrameBlockContext> blockCtxList) {
-        this.blockCtxIt = blockCtxList.iterator();
-        Validate.isTrue(blockCtxIt.hasNext());
+    public FrameReadableByteChannel(Collection<FrameBlockContext> blocks) {
+        this.blockIt = blocks.iterator();
     }
 
     @Override
     public void close() throws IOException {
         closed = true;
-        if (openChannel != null) {
-            openChannel.close();
-            openChannel = null;
+        if (currChannel != null) {
+            currChannel.close();
+            currChannel = null;
         }
     }
 
@@ -41,23 +38,30 @@ public class FrameReadableByteChannel implements ReadableByteChannel {
         if (closed) {
             throw new ClosedChannelException();
         }
-        // prepare first channel
-        if (openChannel == null) {
-            openChannel = blockCtxIt.next().openChannel();
-        }
-        // reads channels until buffer reaches limit
-        int size = 0;
-        while (dst.remaining() > 0) {
-            int b = openChannel.read(dst);
-            if (b > 0) {
-                size += b;
-                continue;
+        int num = 0;
+        while (true) {
+            if (currChannel == null) {
+                if (!blockIt.hasNext()) {
+                    if (num == 0) {
+                        num = -1;
+                    }
+                    return num; // no more channels
+                }
+                currChannel = blockIt.next().openChannel();
             }
-            if (!blockCtxIt.hasNext()) {
-                break;
+            // read bytes
+            int n = currChannel.read(dst);
+            if (n > 0) {
+                num += n;
+                continue; // continue with current channel
             }
-            openChannel = blockCtxIt.next().openChannel();
+            // no byte was read, find reason:
+            if (dst.remaining() == 0) {
+                return num; // full buffer
+            }
+            // channel at the end
+            currChannel.close();
+            currChannel = null;
         }
-        return size;
     }
 }

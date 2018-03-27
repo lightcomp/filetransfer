@@ -18,9 +18,9 @@ public interface TransferStatus {
     LocalDateTime getStartTime();
 
     /**
-     * Time of last successful transfer activity.
+     * Time of last successful transfer or state change.
      */
-    LocalDateTime getLastTransferTime();
+    LocalDateTime getLastActivity();
 
     /**
      * Total size of transfer (bytes).

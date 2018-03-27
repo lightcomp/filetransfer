@@ -15,7 +15,7 @@ import cxf.FileTransferService;
 
 public class BeginPhase implements Phase {
 
-    private final List<FileProvider> fileProviders = new ArrayList<>();
+    private final List<FileProvider> files = new ArrayList<>();
 
     private final TransferContext transferCtx;
 
@@ -31,6 +31,7 @@ public class BeginPhase implements Phase {
         try {
             FileTransfer fileTransfer = createFileTransfer();
             String transferId = service.begin(fileTransfer, requestId);
+            // set transfer id after success
             transferCtx.setTransferId(transferId);
         } catch (CanceledException ae) {
             throw ae;
@@ -41,7 +42,7 @@ public class BeginPhase implements Phase {
 
     @Override
     public Phase getNextPhase() {
-        return new DataPhase(transferCtx, fileProviders);
+        return new DataPhase(transferCtx, files);
     }
 
     @Override
@@ -54,16 +55,16 @@ public class BeginPhase implements Phase {
             @Override
             protected File convertFile(SourceFile sf) {
                 File f = super.convertFile(sf);
-                handleConvertedFile(f.getFileId(), sf);
+                addFile(f.getFileId(), sf);
                 return f;
             }
         };
         return builder.build();
     }
 
-    private void handleConvertedFile(String fileId, SourceFile sourceFile) {
+    private void addFile(String fileId, SourceFile sourceFile) {
         FileProvider fp = FileProvider.create(fileId, sourceFile, transferCtx.getChecksumType());
-        fileProviders.add(fp);
+        files.add(fp);
         transferCtx.onFilePrepared(fp.getSize());
     }
 }

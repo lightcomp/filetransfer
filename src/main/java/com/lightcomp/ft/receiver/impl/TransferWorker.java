@@ -21,7 +21,7 @@ class TransferWorker implements Runnable {
     @Override
     public void run() {
         try {
-            if (transfer.isCancelPending()) {
+            if (transfer.isCancelRequested()) {
                 throw new CanceledException();
             }
             task.run();

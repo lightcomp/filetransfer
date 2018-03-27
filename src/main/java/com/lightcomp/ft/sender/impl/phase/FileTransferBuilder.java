@@ -40,43 +40,43 @@ public class FileTransferBuilder {
         return ft;
     }
 
-    private void createItems(List<Item> targetItems) throws CanceledException {
+    private void createItems(List<Item> target) throws CanceledException {
         dirItemsStack.clear();
         lastFileId = 0;
 
-        Collection<SourceItem> sourceItems = transferCtx.getSourceItems();
-        DirItems dis = new DirItems(sourceItems, targetItems);
-        dirItemsStack.add(dis);
+        Collection<SourceItem> source = transferCtx.getSourceItems();
+        DirItems dirItems = new DirItems(source, target);
+        dirItemsStack.add(dirItems);
 
-        while (dirItemsStack.size() > 0) {
-            dis = dirItemsStack.removeFirst();
-            convertDirItems(dis);
+        while (!dirItemsStack.isEmpty()) {
+            dirItems = dirItemsStack.removeFirst();
+            convertDirItems(dirItems);
         }
     }
 
-    private void convertDirItems(DirItems dis) throws CanceledException {
-        for (SourceItem si : dis.sourceItems) {
-            if (transferCtx.isCancelPending()) {
+    private void convertDirItems(DirItems dirItems) throws CanceledException {
+        for (SourceItem si : dirItems.source) {
+            if (transferCtx.isCancelRequested()) {
                 throw new CanceledException();
             }
-            Item item;
+            Item ti;
             if (si.isDir()) {
-                item = convertDir(si.asDir());
+                ti = convertDir(si.asDir());
             } else {
-                item = convertFile(si.asFile());
+                ti = convertFile(si.asFile());
             }
-            dis.targetItems.add(item);
+            dirItems.target.add(ti);
         }
     }
 
-    protected Dir convertDir(SourceDir sourceDir) {
+    protected Dir convertDir(SourceDir sd) {
         Dir dir = new Dir();
-        dir.setName(sourceDir.getName());
+        dir.setName(sd.getName());
 
         Validate.notEmpty(dir.getName());
 
-        DirItems dis = new DirItems(sourceDir.getItems(), dir.getItems());
-        dirItemsStack.addLast(dis);
+        DirItems dirItems = new DirItems(sd.getItems(), dir.getItems());
+        dirItemsStack.addLast(dirItems);
 
         return dir;
     }
@@ -88,23 +88,23 @@ public class FileTransferBuilder {
         file.setFileId(fileId);
         file.setName(sf.getName());
         file.setSize(sf.getSize());
-        file.setLastModified(sf.getLastModified().toMillis());
+        file.setLastModified(sf.getLastModified());
 
-        Validate.notBlank(file.getName());
-        Validate.isTrue(file.getSize() >= 0);
+        Validate.notBlank(file.getName(), "Empty file name");
+        Validate.isTrue(file.getSize() >= 0, "neg");
 
         return file;
     }
 
     private static class DirItems {
 
-        public final Collection<SourceItem> sourceItems;
+        final Collection<SourceItem> source;
 
-        public final List<Item> targetItems;
+        final Collection<Item> target;
 
-        public DirItems(Collection<SourceItem> sourceItems, List<Item> targetItems) {
-            this.sourceItems = sourceItems;
-            this.targetItems = targetItems;
+        DirItems(Collection<SourceItem> source, Collection<Item> target) {
+            this.source = source;
+            this.target = target;
         }
     }
 }

@@ -18,9 +18,14 @@ class MessageParam implements MessagePart {
     public Integer getPosition() {
         return position;
     }
-    
+
     @Override
     public void write(StringBuilder sb) {
         sb.append(name).append('=').append(value);
+    }
+
+    @Override
+    public void writeSeparator(StringBuilder sb, MessagePart nextMessage) {
+        sb.append(", ");
     }
 }

@@ -13,7 +13,7 @@ public class TransferStatusImpl implements TransferStatus {
 
     private LocalDateTime startTime;
 
-    private LocalDateTime lastTransferTime;
+    private LocalDateTime lastActivity;
 
     private int recoveryCount;
 
@@ -23,6 +23,7 @@ public class TransferStatusImpl implements TransferStatus {
 
     public TransferStatusImpl() {
         state = TransferState.INITIALIZED;
+        lastActivity = LocalDateTime.now();
     }
 
     /**
@@ -31,7 +32,7 @@ public class TransferStatusImpl implements TransferStatus {
     private TransferStatusImpl(TransferStatusImpl source) {
         state = source.state;
         startTime = source.startTime;
-        lastTransferTime = source.lastTransferTime;
+        lastActivity = source.lastActivity;
         recoveryCount = source.recoveryCount;
         totalTransferSize = source.totalTransferSize;
         transferedSize = source.transferedSize;
@@ -49,7 +50,7 @@ public class TransferStatusImpl implements TransferStatus {
 
     @Override
     public LocalDateTime getLastTransferTime() {
-        return lastTransferTime;
+        return lastActivity;
     }
 
     @Override
@@ -81,23 +82,17 @@ public class TransferStatusImpl implements TransferStatus {
         Validate.isTrue(size >= 0);
 
         transferedSize += size;
-        updateLastTransfer(LocalDateTime.now());
+        updateActivity();
     }
 
     public void changeState(TransferState nextState) {
         Validate.notNull(nextState);
 
         state = nextState;
+        updateActivity();
 
-        if (state == TransferState.FAILED) {
-            return;
-        }
-
-        LocalDateTime now = LocalDateTime.now();
-        updateLastTransfer(now);
-
-        if (state == TransferState.STARTED) {
-            startTime = now;
+        if (startTime == null) {
+            startTime = lastActivity;
         }
     }
 
@@ -105,8 +100,15 @@ public class TransferStatusImpl implements TransferStatus {
         return new TransferStatusImpl(this);
     }
 
-    private void updateLastTransfer(LocalDateTime transferTime) {
-        lastTransferTime = transferTime;
+    private void updateActivity() {
+        lastActivity = LocalDateTime.now();
         recoveryCount = 0;
+    }
+
+    @Override
+    public String toString() {
+        return "TransferStatusImpl [state=" + state + ", startTime=" + startTime + ", lastActivity=" + lastActivity
+                + ", recoveryCount=" + recoveryCount + ", totalTransferSize=" + totalTransferSize + ", transferedSize="
+                + transferedSize + "]";
     }
 }

@@ -6,5 +6,5 @@ public interface TransferInfo {
 
     String getRequestId();
 
-    boolean isCancelPending();
+    boolean isCancelRequested();
 }

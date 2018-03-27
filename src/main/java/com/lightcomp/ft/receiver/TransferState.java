@@ -1,7 +1,8 @@
 package com.lightcomp.ft.receiver;
 
 /**
- * Internal receiver transfer state.
+ * Internal receiver transfer state. <i>Implementation note: Do not change
+ * defined order, ordinal is used.</i>
  */
 public enum TransferState {
     /**
@@ -12,6 +13,10 @@ public enum TransferState {
      * Data is transferring.
      */
     STARTED,
+    /**
+     * Data is transferring.
+     */
+    TRANSFERING,
     /**
      * Data is transfered, waiting for validation.
      */

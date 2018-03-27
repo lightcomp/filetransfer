@@ -14,27 +14,27 @@ import com.lightcomp.ft.sender.impl.phase.operation.SendOperation;
 
 public class DataPhase extends RecoverablePhase {
 
-    private final Collection<FileProvider> fileProviders;
+    private final Collection<FileProvider> files;
 
-    private final Iterator<FileProvider> fileProviderIt;
+    private final Iterator<FileProvider> fileIt;
 
     private int lastFrameId;
 
     private String lastSentFrameId;
 
-    private FileProvider currFileProvider;
+    private FileProvider currFile;
 
-    private long currFileRemainingSize;
+    private long currFileOffset;
 
-    public DataPhase(TransferContext transferCtx, Collection<FileProvider> fileProviders) {
+    public DataPhase(TransferContext transferCtx, Collection<FileProvider> files) {
         super(transferCtx);
-        this.fileProviders = fileProviders;
-        this.fileProviderIt = fileProviders.iterator();
+        this.files = files;
+        this.fileIt = files.iterator();
     }
 
     @Override
     public Phase getNextPhase() {
-        return new PreparePhase(transferCtx, fileProviders);
+        return new PreparePhase(transferCtx, files);
     }
 
     @Override
@@ -44,7 +44,7 @@ public class DataPhase extends RecoverablePhase {
 
     @Override
     protected Operation getNextOperation() throws CanceledException {
-        if (!fileProviderIt.hasNext() && currFileProvider == null) {
+        if (!fileIt.hasNext() && currFile == null) {
             return null; // no more files to send
         }
         FrameContext frameCtx = getNextFrameContext();
@@ -62,47 +62,45 @@ public class DataPhase extends RecoverablePhase {
 
     public void onSendSuccess(FrameContext frameContext) {
         lastSentFrameId = frameContext.getFrameId();
-
         // notify transfer context about frame success/progress
         transferCtx.onDataSent(frameContext.getSize());
     }
 
     private FrameContext getNextFrameContext() throws CanceledException {
-        String frameId = Integer.toString(++lastFrameId);
-        FrameContext frameCtx = new FrameContext(frameId, transferCtx);
+        FrameContext frameCtx = createFrameContext();
 
         // add current file
-        if (currFileProvider != null) {
-            long offset = currFileProvider.getSize() - currFileRemainingSize;
+        if (currFile != null) {
+            long len = currFile.getSize() - currFileOffset;
+            long n = frameCtx.addFile(currFile, currFileOffset, len);
+            currFileOffset += n;
 
-            // add file to frame
-            long size = frameCtx.addFile(currFileProvider, offset, currFileRemainingSize);
-            currFileRemainingSize -= size;
-
-            // test if current file does not fit in frame
-            if (currFileRemainingSize > 0) {
-                return frameCtx;
+            if (currFileOffset < currFile.getSize()) {
+                return frameCtx; // send rest of the file in next frame
             }
         }
 
-        // continue with file iterator
-        while (fileProviderIt.hasNext()) {
-            currFileProvider = fileProviderIt.next();
-            currFileRemainingSize = currFileProvider.getSize();
+        // fill frame with next file
+        while (fileIt.hasNext()) {
+            currFile = fileIt.next();
+            currFileOffset = 0;
 
-            // add file to frame
-            long size = frameCtx.addFile(currFileProvider, 0, currFileRemainingSize);
-            currFileRemainingSize -= size;
+            long n = frameCtx.addFile(currFile, 0, currFile.getSize());
+            currFileOffset += n;
 
-            // test if current file does not fit in frame
-            if (currFileRemainingSize > 0) {
-                return frameCtx;
+            if (currFileOffset < currFile.getSize()) {
+                return frameCtx; // send rest of the file in next frame
             }
         }
 
-        // current file will be completely send
-        currFileProvider = null;
+        // last file fits in to the frame
+        currFile = null;
 
         return frameCtx;
+    }
+
+    private FrameContext createFrameContext() {
+        String frameId = Integer.toString(++lastFrameId);
+        return new FrameContext(frameId, transferCtx);
     }
 }

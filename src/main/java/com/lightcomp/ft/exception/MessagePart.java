@@ -6,6 +6,8 @@ interface MessagePart extends Comparable<MessagePart> {
 
     void write(StringBuilder sb);
 
+    void writeSeparator(StringBuilder sb, MessagePart nextMessage);
+    
     @Override
     default int compareTo(MessagePart o) {
         Integer tp = getPosition();

@@ -1,5 +1,8 @@
 package com.lightcomp.ft;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 import com.lightcomp.ft.receiver.BeginTransferListener;
@@ -7,40 +10,24 @@ import com.lightcomp.ft.receiver.TransferAcceptor;
 
 public class BeginTransferListenerImpl implements BeginTransferListener {
 
-    @Override
-    public TransferAcceptor onTransferBegin(String requestId) {
-        return new TransferAcceptor() {
+    private final Path transferDir;
 
-            @Override
-            public void onTransferSuccess() {
-                // TODO Auto-generated method stub
+    private int lastTransferId;
 
-            }
-
-            @Override
-            public void onTransferFailed(Throwable cause) {
-                // TODO Auto-generated method stub
-
-            }
-
-            @Override
-            public void onTransferAbort() {
-                // TODO Auto-generated method stub
-
-            }
-
-            @Override
-            public String getTransferId() {
-                // TODO Auto-generated method stub
-                return "X";
-            }
-
-            @Override
-            public Path getTransferDir() {
-                // TODO Auto-generated method stub
-                return null;
-            }
-        };
+    public BeginTransferListenerImpl(Path transferDir) {
+        this.transferDir = transferDir;
     }
 
+    @Override
+    public TransferAcceptor onTransferBegin(String requestId) {
+        String tid = Integer.toString(++lastTransferId);
+        Path dir = transferDir.resolve(tid);
+        // prepare transfer directory
+        try {
+            Files.createDirectory(dir);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return new TransferAcceptorImpl(tid, dir);
+    }
 }

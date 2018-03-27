@@ -17,4 +17,9 @@ class MessageContent implements MessagePart {
     public Integer getPosition() {
         return Integer.MIN_VALUE;
     }
+
+    @Override
+    public void writeSeparator(StringBuilder sb, MessagePart nextMessage) {
+        sb.append(", ");
+    }
 }

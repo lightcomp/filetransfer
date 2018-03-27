@@ -34,8 +34,8 @@ public class CommitOperation implements Operation {
                     case COMMITTED:
                         return false; // success
                     default:
-                        throw TransferExceptionBuilder.from("Cannot send commit operation").setTransfer(commitPhase.getTransferInfo())
-                                .addParam("recieverState", status.getState()).build();
+                        throw TransferExceptionBuilder.from("Failed to recover commit operation")
+                                .addParam("state", status.getState()).build();
                 }
             }
         };

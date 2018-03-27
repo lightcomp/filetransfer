@@ -37,8 +37,8 @@ public class PrepareOperation implements Operation {
                     case PREPARED:
                         return false; // success
                     default:
-                        throw TransferExceptionBuilder.from("Cannot send prepare operation")
-                                .setTransfer(preparePhase.getTransferInfo()).addParam("recieverState", status.getState()).build();
+                        throw TransferExceptionBuilder.from("Failed to recover prepare operation")
+                                .setTransfer(preparePhase.getTransferInfo()).addParam("state", status.getState()).build();
                 }
             }
         };

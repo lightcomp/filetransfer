@@ -33,7 +33,8 @@ public class TransferImpl implements Runnable, Transfer, TransferContext {
 
     private final FileTransferService service;
 
-    private volatile boolean cancelPending;
+    // flag if cancel was requested
+    private volatile boolean cancelRequested;
 
     private String transferId;
 
@@ -79,8 +80,8 @@ public class TransferImpl implements Runnable, Transfer, TransferContext {
     }
 
     @Override
-    public boolean isCancelPending() {
-        return cancelPending;
+    public boolean isCancelRequested() {
+        return cancelRequested;
     }
 
     @Override
@@ -116,15 +117,15 @@ public class TransferImpl implements Runnable, Transfer, TransferContext {
     }
 
     @Override
-    public synchronized void sleep(long ms, boolean ignoreCancel) {
-        if (cancelPending && !ignoreCancel) {
+    public synchronized void sleep(long ms, boolean cancellable) {
+        if (cancelRequested && cancellable) {
             return;
         }
         try {
-            if (ignoreCancel) {
-                Thread.sleep(ms);
-            } else {
+            if (cancellable) {
                 wait(ms);
+            } else {
+                Thread.sleep(ms);
             }
         } catch (InterruptedException e) {
             // by default handled as transfer failure
@@ -134,11 +135,11 @@ public class TransferImpl implements Runnable, Transfer, TransferContext {
 
     @Override
     public synchronized void cancel() {
-        cancelPending = true;
-
-        // wake up transfer thread if waiting
-        notifyAll();
-
+        if (!cancelRequested) {
+            cancelRequested = true;
+            // wake up transfer thread
+            notifyAll();
+        }
         TransferState ts = status.getState();
         while (!ts.equals(TransferState.CANCELED)) {
             if (ts == TransferState.COMMITTED) {
@@ -173,15 +174,16 @@ public class TransferImpl implements Runnable, Transfer, TransferContext {
     private Phase prepareNextPhase(Phase nextPhase, TransferState nextState) throws CanceledException {
         TransferStatus ts = null;
         synchronized (this) {
+            // update current state
+            status.changeState(nextState);
             // not committed transfers can be canceled
             if (nextState != TransferState.COMMITTED) {
-                if (cancelPending) {
+                if (cancelRequested) {
                     throw new CanceledException();
                 }
                 // copy status in synch block
                 ts = status.copy();
             }
-            status.changeState(nextState);
             // notify canceling threads
             notifyAll();
         }
@@ -198,7 +200,7 @@ public class TransferImpl implements Runnable, Transfer, TransferContext {
         boolean canceled;
         synchronized (this) {
             // cancel when canceled exception is thrown and cancel is pending
-            canceled = cancelPending && cause instanceof CanceledException;
+            canceled = cancelRequested && cause instanceof CanceledException;
             if (canceled) {
                 status.changeState(TransferState.CANCELED);
             } else {

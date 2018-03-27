@@ -3,8 +3,10 @@ package com.lightcomp.ft.receiver.impl;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
@@ -15,7 +17,7 @@ import com.lightcomp.ft.receiver.BeginTransferListener;
 import com.lightcomp.ft.receiver.ReceiverConfig;
 import com.lightcomp.ft.receiver.ReceiverService;
 import com.lightcomp.ft.receiver.TransferAcceptor;
-import com.lightcomp.ft.receiver.TransferStatus;
+import com.lightcomp.ft.receiver.impl.TransferImpl.ActivityStatus;
 import com.lightcomp.ft.xsd.v1.ErrorCode;
 
 import cxf.FileTransferException;
@@ -81,16 +83,6 @@ public class ReceiverServiceImpl implements ReceiverService, TransferProvider {
     }
 
     @Override
-    public TransferStatus getTransferStatus(String transferId) {
-        TransferImpl transfer;
-        synchronized (this) {
-            Validate.isTrue(state == State.RUNNING);
-            transfer = transferIdMap.get(transferId);
-        }
-        return transfer.getStatus();
-    }
-
-    @Override
     public void cancelTransfer(String transferId) {
         TransferImpl transfer;
         synchronized (this) {
@@ -122,11 +114,12 @@ public class ReceiverServiceImpl implements ReceiverService, TransferProvider {
         checkRunningState();
 
         TransferAcceptor acceptor = beginTransferListener.onTransferBegin(requestId);
+        String transferId = Validate.notEmpty(acceptor.getTransferId());
         try {
             synchronized (this) {
                 checkRunningState();
                 TransferImpl transfer = new TransferImpl(acceptor, requestId, config);
-                if (transferIdMap.putIfAbsent(transfer.getTransferId(), transfer) != null) {
+                if (transferIdMap.putIfAbsent(transferId, transfer) != null) {
                     throw TransferExceptionBuilder.from("Transfer id already exists").setTransfer(transfer)
                             .setCode(ErrorCode.FATAL).buildFault();
                 }
@@ -152,7 +145,7 @@ public class ReceiverServiceImpl implements ReceiverService, TransferProvider {
 
     private void run() {
         while (true) {
-            List<TransferImpl> transfers;
+            List<TransferImpl> timeoutedTransfers = new ArrayList<>();
             synchronized (this) {
                 if (state != State.RUNNING) {
                     state = State.TERMINATED;
@@ -161,52 +154,55 @@ public class ReceiverServiceImpl implements ReceiverService, TransferProvider {
                     // break thread loop
                     break;
                 }
-                transfers = new ArrayList<>(transferIdMap.values());
+                removeInactiveTransfers(timeoutedTransfers);
             }
-            List<String> inactiveTransferIds = findInactiveTransferIds(transfers);
+
+            // try to cancel timed out transfers
+            cancelTransfers(timeoutedTransfers);
+
             synchronized (this) {
-                // remove all inactive transfers
-                inactiveTransferIds.forEach(transferIdMap::remove);
-                // wait for timeout or stopping notification
                 try {
+                    // wait for timeout or stopping notification
                     wait(1000);
                 } catch (InterruptedException e) {
                     // service cannot run without manager
-                    state = State.TERMINATED;
-                    // break thread loop
-                    break;
+                    state = State.STOPPING;
                 }
             }
         }
         // no one can access transferIdMap in terminated state thus thread-safe
-        stopAllTransfers();
+        cancelTransfers(transferIdMap.values());
+        transferIdMap.clear();
     }
 
     /**
-     * Finds all inactive transfer ids. Caller must ensure synchronization.
+     * Removes all terminated transfers. Also adds timeouted transfers to specified
+     * collection. Caller must ensure synchronization.
      */
-    private List<String> findInactiveTransferIds(Collection<TransferImpl> transfers) {
-        List<String> canceledIds = new ArrayList<>();
-        for (TransferImpl transfer : transfers) {
-            if (transfer.isInactive()) {
-                canceledIds.add(transfer.getTransferId());
+    private void removeInactiveTransfers(Collection<TransferImpl> timeoutedTransfers) {
+        Iterator<Entry<String, TransferImpl>> it = transferIdMap.entrySet().iterator();
+        while (it.hasNext()) {
+            TransferImpl transfer = it.next().getValue();
+            ActivityStatus status = transfer.getActivityStatus();
+            if (status == ActivityStatus.TIMEOUT_TERMINATED) {
+                it.remove();
+            }
+            if (status == ActivityStatus.TIMEOUT) {
+                timeoutedTransfers.add(transfer);
             }
         }
-        return canceledIds;
     }
 
     /**
-     * All transfers are canceled and lookup map is cleared. Caller must ensure
-     * synchronization.
+     * Cancels specified transfers. Caller must ensure synchronization.
      */
-    private void stopAllTransfers() {
-        for (TransferImpl transfer : transferIdMap.values()) {
+    private void cancelTransfers(Collection<TransferImpl> transfers) {
+        for (TransferImpl transfer : transfers) {
             try {
                 transfer.cancel();
             } catch (Throwable t) {
-                logger.warn("Unable to cancel transfer during service termination", t);
+                logger.warn("Unable to cancel transfer", t);
             }
         }
-        transferIdMap.clear();
     }
 }

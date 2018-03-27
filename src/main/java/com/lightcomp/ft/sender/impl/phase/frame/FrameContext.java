@@ -16,7 +16,7 @@ import com.lightcomp.ft.xsd.v1.Frame;
 
 public class FrameContext {
 
-    private final List<FrameBlockContext> blockCtxList = new ArrayList<>();
+    private final List<FrameBlockContext> blocks = new ArrayList<>();
 
     private final String frameId;
 
@@ -38,7 +38,7 @@ public class FrameContext {
     }
 
     public Frame createFrame() {
-        Validate.isTrue(blockCtxList.size() > 0);
+        Validate.isTrue(blocks.size() > 0);
 
         Frame frame = new Frame();
         frame.setFrameId(frameId);
@@ -46,22 +46,29 @@ public class FrameContext {
 
         FileChunks fcs = new FileChunks();
         List<FileChunk> fcList = fcs.getList();
-        for (FrameBlockContext bc : blockCtxList) {
+        for (FrameBlockContext bc : blocks) {
             fcList.add(bc.createFileChunk());
         }
         frame.setFileChunks(fcs);
 
-        FrameReadableDataSource ds = new FrameReadableDataSource(blockCtxList);
+        FrameReadableDataSource ds = new FrameReadableDataSource(blocks);
         frame.setData(new DataHandler(ds));
 
         return frame;
     }
 
+    /**
+     * @param fileProvider
+     * @param offset
+     *            file offset
+     * @param length
+     * @return Number of bytes added to frame.
+     */
     public long addFile(FileProvider fileProvider, long offset, long length) throws CanceledException {
         Validate.isTrue(offset >= 0);
         Validate.isTrue(length > 0);
 
-        if (transferCtx.isCancelPending()) {
+        if (transferCtx.isCancelRequested()) {
             throw new CanceledException();
         }
 
@@ -69,7 +76,7 @@ public class FrameContext {
         long blockSize = Math.min(length, maxBlockSize - this.size);
 
         FrameBlockContext bc = new FrameBlockContext(fileProvider, offset, this.size, blockSize);
-        blockCtxList.add(bc);
+        blocks.add(bc);
 
         // increment frame size
         size += blockSize;

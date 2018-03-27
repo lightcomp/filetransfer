@@ -8,24 +8,35 @@ import com.lightcomp.ft.common.ReadableByteChannelWrapper;
 
 public class ReadLimitingByteChannel extends ReadableByteChannelWrapper {
 
-    private long remainingSize;
+    private long remainingBytes;
 
-    public ReadLimitingByteChannel(ReadableByteChannel rbch, long readLimit) {
+    public ReadLimitingByteChannel(ReadableByteChannel rbch, long lengthLimit) {
         super(rbch);
-        this.remainingSize = readLimit;
+        this.remainingBytes = lengthLimit;
     }
 
     @Override
     public int read(ByteBuffer dst) throws IOException {
-        if (remainingSize == 0) {
-            return 0;
+        if (remainingBytes == 0) {
+            return -1;
         }
-        int remaining = dst.remaining();
-        if (remainingSize < remaining) {
-            dst.limit((int) remainingSize);
+        int num = readInternal(dst);
+        remainingBytes -= num;
+        return num;
+    }
+
+    private int readInternal(ByteBuffer dst) throws IOException {
+        long diff = dst.remaining() - remainingBytes;
+        if (diff <= 0) {
+            return super.read(dst);
         }
-        int size = super.read(dst);
-        remainingSize -= size;
-        return size;
+        int origLimit = dst.limit();
+        int newLimit = origLimit - (int) diff;
+        dst.limit(newLimit);
+        try {
+            return super.read(dst);
+        } finally {
+            dst.limit(origLimit);
+        }
     }
 }

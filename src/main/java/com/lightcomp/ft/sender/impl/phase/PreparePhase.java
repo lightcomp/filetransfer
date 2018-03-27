@@ -15,13 +15,13 @@ import com.lightcomp.ft.xsd.v1.FileChecksums;
 
 public class PreparePhase extends RecoverablePhase {
 
-    private final Collection<FileProvider> fileProviders;
+    private final Collection<FileProvider> files;
 
     private boolean opCreated;
 
-    public PreparePhase(TransferContext transferContext, Collection<FileProvider> fileProviders) {
+    public PreparePhase(TransferContext transferContext, Collection<FileProvider> files) {
         super(transferContext);
-        this.fileProviders = fileProviders;
+        this.files = files;
     }
 
     @Override
@@ -52,8 +52,8 @@ public class PreparePhase extends RecoverablePhase {
         FileChecksums fchs = new FileChecksums();
         List<FileChecksum> list = fchs.getList();
 
-        for (FileProvider fp : fileProviders) {
-            if (transferCtx.isCancelPending()) {
+        for (FileProvider fp : files) {
+            if (transferCtx.isCancelRequested()) {
                 throw new CanceledException();
             }
             FileChecksum fch = createFileChecksum(fp);

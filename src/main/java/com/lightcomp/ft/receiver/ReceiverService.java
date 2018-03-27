@@ -23,11 +23,6 @@ public interface ReceiverService {
     void stop();
 
     /**
-     * Returns current transfer status.
-     */
-    TransferStatus getTransferStatus(String transferId);
-
-    /**
      * Cancel transfer. Caller will wait for termination if the transfer is active.
      * When canceled {@link TransferAcceptor#onTransferCanceled()} is called.
      * 

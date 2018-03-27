@@ -42,8 +42,7 @@ public class SendOperation implements Operation {
                 // check transfer state
                 FileTransferState state = status.getState();
                 if (state != FileTransferState.ACTIVE) {
-                    throw TransferExceptionBuilder.from("Cannot send data").setTransfer(dataPhase.getTransferInfo())
-                            .addParam("recieverState", state).build();
+                    throw TransferExceptionBuilder.from("Failed to recover send operation").addParam("state", state).build();
                 }
 
                 // test if succeeded
@@ -60,7 +59,7 @@ public class SendOperation implements Operation {
                 }
 
                 // any other frameId is exception
-                throw TransferExceptionBuilder.from("Cannot send data").setTransfer(dataPhase.getTransferInfo())
+                throw TransferExceptionBuilder.from("Failed to recover send operation")
                         .addParam("lastSentFrameId", lastSentFrameId).addParam("lastRecievedFrameId", lastRecievedFrameId)
                         .build();
             }
