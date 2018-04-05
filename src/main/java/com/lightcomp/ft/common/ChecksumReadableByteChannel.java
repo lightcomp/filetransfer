@@ -23,13 +23,17 @@ public class ChecksumReadableByteChannel extends ReadableByteChannelWrapper {
         return n;
     }
 
-    private void updateChecksum(ByteBuffer bb, int len) {
+    /**
+     * @param n
+     *            number of bytes read
+     */
+    private void updateChecksum(ByteBuffer bb, int n) {
         // reallocate buffer if needed
-        if (buffer.length < len) {
-            buffer = new byte[len];
+        if (buffer.length < n) {
+            buffer = new byte[n];
         }
         // copy buffer
-        bb.get(buffer, 0, len);
-        chsg.update(buffer, 0, len);
+        bb.get(buffer, 0, n);
+        chsg.update(buffer, 0, n);
     }
 }

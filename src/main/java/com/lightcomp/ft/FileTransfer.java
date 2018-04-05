@@ -1,18 +1,18 @@
 package com.lightcomp.ft;
 
-import com.lightcomp.ft.receiver.BeginTransferListener;
-import com.lightcomp.ft.receiver.ReceiverConfig;
-import com.lightcomp.ft.receiver.ReceiverService;
-import com.lightcomp.ft.receiver.impl.ReceiverServiceImpl;
-import com.lightcomp.ft.sender.SenderConfig;
-import com.lightcomp.ft.sender.SenderService;
-import com.lightcomp.ft.sender.impl.SenderServiceImpl;
+import com.lightcomp.ft.client.Client;
+import com.lightcomp.ft.client.ClientConfig;
+import com.lightcomp.ft.client.internal.ClientImpl;
+import com.lightcomp.ft.server.BeginTransferListener;
+import com.lightcomp.ft.server.ReceiverConfig;
+import com.lightcomp.ft.server.ReceiverService;
+import com.lightcomp.ft.server.impl.ReceiverServiceImpl;
 
 public class FileTransfer {
 
-    public static SenderService createSenderService(SenderConfig config) {
-        SenderServiceImpl impl = new SenderServiceImpl(config);
-        return impl;
+    public static Client createClient(ClientConfig config) {
+        Client client = new ClientImpl(config);
+        return client;
     }
 
     public static ReceiverService createReceiverService(BeginTransferListener beginTransferListener, ReceiverConfig config) {

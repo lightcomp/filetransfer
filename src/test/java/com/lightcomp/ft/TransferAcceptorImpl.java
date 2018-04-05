@@ -5,8 +5,8 @@ import java.nio.file.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.lightcomp.ft.receiver.TransferAcceptor;
-import com.lightcomp.ft.receiver.TransferStatus;
+import com.lightcomp.ft.server.TransferAcceptor;
+import com.lightcomp.ft.server.TransferStatus;
 
 public class TransferAcceptorImpl implements TransferAcceptor {
 

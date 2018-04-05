@@ -15,8 +15,6 @@ public class ChecksumGenerator {
     // current data stream position
     private long currStreamPos;
 
-    private byte[] result;
-
     public ChecksumGenerator(ChecksumType type) {
         this.md = type.createMessageDigest();
     }
@@ -39,25 +37,28 @@ public class ChecksumGenerator {
      *            the number of bytes to use, starting at offset
      */
     public void update(byte[] input, int offset, int length) {
-        long posAfterUpdate = currStreamPos + length;
-        if (posAfterUpdate <= numProcessed) {
-            currStreamPos = posAfterUpdate;
-            return;
+        long posUpdate = currStreamPos + length;
+        // check if more bytes were processed than is current position
+        if (posUpdate > numProcessed) {
+            // calculate new offset and length for checksum
+            int newLen = (int) (posUpdate - numProcessed);
+            int newOff = offset + (length - newLen);
+            // update checksum
+            md.update(input, newOff, newLen);
+            // increment number of bytes processed
+            numProcessed += newLen;
         }
-        // data size cannot be bigger than length
-        int newDataSize = (int) (posAfterUpdate - numProcessed);
-        int off = offset + (length - newDataSize);
-
-        md.update(input, off, newDataSize);
-
-        numProcessed += newDataSize;
-        currStreamPos = posAfterUpdate;
+        currStreamPos = posUpdate;
     }
 
-    public String getHexString() {
-        if (result == null) {
-            result = md.digest();
-        }
+    /**
+     * Generates checksum as hex string. The generator is reset after this call is
+     * made.
+     */
+    public String generate() {
+        byte[] result = md.digest();
+        numProcessed = 0;
+        currStreamPos = 0;
         return Hex.encodeHexString(result);
     }
 }

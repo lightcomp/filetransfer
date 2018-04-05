@@ -9,22 +9,6 @@
 	<globalBindings>
 		<xjc:simple /> <!-- make collection names plural -->
 		<serializable uid="1" /> <!-- implements java.io.Serializable -->
-		<xjc:javaType name="java.time.ZonedDateTime" xmlType="xsd:dateTime"
-			adapter="com.lightcomp.ft.xml.DateTimeXmlAdapter" /> <!-- use Java 8 date instead of XmlGregCal -->
 	</globalBindings>
-
-	<!-- naming policy adjustment -->
-	<bindings schemaLocation="file-transfer-v1.xsd">
-		<bindings node="./xsd:complexType[@name='FileChecksums']">
-			<bindings node="//xsd:element[@name='fileChecksum']">
-				<property name="list" />
-			</bindings>
-		</bindings>
-		<bindings node="./xsd:complexType[@name='FileChunks']">
-			<bindings node="//xsd:element[@name='fileChunk']">
-				<property name="list" />
-			</bindings>
-		</bindings>
-	</bindings>
 
 </bindings>

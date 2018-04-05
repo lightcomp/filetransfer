@@ -5,8 +5,8 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import com.lightcomp.ft.receiver.BeginTransferListener;
-import com.lightcomp.ft.receiver.TransferAcceptor;
+import com.lightcomp.ft.server.BeginTransferListener;
+import com.lightcomp.ft.server.TransferAcceptor;
 
 public class BeginTransferListenerImpl implements BeginTransferListener {
 

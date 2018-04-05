@@ -1,0 +1,80 @@
+package com.lightcomp.ft.client.internal;
+
+import org.apache.cxf.ext.logging.LoggingFeature;
+import org.apache.cxf.frontend.ClientProxy;
+import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
+import org.apache.cxf.transport.http.HTTPConduit;
+import org.apache.cxf.transports.http.configuration.HTTPClientPolicy;
+
+import com.lightcomp.ft.client.Client;
+import com.lightcomp.ft.client.ClientConfig;
+import com.lightcomp.ft.client.DownloadRequest;
+import com.lightcomp.ft.client.Transfer;
+import com.lightcomp.ft.client.UploadRequest;
+import com.lightcomp.ft.client.internal.upload.UploadTransfer;
+import com.lightcomp.ft.common.TaskExecutor;
+
+import cxf.FileTransferService;
+
+public class ClientImpl implements Client {
+
+    private final TaskExecutor taskExecutor;
+
+    private final FileTransferService service;
+
+    private final ClientConfig config;
+
+    public ClientImpl(ClientConfig config) {
+        this.taskExecutor = new TaskExecutor(config.getThreadPoolSize());
+        this.service = createService(config);
+        this.config = config;
+    }
+
+    @Override
+    public Transfer beginUpload(UploadRequest request) {
+        AbstractTransfer transfer = new UploadTransfer(request, config, service);
+        taskExecutor.addTask(transfer);
+        return transfer;
+    }
+
+    @Override
+    public Transfer beginDownload(DownloadRequest request) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public void start() {
+        taskExecutor.start();
+    }
+
+    @Override
+    public void stop() {
+        taskExecutor.stop();
+    }
+
+    private static FileTransferService createService(ClientConfig config) {
+        JaxWsProxyFactoryBean factory = new JaxWsProxyFactoryBean();
+        factory.setAddress(config.getAddress());
+
+        if (config.isSoapLogging()) {
+            factory.getFeatures().add(new LoggingFeature());
+        }
+
+        FileTransferService service = factory.create(FileTransferService.class);
+        org.apache.cxf.endpoint.Client client = ClientProxy.getClient(service);
+        HTTPConduit httpConduit = (HTTPConduit) client.getConduit();
+
+        configureTimeouts(httpConduit, config);
+
+        return service;
+    }
+
+    private static void configureTimeouts(HTTPConduit httpConduit, ClientConfig config) {
+        long ms = config.getRequestTimeout() * 1000;
+        HTTPClientPolicy cp = new HTTPClientPolicy();
+        cp.setConnectionTimeout(ms);
+        cp.setReceiveTimeout(ms);
+        httpConduit.setClient(cp);
+    }
+}

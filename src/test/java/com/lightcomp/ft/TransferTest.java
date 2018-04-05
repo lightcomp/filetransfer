@@ -20,14 +20,14 @@ import org.apache.cxf.BusFactory;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.lightcomp.ft.client.ClientConfig;
+import com.lightcomp.ft.client.Client;
+import com.lightcomp.ft.client.SourceItem;
+import com.lightcomp.ft.client.Transfer;
+import com.lightcomp.ft.client.TransferState;
 import com.lightcomp.ft.common.ChecksumType;
-import com.lightcomp.ft.receiver.ReceiverConfig;
-import com.lightcomp.ft.receiver.ReceiverService;
-import com.lightcomp.ft.sender.SenderConfig;
-import com.lightcomp.ft.sender.SenderService;
-import com.lightcomp.ft.sender.SourceItem;
-import com.lightcomp.ft.sender.Transfer;
-import com.lightcomp.ft.sender.TransferState;
+import com.lightcomp.ft.server.ReceiverConfig;
+import com.lightcomp.ft.server.ReceiverService;
 
 public class TransferTest {
 
@@ -70,11 +70,12 @@ public class TransferTest {
     @Test
     public void test() throws InterruptedException {
         ReceiverConfig rcfg = new ReceiverConfig();
-        rcfg.setInactiveTimeout(60); // TODO: 1 to debug logging
+        rcfg.setInactiveTimeout(10); // TODO: 1 to debug logging
         publishEndpoint(TEMP_DIR, rcfg);
 
-        SenderConfig scfg = new SenderConfig(EP_ADDR);
-        SenderService sender = FileTransfer.createSenderService(scfg);
+        ClientConfig scfg = new ClientConfig(EP_ADDR);
+        scfg.setSoapLogging(true);
+        Client sender = FileTransfer.createSenderService(scfg);
         sender.start();
 
         TransferRequestImpl req = new TransferRequestImpl("trans1", CHST, createTransferContent(3, 30));
