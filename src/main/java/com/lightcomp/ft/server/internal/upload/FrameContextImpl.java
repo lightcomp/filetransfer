@@ -131,7 +131,7 @@ public class FrameContextImpl implements FrameContext {
 
     public static FrameContextImpl create(Frame frame, Path dataFile) {
         boolean last = frame.isLast() != null ? frame.isLast() : false;
-        Collection<FrameBlock> blocks = frame.getBlocks().getFdsAndFesAndFbs();
+        Collection<FrameBlock> blocks = frame.getBlocks().getDesAndFdsAndFes();
         return new FrameContextImpl(frame.getSeqNum(), last, frame.getDataSize(), dataFile, blocks);
     }
 }

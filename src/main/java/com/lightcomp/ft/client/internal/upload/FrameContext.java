@@ -65,7 +65,7 @@ public class FrameContext {
 
         // create frame blocks
         FrameBlocks fbs = new FrameBlocks();
-        fbs.getFdsAndFesAndFbs().addAll(blocks);
+        fbs.getDesAndFdsAndFes().addAll(blocks);
         frame.setBlocks(fbs);
 
         // set MTOM data source

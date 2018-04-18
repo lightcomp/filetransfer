@@ -29,7 +29,7 @@ public class FileTransferServiceImpl implements FileTransferService {
     }
 
     @Override
-    public Frame receive(String transferId, BigInteger frameSeqNum) throws FileTransferException {
+    public Frame receive(BigInteger frameSeqNum, String transferId) throws FileTransferException {
         Transfer transfer = transferProvider.getTransfer(transferId);
         return transfer.sendFrame(frameSeqNum.longValue());
     }

@@ -27,7 +27,7 @@
 		<xs:complexContent>
 			<xs:extension base="ft:FrameBlock">
 				<xs:sequence/>
-				<xs:attribute name="name" use="optional" type="xs:string">
+				<xs:attribute name="name" use="required" type="xs:string">
 					<xs:annotation>
 						<xs:documentation>Jméno přenášeného adresáře. Uvádí se prosté jméno položky, tj. bez cesty.</xs:documentation>
 					</xs:annotation>
@@ -65,7 +65,7 @@
 		<xs:complexContent>
 			<xs:extension base="ft:FrameBlock">
 				<xs:sequence/>
-				<xs:attribute name="name" use="optional" type="xs:string">
+				<xs:attribute name="name" use="required" type="xs:string">
 					<xs:annotation>
 						<xs:documentation>Jméno přenášeného souboru. Uvádí se prosté jméno položky, tj. bez cesty.</xs:documentation>
 					</xs:annotation>
@@ -185,11 +185,11 @@ Každý blok se týká nějaké položka. ID položky musí být v bloku vždy u
 				<xs:annotation>
 					<xs:documentation>Jeden přenášený blok</xs:documentation>
 				</xs:annotation>
+				<xs:element name="de" type="ft:DirEnd" minOccurs="0" maxOccurs="1"/>
 				<xs:element name="fd" type="ft:FileData" minOccurs="0" maxOccurs="1"/>
 				<xs:element name="fe" type="ft:FileEnd" minOccurs="0" maxOccurs="1"/>
 				<xs:element name="fb" type="ft:FileBegin" minOccurs="0" maxOccurs="1"/>
 				<xs:element name="db" type="ft:DirBegin" minOccurs="0" maxOccurs="1"/>
-				<xs:element name="de" type="ft:DirEnd" minOccurs="0" maxOccurs="1"/>
 			</xs:choice>
 		</xs:sequence>
 	</xs:complexType>
