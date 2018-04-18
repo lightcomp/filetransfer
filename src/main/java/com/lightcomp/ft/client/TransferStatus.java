@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 public interface TransferStatus {
 
     /**
-     * Transfer phase.
+     * Transfer state.
      */
     TransferState getState();
 

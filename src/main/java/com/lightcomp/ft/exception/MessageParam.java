@@ -1,6 +1,6 @@
 package com.lightcomp.ft.exception;
 
-class MessageParam implements MessagePart {
+class MessageParam implements Comparable<MessageParam> {
 
     public final String name;
 
@@ -14,18 +14,18 @@ class MessageParam implements MessagePart {
         this.position = position;
     }
 
-    @Override
-    public Integer getPosition() {
-        return position;
-    }
-
-    @Override
     public void write(StringBuilder sb) {
-        sb.append(name).append('=').append(value);
+        sb.append(", ").append(name).append('=').append(value);
     }
 
     @Override
-    public void writeSeparator(StringBuilder sb, MessagePart nextMessage) {
-        sb.append(", ");
+    public int compareTo(MessageParam o) {
+        if (position == null) {
+            return o.position != null ? 1 : 0;
+        }
+        if (o.position == null) {
+            return -1;
+        }
+        return position.compareTo(o.position);
     }
 }

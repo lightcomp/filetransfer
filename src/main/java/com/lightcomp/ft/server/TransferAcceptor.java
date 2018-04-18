@@ -1,21 +1,25 @@
 package com.lightcomp.ft.server;
 
-import java.nio.file.Path;
-
 /**
- * Acceptor for incoming file transfer.
+ * File transfer acceptor initialized by {@link TransferReceiver}.
  */
 public interface TransferAcceptor {
 
+    public enum Mode {
+        UPLOAD, DOWNLOAD
+    }
+
     /**
-     * Unique transfer id.
+     * Unique transfer id, not-null.
      */
     String getTransferId();
 
     /**
-     * Target directory for transfered items.
+     * Transfer mode, not-null. Extending interface is expected to be implemented,
+     * for UPLOAD mode interface {@link UploadAcceptor} and for DOWNLOAD mode
+     * interface {@link DownloadAcceptor}.
      */
-    Path getTransferDir();
+    Mode getMode();
 
     /**
      * Transfer progress callback.

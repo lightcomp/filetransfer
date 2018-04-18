@@ -1,6 +1,7 @@
 package com.lightcomp.ft.common;
 
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.Validate;
@@ -15,8 +16,8 @@ public class ChecksumGenerator {
     // current data stream position
     private long currStreamPos;
 
-    public ChecksumGenerator(ChecksumType type) {
-        this.md = type.createMessageDigest();
+    private ChecksumGenerator(MessageDigest md) {
+        this.md = md;
     }
 
     public long getNumProcessed() {
@@ -60,5 +61,18 @@ public class ChecksumGenerator {
         numProcessed = 0;
         currStreamPos = 0;
         return Hex.encodeHexString(result);
+    }
+
+    /**
+     * Creates checksum generator with default hash algorithm SHA-512.
+     */
+    public static ChecksumGenerator createDefault() {
+        MessageDigest md;
+        try {
+            md = MessageDigest.getInstance("SHA-512");
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
+        return new ChecksumGenerator(md);
     }
 }

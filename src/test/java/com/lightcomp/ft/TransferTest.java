@@ -22,12 +22,12 @@ import org.junit.Test;
 
 import com.lightcomp.ft.client.ClientConfig;
 import com.lightcomp.ft.client.Client;
-import com.lightcomp.ft.client.SourceItem;
 import com.lightcomp.ft.client.Transfer;
 import com.lightcomp.ft.client.TransferState;
 import com.lightcomp.ft.common.ChecksumType;
-import com.lightcomp.ft.server.ReceiverConfig;
-import com.lightcomp.ft.server.ReceiverService;
+import com.lightcomp.ft.core.SourceItem;
+import com.lightcomp.ft.server.ServerConfig;
+import com.lightcomp.ft.server.Server;
 
 public class TransferTest {
 
@@ -69,7 +69,7 @@ public class TransferTest {
 
     @Test
     public void test() throws InterruptedException {
-        ReceiverConfig rcfg = new ReceiverConfig();
+        ServerConfig rcfg = new ServerConfig();
         rcfg.setInactiveTimeout(10); // TODO: 1 to debug logging
         publishEndpoint(TEMP_DIR, rcfg);
 
@@ -94,9 +94,9 @@ public class TransferTest {
         }
     }
 
-    public static void publishEndpoint(Path transferId, ReceiverConfig cfg) {
+    public static void publishEndpoint(Path transferId, ServerConfig cfg) {
         BeginTransferListenerImpl listenerImpl = new BeginTransferListenerImpl(transferId);
-        ReceiverService receiver = FileTransfer.createReceiverService(listenerImpl, cfg);
+        Server receiver = FileTransfer.createReceiverService(listenerImpl, cfg);
 
         Bus bus = BusFactory.newInstance().createBus();
         BusFactory.setThreadDefaultBus(bus);

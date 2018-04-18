@@ -1,9 +1,11 @@
 package com.lightcomp.ft.client.internal.upload.blocks;
 
-import com.lightcomp.ft.client.internal.upload.frame.FrameContext;
+import com.lightcomp.ft.client.internal.upload.FileContext;
+import com.lightcomp.ft.client.internal.upload.FrameBlockData;
+import com.lightcomp.ft.client.internal.upload.FrameContext;
 import com.lightcomp.ft.xsd.v1.FileData;
 
-class FileDataBlock implements Block {
+class FileDataBlock implements FrameBlock {
 
     private final FileContext fileCtx;
 
@@ -17,32 +19,31 @@ class FileDataBlock implements Block {
     }
 
     @Override
-    public boolean create(FrameContext frameCtx) {
+    public boolean addToFrame(FrameContext frameCtx) {
         if (offset == fileCtx.getSize()) {
             size = 0; // end of file
             return true;
         }
-        long remFrameSize = frameCtx.getRemainingSize();
-        if (remFrameSize == 0 || frameCtx.isBlockListFull()) {
+        long remDataSize = frameCtx.getRemainingDataSize();
+        if (remDataSize == 0 || frameCtx.isBlockListFull()) {
             return false;
         }
         long remFileSize = fileCtx.getSize() - offset;
-        size = Math.min(remFileSize, remFrameSize);
+        size = Math.min(remFileSize, remDataSize);
 
         FileData fd = new FileData();
-        fd.setItemId(fileCtx.getItemId());
         fd.setOffset(offset);
-        fd.setFrameOffset(frameCtx.getSize());
+        fd.setFrameOffset(frameCtx.getDataSize());
         fd.setSize(size);
 
-        frameCtx.addBlock(fd);
-        frameCtx.addDataProvider(fileCtx.getDataProvider(offset, size));
+        FrameBlockData fbd = fileCtx.createFrameBlockData(offset, size);
+        frameCtx.addDataBlock(fd, fbd);
 
         return true;
     }
 
     @Override
-    public Block getNext() {
+    public FrameBlock getNext() {
         if (size > 0) {
             return new FileDataBlock(fileCtx, offset + size);
         }

@@ -14,17 +14,13 @@ public enum TransferState {
      */
     STARTED,
     /**
-     * Data is transferring.
+     * Data is transfered.
      */
-    TRANSFERING,
+    TRANSFERED,
     /**
-     * Data is transfered, waiting for validation.
+     * Transfer is finished.
      */
-    PREPARED,
-    /**
-     * Transfer is finished, second phase of two-phase commit.
-     */
-    COMMITTED,
+    FINISHED,
     /**
      * File transfer is failed.
      */

@@ -23,12 +23,7 @@ public interface TransferStatus {
     LocalDateTime getStartTime();
 
     /**
-     * Total size of transfer (byte).
-     */
-    long getTotalTransferSize();
-
-    /**
-     * Transfered size (byte).
+     * Transfered size in bytes.
      */
     long getTransferedSize();
 }

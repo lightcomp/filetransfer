@@ -5,10 +5,10 @@ import java.util.Collection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.lightcomp.ft.client.SourceItem;
 import com.lightcomp.ft.client.TransferRequest;
 import com.lightcomp.ft.client.TransferStatus;
 import com.lightcomp.ft.common.ChecksumType;
+import com.lightcomp.ft.core.SourceItem;
 import com.lightcomp.ft.exception.TransferException;
 
 public class TransferRequestImpl implements TransferRequest {

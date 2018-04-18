@@ -77,10 +77,10 @@ public final class ClientConfig {
 
     /**
      * @param recoveryDelay
-     *            delay before transfer recovery in seconds, not negative
+     *            delay before transfer recovery in seconds, greater than zero
      */
     public void setRecoveryDelay(int recoveryDelay) {
-        Validate.isTrue(recoveryDelay >= 0);
+        Validate.isTrue(recoveryDelay > 0);
         this.recoveryDelay = recoveryDelay;
     }
 

@@ -95,6 +95,7 @@
 									</bindingFiles>
 									<markGenerated>false</markGenerated>
 									<extraargs>
+										<extraarg>-xjc-Xinheritance</extraarg>
 										<extraarg>-verbose</extraarg>
 										<extraarg>-wsdlLocation</extraarg>
 										<wsdlurl />

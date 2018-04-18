@@ -5,10 +5,10 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import com.lightcomp.ft.server.BeginTransferListener;
+import com.lightcomp.ft.server.TransferReceiver;
 import com.lightcomp.ft.server.TransferAcceptor;
 
-public class BeginTransferListenerImpl implements BeginTransferListener {
+public class BeginTransferListenerImpl implements TransferReceiver {
 
     private final Path transferDir;
 

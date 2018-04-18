@@ -1,9 +1,10 @@
 package com.lightcomp.ft.client.internal.upload.blocks;
 
-import com.lightcomp.ft.client.internal.upload.frame.FrameContext;
+import com.lightcomp.ft.client.internal.upload.FileContext;
+import com.lightcomp.ft.client.internal.upload.FrameContext;
 import com.lightcomp.ft.xsd.v1.FileEnd;
 
-class FileEndBlock implements Block {
+class FileEndBlock implements FrameBlock {
 
     private final FileContext fileCtx;
 
@@ -12,12 +13,11 @@ class FileEndBlock implements Block {
     }
 
     @Override
-    public boolean create(FrameContext frameCtx) {
+    public boolean addToFrame(FrameContext frameCtx) {
         if (frameCtx.isBlockListFull()) {
             return false;
         }
         FileEnd fe = new FileEnd();
-        fe.setItemId(fileCtx.getItemId());
         fe.setLastModified(fileCtx.getLastModified());
         fe.setChecksum(fileCtx.getChecksum());
 
@@ -27,7 +27,7 @@ class FileEndBlock implements Block {
     }
 
     @Override
-    public Block getNext() {
+    public FrameBlock getNext() {
         return null;
     }
 }

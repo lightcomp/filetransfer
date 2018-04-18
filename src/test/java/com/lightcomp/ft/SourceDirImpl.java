@@ -4,9 +4,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import com.lightcomp.ft.client.SourceDir;
-import com.lightcomp.ft.client.SourceFile;
-import com.lightcomp.ft.client.SourceItem;
+import com.lightcomp.ft.core.SourceDir;
+import com.lightcomp.ft.core.SourceFile;
+import com.lightcomp.ft.core.SourceItem;
 
 public class SourceDirImpl implements SourceDir {
 

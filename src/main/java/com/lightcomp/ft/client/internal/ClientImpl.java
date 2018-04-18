@@ -20,14 +20,14 @@ public class ClientImpl implements Client {
 
     private final TaskExecutor taskExecutor;
 
-    private final FileTransferService service;
-
     private final ClientConfig config;
+
+    private final FileTransferService service;
 
     public ClientImpl(ClientConfig config) {
         this.taskExecutor = new TaskExecutor(config.getThreadPoolSize());
-        this.service = createService(config);
         this.config = config;
+        this.service = createService(config);
     }
 
     @Override
@@ -39,8 +39,8 @@ public class ClientImpl implements Client {
 
     @Override
     public Transfer beginDownload(DownloadRequest request) {
-        // TODO Auto-generated method stub
-        return null;
+        // TODO: client download impl
+        throw new UnsupportedOperationException();
     }
 
     @Override

@@ -20,12 +20,24 @@
 			<xs:enumeration value="FINISHED"/>
 		</xs:restriction>
 	</xs:simpleType>
-	<xs:complexType name="Dir">
+	<xs:complexType name="DirBegin">
 		<xs:annotation>
 			<xs:documentation>Adresář, přenáší se jeho název a id rodičovského adresáře. Adresář může obsahovat další adresáře nebo soubory.</xs:documentation>
 		</xs:annotation>
 		<xs:complexContent>
-			<xs:extension base="ft:FSBlock">
+			<xs:extension base="ft:FrameBlock">
+				<xs:sequence/>
+				<xs:attribute name="name" use="optional" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Jméno přenášeného adresáře. Uvádí se prosté jméno položky, tj. bez cesty.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="DirEnd">
+		<xs:complexContent>
+			<xs:extension base="ft:FrameBlock">
 				<xs:sequence/>
 			</xs:extension>
 		</xs:complexContent>
@@ -35,23 +47,33 @@
 			<xs:documentation>Obecná výjimka API.</xs:documentation>
 		</xs:annotation>
 		<xs:sequence/>
-		<xs:attribute name="detail" use="optional" type="xs:string"/>
-		<xs:attribute name="errorCode" use="optional" type="ft:ErrorCode">
+		<xs:attribute name="detail" use="optional" type="xs:string">
 			<xs:annotation>
-				<xs:documentation>Missing error code is equal to FATAL.</xs:documentation>
+				<xs:documentation>Volitelný textový popis chyby, který upřesňuje standardní chybu v SOAP obálce. Položka slouží k lepšímu porozumění a příčině chyby.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="errorCode" use="required" type="ft:ErrorCode">
+			<xs:annotation>
+				<xs:documentation>Typ chyby.</xs:documentation>
 			</xs:annotation>
 		</xs:attribute>
 	</xs:complexType>
 	<xs:complexType name="FileBegin">
 		<xs:annotation>
-			<xs:documentation>Blok pro zahájení přenosu souboru.</xs:documentation>
+			<xs:documentation>Blok pro zahájení přenosu souboru. Soubor je určen svým jménem a rodičovskou položkou.</xs:documentation>
 		</xs:annotation>
 		<xs:complexContent>
-			<xs:extension base="ft:FSBlock">
+			<xs:extension base="ft:FrameBlock">
 				<xs:sequence/>
+				<xs:attribute name="name" use="optional" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Jméno přenášeného souboru. Uvádí se prosté jméno položky, tj. bez cesty.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
 				<xs:attribute name="size" use="required" type="xs:long">
 					<xs:annotation>
-						<xs:documentation>Velikost souboru v bytech, může být větší ne 2/4GB.</xs:documentation>
+						<xs:documentation>Velikost souboru v bytech, může být větší než 
+2/4GB.</xs:documentation>
 					</xs:annotation>
 				</xs:attribute>
 			</xs:extension>
@@ -64,18 +86,42 @@
 		<xs:complexContent>
 			<xs:extension base="ft:FrameBlock">
 				<xs:sequence/>
-				<xs:attribute name="frameOffset" use="required" type="xs:long"/>
-				<xs:attribute name="offset" use="required" type="xs:long"/>
-				<xs:attribute name="size" use="required" type="xs:long"/>
+				<xs:attribute name="frameOffset" use="required" type="xs:long">
+					<xs:annotation>
+						<xs:documentation>Offset dat uvnitř přenášeného rámce.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="offset" use="required" type="xs:long">
+					<xs:annotation>
+						<xs:documentation>Offset dat v souboru.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="size" use="required" type="xs:long">
+					<xs:annotation>
+						<xs:documentation>Velikost přenášených dat v bloku.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
 	<xs:complexType name="FileEnd">
+		<xs:annotation>
+			<xs:documentation>Blok pro ukončení přenosu souboru. V bloku je přeesen kontrolní součet souboru a čas jeho poslední modifikace.
+Tento blok je možné zaslat až po úplném přenesení souboru.</xs:documentation>
+		</xs:annotation>
 		<xs:complexContent>
 			<xs:extension base="ft:FrameBlock">
 				<xs:sequence/>
-				<xs:attribute name="checksum" use="required" type="xs:string"/>
-				<xs:attribute name="lastModified" use="required" type="xs:long"/>
+				<xs:attribute name="checksum" use="required" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Kontrolní součet obsahu souboru (sha512)</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="lastModified" use="required" type="xs:long">
+					<xs:annotation>
+						<xs:documentation>Čas poslední modifikace souboru.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -89,7 +135,11 @@
 				<xs:documentation>Vrací pořadové číslo posledního zpracovaného rámce. Pokud nebyl žádný rámec přijat/odeslán je vrácena nulová hodnota.</xs:documentation>
 			</xs:annotation>
 		</xs:attribute>
-		<xs:attribute name="state" use="required" type="ft:FileTransferState"/>
+		<xs:attribute name="state" use="required" type="ft:FileTransferState">
+			<xs:annotation>
+				<xs:documentation>Stav přenosu</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
 	</xs:complexType>
 	<xs:complexType name="Frame">
 		<xs:annotation>
@@ -97,22 +147,34 @@
 		</xs:annotation>
 		<xs:sequence>
 			<xs:element name="blocks" type="ft:FrameBlocks" minOccurs="1" maxOccurs="1"/>
-			<xs:element name="data" type="xs:base64Binary" xmime:expectedContentTypes="application/octet-stream" minOccurs="1" maxOccurs="1"/>
+			<xs:element name="data" type="xs:base64Binary" xmime:expectedContentTypes="application/octet-stream" minOccurs="1" maxOccurs="1">
+				<xs:annotation>
+					<xs:documentation>Přenášená data souborů. Implementace by měly podporovat rozšíření MTOM pro efektivní přenos binárních dat.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
 		</xs:sequence>
-		<xs:attribute name="last" use="optional" type="xs:boolean"/>
-		<xs:attribute name="seqNum" use="required" type="xs:int"/>
-		<xs:attribute name="size" use="required" type="xs:long"/>
+		<xs:attribute name="dataSize" use="required" type="xs:long">
+			<xs:annotation>
+				<xs:documentation>Velikost přenášených dat v rámci, tj. velikost dat v atributu data.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="last" use="optional" type="xs:boolean">
+			<xs:annotation>
+				<xs:documentation>Příznak, zda se jedná o poslední rámec přenosu.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="seqNum" use="required" type="xs:int">
+			<xs:annotation>
+				<xs:documentation>Sekvenční číslo rámce. První rámec má číslo 1.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
 	</xs:complexType>
 	<xs:complexType name="FrameBlock" abstract="true">
 		<xs:annotation>
-			<xs:documentation>Přenášená položka, jedná se o adresář (Dir) nebo soubor (File). Každá přenášená položka má své id.</xs:documentation>
+			<xs:documentation>Přenášený blok v jednom rámci. Blokem může být informace o souboru, adresáři nebo vlastní binární data.
+Každý blok se týká nějaké položka. ID položky musí být v bloku vždy určeno (viz atribut itemId).</xs:documentation>
 		</xs:annotation>
 		<xs:sequence/>
-		<xs:attribute name="itemId" use="required" type="xs:string">
-			<xs:annotation>
-				<xs:documentation>Jméno přenášené položky.</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
 	</xs:complexType>
 	<xs:complexType name="FrameBlocks">
 		<xs:annotation>
@@ -120,20 +182,15 @@
 		</xs:annotation>
 		<xs:sequence>
 			<xs:choice minOccurs="1" maxOccurs="unbounded">
-				<xs:element name="fd" type="ft:FileData" minOccurs="0" maxOccurs="unbounded"/>
-				<xs:element name="fe" type="ft:FileEnd" minOccurs="0" maxOccurs="unbounded"/>
-				<xs:element name="fb" type="ft:FileBegin" minOccurs="0" maxOccurs="unbounded"/>
-				<xs:element name="d" type="ft:Dir" minOccurs="0" maxOccurs="unbounded"/>
+				<xs:annotation>
+					<xs:documentation>Jeden přenášený blok</xs:documentation>
+				</xs:annotation>
+				<xs:element name="fd" type="ft:FileData" minOccurs="0" maxOccurs="1"/>
+				<xs:element name="fe" type="ft:FileEnd" minOccurs="0" maxOccurs="1"/>
+				<xs:element name="fb" type="ft:FileBegin" minOccurs="0" maxOccurs="1"/>
+				<xs:element name="db" type="ft:DirBegin" minOccurs="0" maxOccurs="1"/>
+				<xs:element name="de" type="ft:DirEnd" minOccurs="0" maxOccurs="1"/>
 			</xs:choice>
 		</xs:sequence>
-	</xs:complexType>
-	<xs:complexType name="FSBlock" abstract="true">
-		<xs:complexContent>
-			<xs:extension base="ft:FrameBlock">
-				<xs:sequence/>
-				<xs:attribute name="name" use="required" type="xs:string"/>
-				<xs:attribute name="parentItemId" use="optional" type="xs:string"/>
-			</xs:extension>
-		</xs:complexContent>
 	</xs:complexType>
 </xs:schema>
