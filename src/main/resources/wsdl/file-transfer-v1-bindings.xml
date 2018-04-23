@@ -3,7 +3,7 @@
 	xmlns="http://java.sun.com/xml/ns/jaxb"
 	xmlns:xsd="http://www.w3.org/2001/XMLSchema" 
 	xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc"
-	xmlns:inheritance="http://jaxb2-commons.dev.java.net/basic/inheritance">
+	xmlns:inh="http://jaxb2-commons.dev.java.net/basic/inheritance">
 
 	<jaxws:bindings xmlns:jaxws="http://java.sun.com/xml/ns/jaxws">
 		<jaxws:enableWrapperStyle>false</jaxws:enableWrapperStyle> <!-- force bare methods (do not unwrap) -->
@@ -16,22 +16,22 @@
 
 	<bindings schemaLocation="file-transfer-v1.xsd">
 		<bindings node="//xsd:complexType[@name='FrameBlock']">
-			<inheritance:implements>com.lightcomp.ft.server.internal.upload.blocks.ReceiveBlock</inheritance:implements>
+			<inh:implements>com.lightcomp.ft.core.blocks.BlockProcessor</inh:implements>
 		</bindings>
 		<bindings node="//xsd:complexType[@name='DirBegin']">
-			<class implClass="com.lightcomp.ft.server.internal.upload.blocks.DirBeginBlockImpl" />
+			<class implClass="com.lightcomp.ft.core.blocks.DirBeginBlockImpl" />
 		</bindings>
 		<bindings node="//xsd:complexType[@name='DirEnd']">
-			<class implClass="com.lightcomp.ft.server.internal.upload.blocks.DirEndBlockImpl" />
+			<class implClass="com.lightcomp.ft.core.blocks.DirEndBlockImpl" />
 		</bindings>
 		<bindings node="//xsd:complexType[@name='FileBegin']">
-			<class implClass="com.lightcomp.ft.server.internal.upload.blocks.FileBeginBlockImpl" />
+			<class implClass="com.lightcomp.ft.core.blocks.FileBeginBlockImpl" />
 		</bindings>
 		<bindings node="//xsd:complexType[@name='FileData']">
-			<class implClass="com.lightcomp.ft.server.internal.upload.blocks.FileDataBlockImpl" />
+			<class implClass="com.lightcomp.ft.core.blocks.FileDataBlockImpl" />
 		</bindings>
 		<bindings node="//xsd:complexType[@name='FileEnd']">
-			<class implClass="com.lightcomp.ft.server.internal.upload.blocks.FileEndBlockImpl" />
+			<class implClass="com.lightcomp.ft.core.blocks.FileEndBlockImpl" />
 		</bindings>
 	</bindings>
 	

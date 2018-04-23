@@ -27,7 +27,7 @@
 		<xs:complexContent>
 			<xs:extension base="ft:FrameBlock">
 				<xs:sequence/>
-				<xs:attribute name="name" use="required" type="xs:string">
+				<xs:attribute name="n" use="required" type="xs:string">
 					<xs:annotation>
 						<xs:documentation>Jméno přenášeného adresáře. Uvádí se prosté jméno položky, tj. bez cesty.</xs:documentation>
 					</xs:annotation>
@@ -65,15 +65,15 @@
 		<xs:complexContent>
 			<xs:extension base="ft:FrameBlock">
 				<xs:sequence/>
-				<xs:attribute name="name" use="required" type="xs:string">
-					<xs:annotation>
-						<xs:documentation>Jméno přenášeného souboru. Uvádí se prosté jméno položky, tj. bez cesty.</xs:documentation>
-					</xs:annotation>
-				</xs:attribute>
-				<xs:attribute name="size" use="required" type="xs:long">
+				<xs:attribute name="fs" use="required" type="xs:long">
 					<xs:annotation>
 						<xs:documentation>Velikost souboru v bytech, může být větší než 
 2/4GB.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="n" use="required" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Jméno přenášeného souboru. Uvádí se prosté jméno položky, tj. bez cesty.</xs:documentation>
 					</xs:annotation>
 				</xs:attribute>
 			</xs:extension>
@@ -86,19 +86,14 @@
 		<xs:complexContent>
 			<xs:extension base="ft:FrameBlock">
 				<xs:sequence/>
-				<xs:attribute name="frameOffset" use="required" type="xs:long">
-					<xs:annotation>
-						<xs:documentation>Offset dat uvnitř přenášeného rámce.</xs:documentation>
-					</xs:annotation>
-				</xs:attribute>
-				<xs:attribute name="offset" use="required" type="xs:long">
-					<xs:annotation>
-						<xs:documentation>Offset dat v souboru.</xs:documentation>
-					</xs:annotation>
-				</xs:attribute>
-				<xs:attribute name="size" use="required" type="xs:long">
+				<xs:attribute name="ds" use="required" type="xs:long">
 					<xs:annotation>
 						<xs:documentation>Velikost přenášených dat v bloku.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="off" use="required" type="xs:long">
+					<xs:annotation>
+						<xs:documentation>Offset dat v souboru.</xs:documentation>
 					</xs:annotation>
 				</xs:attribute>
 			</xs:extension>
@@ -106,18 +101,12 @@
 	</xs:complexType>
 	<xs:complexType name="FileEnd">
 		<xs:annotation>
-			<xs:documentation>Blok pro ukončení přenosu souboru. V bloku je přeesen kontrolní součet souboru a čas jeho poslední modifikace.
-Tento blok je možné zaslat až po úplném přenesení souboru.</xs:documentation>
+			<xs:documentation>Blok pro ukončení přenosu souboru. V bloku je přenesen čas jeho poslední modifikace. Blok má rezervováno 64 bytů v datech rámce pro přenesení kontrolního součtu. Tato oblast následuje vždy za daty přenášeného souboru. Tento blok je možné zaslat až po úplném přenesení souboru.</xs:documentation>
 		</xs:annotation>
 		<xs:complexContent>
 			<xs:extension base="ft:FrameBlock">
 				<xs:sequence/>
-				<xs:attribute name="checksum" use="required" type="xs:string">
-					<xs:annotation>
-						<xs:documentation>Kontrolní součet obsahu souboru (sha512)</xs:documentation>
-					</xs:annotation>
-				</xs:attribute>
-				<xs:attribute name="lastModified" use="required" type="xs:long">
+				<xs:attribute name="lm" use="required" type="xs:long">
 					<xs:annotation>
 						<xs:documentation>Čas poslední modifikace souboru.</xs:documentation>
 					</xs:annotation>
