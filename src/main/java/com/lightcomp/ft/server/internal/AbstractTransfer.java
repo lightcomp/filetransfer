@@ -8,18 +8,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.lightcomp.ft.core.TransferInfo;
+import com.lightcomp.ft.exception.CanceledException;
 import com.lightcomp.ft.exception.FileTransferExceptionBuilder;
 import com.lightcomp.ft.exception.TransferException;
 import com.lightcomp.ft.exception.TransferExceptionBuilder;
 import com.lightcomp.ft.server.ServerConfig;
 import com.lightcomp.ft.server.TransferAcceptor;
 import com.lightcomp.ft.server.TransferState;
-import com.lightcomp.ft.server.TransferStatus;
+import com.lightcomp.ft.wsdl.v1.FileTransferException;
 import com.lightcomp.ft.xsd.v1.ErrorCode;
 import com.lightcomp.ft.xsd.v1.FileTransferState;
 import com.lightcomp.ft.xsd.v1.FileTransferStatus;
-
-import cxf.FileTransferException;
 
 public abstract class AbstractTransfer implements Transfer, TransferInfo {
 
@@ -32,9 +31,6 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
     protected final String requestId;
 
     protected final ServerConfig config;
-
-    // flag if cancel was requested
-    private volatile boolean cancelRequested;
 
     public AbstractTransfer(TransferAcceptor acceptor, String requestId, ServerConfig config) {
         this.acceptor = acceptor;
@@ -52,37 +48,26 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
         return requestId;
     }
 
-    @Override
-    public boolean isCancelRequested() {
-        return cancelRequested;
+    public synchronized boolean isCanceled() {
+        return status.getState().equals(TransferState.CANCELED);
     }
 
     public abstract int getLastFrameSeqNum();
 
+    public abstract boolean isProcessingFrame();
+
     @Override
-    public void begin() throws FileTransferException {
-        TransferStatus ts = null;
-        synchronized (this) {
-            TransferState currState = status.getState();
-            if (currState != TransferState.INITIALIZED) {
-                throw FileTransferExceptionBuilder.from(this, "Unable to begin transfer in current state")
-                        .addParam("currentState", currState).setCause(status.getFailureCause()).build();
-            }
-            // update current state
-            status.changeState(TransferState.STARTED);
-            // copy state in sync block
-            ts = status.copy();
-            // notify canceling threads
-            notifyAll();
-        }
-        acceptor.onTransferProgress(ts);
+    public synchronized void init() throws FileTransferException {
+        Validate.isTrue(status.getState() == TransferState.INITIALIZED);
+        // update current state
+        status.changeState(TransferState.STARTED);
     }
 
     @Override
     public void finish() throws FileTransferException {
         synchronized (this) {
             TransferState currState = status.getState();
-            if (currState == TransferState.STARTED) {
+            if (currState == TransferState.STARTED && isProcessingFrame()) {
                 throw FileTransferExceptionBuilder.from(this, "Transfer is busy").setCode(ErrorCode.BUSY).build();
             }
             if (currState != TransferState.TRANSFERED) {
@@ -91,8 +76,6 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
             }
             // update current state
             status.changeState(TransferState.FINISHED);
-            // notify canceling threads
-            notifyAll();
         }
         Thread handlerThread = new Thread(acceptor::onTransferSuccess, "FileTransfer_SuccessHandler");
         handlerThread.start();
@@ -108,49 +91,41 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
 
     @Override
     public synchronized void abort() throws FileTransferException {
-        cancelRequested = true;
-
-        TransferState ts = status.getState();
-        while (!ts.equals(TransferState.CANCELED)) {
+        synchronized (this) {
+            TransferState ts = status.getState();
             if (ts == TransferState.FINISHED) {
                 throw FileTransferExceptionBuilder.from(this, "Finished transfer cannot be aborted").build();
             }
-            if (ts == TransferState.FAILED) {
-                return; // just let know that transfer is not active
+            if (ts == TransferState.FAILED || ts == TransferState.CANCELED) {
+                return; // handle failed as canceled during abort
             }
-            try {
-                wait(100);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException(e);
-            }
-            ts = status.getState();
+            // update current state
+            status.changeState(TransferState.CANCELED);
         }
+        acceptor.onTransferCanceled(true);
     }
 
-    public synchronized void cancel() {
-        cancelRequested = true;
-
-        TransferState ts = status.getState();
-        while (!ts.equals(TransferState.CANCELED)) {
+    public void cancel() {
+        synchronized (this) {
+            TransferState ts = status.getState();
             if (ts == TransferState.FINISHED) {
                 throw TransferExceptionBuilder.from(this, "Finished transfer cannot be canceled").build();
             }
             if (ts == TransferState.FAILED) {
                 throw TransferExceptionBuilder.from(this, "Failed transfer cannot be canceled").build();
             }
-            try {
-                wait(100);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException(e);
+            if (ts == TransferState.CANCELED) {
+                return;
             }
-            ts = status.getState();
+            // update current state
+            status.changeState(TransferState.CANCELED);
         }
+        acceptor.onTransferCanceled(false);
     }
 
     public synchronized ActivityStatus getActivityStatus() {
-        LocalDateTime limit = LocalDateTime.now().minus(config.getInactiveTimeout(), ChronoUnit.SECONDS);
+        int timeout = config.getInactiveTimeout();
+        LocalDateTime limit = LocalDateTime.now().minus(timeout, ChronoUnit.SECONDS);
         LocalDateTime last = status.getLastActivity();
         if (!limit.isAfter(last)) {
             return ActivityStatus.ACTIVE;
@@ -162,25 +137,32 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
         return ActivityStatus.INACTIVE_RUNNING;
     }
 
-    protected void transferCanceled() {
-        Validate.isTrue(cancelRequested);
-        synchronized (this) {
-            status.changeState(TransferState.CANCELED);
-            // notify canceling threads
-            notifyAll();
-        }
-        acceptor.onTransferCanceled();
-    }
-
     protected void transferFailed(Throwable cause) {
+        TransferExceptionBuilder teb;
+        boolean failed = false;
+
         synchronized (this) {
-            status.changeStateToFailed(cause);
-            // notify canceling threads
-            notifyAll();
+            TransferState ts = status.getState();
+            if (ts == TransferState.CANCELED) {
+                if (cause instanceof CanceledException) {
+                    return; // ignore canceled exception if transfer is canceled
+                }
+                teb = TransferExceptionBuilder.from("Canceled transfer thrown exception");
+            } else if (ts == TransferState.FINISHED) {
+                teb = TransferExceptionBuilder.from("Finished transfer thrown exception");
+            } else if (ts == TransferState.FAILED) {
+                teb = TransferExceptionBuilder.from("Failed transfer thrown exception");
+            } else {
+                teb = TransferExceptionBuilder.from("Transfer failed");
+                status.changeStateToFailed(cause);
+                failed = true;
+            }
         }
-        TransferException te = TransferExceptionBuilder.from(this, "Transfer failed").setCause(cause).build();
+        TransferException te = teb.setTransfer(this).setCause(cause).build();
         logger.error(te.getMessage(), te.getCause());
-        acceptor.onTransferFailed(te);
+        if (failed) {
+            acceptor.onTransferFailed(te);
+        }
     }
 
     public static FileTransferState convertState(TransferState state) {

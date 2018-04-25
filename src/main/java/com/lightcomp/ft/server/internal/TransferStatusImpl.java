@@ -22,7 +22,7 @@ public class TransferStatusImpl implements TransferStatus {
     private Throwable failureCause;
 
     public TransferStatusImpl() {
-        state = TransferState.STARTED;
+        state = TransferState.INITIALIZED;
         lastActivity = LocalDateTime.now();
     }
 

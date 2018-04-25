@@ -1,21 +1,20 @@
 package com.lightcomp.ft.client.internal.operations;
 
-import com.lightcomp.ft.client.internal.upload.FrameContext;
+import com.lightcomp.ft.client.internal.UploadFrameContext;
 import com.lightcomp.ft.core.TransferInfo;
 import com.lightcomp.ft.exception.TransferException;
 import com.lightcomp.ft.exception.TransferExceptionBuilder;
+import com.lightcomp.ft.wsdl.v1.FileTransferException;
+import com.lightcomp.ft.wsdl.v1.FileTransferService;
 import com.lightcomp.ft.xsd.v1.FileTransferState;
 import com.lightcomp.ft.xsd.v1.FileTransferStatus;
 import com.lightcomp.ft.xsd.v1.Frame;
 
-import cxf.FileTransferException;
-import cxf.FileTransferService;
-
 public class SendOperation extends RecoverableOperation {
 
-    private final FrameContext frameCtx;
+    private final UploadFrameContext frameCtx;
 
-    public SendOperation(TransferInfo transferInfo, RecoveryHandler handler, FrameContext frameCtx) {
+    public SendOperation(TransferInfo transferInfo, RecoveryHandler handler, UploadFrameContext frameCtx) {
         super(transferInfo, handler);
         this.frameCtx = frameCtx;
     }

@@ -1,9 +1,8 @@
 package com.lightcomp.ft.server.internal;
 
+import com.lightcomp.ft.wsdl.v1.FileTransferException;
 import com.lightcomp.ft.xsd.v1.FileTransferStatus;
 import com.lightcomp.ft.xsd.v1.Frame;
-
-import cxf.FileTransferException;
 
 public interface Transfer {
 
@@ -11,7 +10,7 @@ public interface Transfer {
 
     FileTransferStatus getStatus();
 
-    void begin() throws FileTransferException;
+    void init() throws FileTransferException;
     
     Frame sendFrame(long seqNum) throws FileTransferException;
 
@@ -21,3 +20,4 @@ public interface Transfer {
 
     void abort() throws FileTransferException;
 }
+ 

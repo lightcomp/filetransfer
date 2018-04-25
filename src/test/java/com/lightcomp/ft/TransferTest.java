@@ -10,6 +10,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import javax.xml.ws.Endpoint;
@@ -20,22 +21,19 @@ import org.apache.cxf.BusFactory;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.lightcomp.ft.client.ClientConfig;
 import com.lightcomp.ft.client.Client;
+import com.lightcomp.ft.client.ClientConfig;
 import com.lightcomp.ft.client.Transfer;
 import com.lightcomp.ft.client.TransferState;
-import com.lightcomp.ft.common.ChecksumType;
-import com.lightcomp.ft.core.SourceItem;
-import com.lightcomp.ft.server.ServerConfig;
+import com.lightcomp.ft.core.sender.items.SourceItem;
 import com.lightcomp.ft.server.Server;
+import com.lightcomp.ft.server.ServerConfig;
 
 public class TransferTest {
 
     public static final String EP_ADDR = "http://localhost:7979/ws";
 
     public static final Path TEMP_DIR;
-
-    public static final ChecksumType CHST = ChecksumType.SHA_512;
 
     static {
         String tempDir = System.getProperty("java.io.tmpdir");
@@ -68,35 +66,53 @@ public class TransferTest {
     }
 
     @Test
-    public void test() throws InterruptedException {
-        ServerConfig rcfg = new ServerConfig();
-        rcfg.setInactiveTimeout(10); // TODO: 1 to debug logging
-        publishEndpoint(TEMP_DIR, rcfg);
+    public void testSingleFolder() throws InterruptedException {
+        ServerConfig scfg = new ServerConfig();
+        scfg.setInactiveTimeout(1000000); // TODO: 1 to debug logging
+        TransferReceiverImpl receiver = publishEndpoint(TEMP_DIR, scfg);
 
-        ClientConfig scfg = new ClientConfig(EP_ADDR);
-        scfg.setSoapLogging(true);
-        Client sender = FileTransfer.createSenderService(scfg);
-        sender.start();
+        ClientConfig ccfg = new ClientConfig(EP_ADDR);
+        ccfg.setSoapLogging(true);
+        Client client = FileTransfer.createClient(ccfg);
+        client.start();
 
-        TransferRequestImpl req = new TransferRequestImpl("trans1", CHST, createTransferContent(3, 30));
-        Transfer transfer = sender.beginTransfer(req);
+        Collection<SourceItem> items = Collections.singletonList(new SourceDirImpl("testF1"));
+        UploadRequestImpl req = new UploadRequestImpl("trans1", items); // createTransferContent(0, 1)
+        Transfer transfer = client.beginUpload(req);
 
-        sleepUntilFinished(transfer);
+        sleepUntilFinished(transfer, receiver);
     }
 
-    public static void sleepUntilFinished(Transfer transfer) {
-        while (transfer.getStatus().getState().ordinal() < TransferState.COMMITTED.ordinal()) {
+    @Test
+    public void testRandomContent() throws InterruptedException {
+        ServerConfig scfg = new ServerConfig();
+        scfg.setInactiveTimeout(1000000); // TODO: 1 to debug logging
+        TransferReceiverImpl receiver = publishEndpoint(TEMP_DIR, scfg);
+
+        ClientConfig ccfg = new ClientConfig(EP_ADDR);
+        ccfg.setSoapLogging(true);
+        Client client = FileTransfer.createClient(ccfg);
+        client.start();
+
+        UploadRequestImpl req = new UploadRequestImpl("trans1", (createTransferContent(3, 10)));
+        Transfer transfer = client.beginUpload(req);
+
+        sleepUntilFinished(transfer, receiver);
+    }
+
+    public static void sleepUntilFinished(Transfer transfer, TransferReceiverImpl receiver) {
+        while (transfer.getStatus().getState().ordinal() < TransferState.FINISHED.ordinal() || !receiver.isTerminated()) {
             try {
-                Thread.sleep(100L);
+                Thread.sleep(1000000L);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
         }
     }
 
-    public static void publishEndpoint(Path transferId, ServerConfig cfg) {
-        BeginTransferListenerImpl listenerImpl = new BeginTransferListenerImpl(transferId);
-        Server receiver = FileTransfer.createReceiverService(listenerImpl, cfg);
+    public static TransferReceiverImpl publishEndpoint(Path transferId, ServerConfig cfg) {
+        TransferReceiverImpl receiverImpl = new TransferReceiverImpl(transferId);
+        Server receiver = FileTransfer.createServer(receiverImpl, cfg);
 
         Bus bus = BusFactory.newInstance().createBus();
         BusFactory.setThreadDefaultBus(bus);
@@ -104,6 +120,8 @@ public class TransferTest {
         Endpoint.publish(EP_ADDR, receiver.getImplementor());
 
         receiver.start();
+
+        return receiverImpl;
     }
 
     public static Collection<SourceItem> createTransferContent(int depth, int size) {

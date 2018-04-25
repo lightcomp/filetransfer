@@ -14,16 +14,17 @@ import com.lightcomp.ft.server.TransferState;
 import com.lightcomp.ft.server.TransferStatus;
 import com.lightcomp.ft.server.UploadAcceptor;
 import com.lightcomp.ft.server.internal.AbstractTransfer;
+import com.lightcomp.ft.wsdl.v1.FileTransferException;
 import com.lightcomp.ft.xsd.v1.ErrorCode;
 import com.lightcomp.ft.xsd.v1.Frame;
 
-import cxf.FileTransferException;
-
 public class UploadTransfer extends AbstractTransfer {
 
-    private final FrameWorker frameWorker;
+    private final UploadWorker worker;
 
     private final Path uploadDir;
+
+    private final FrameContext frameCtx;
 
     private Path tempUploadDir;
 
@@ -33,8 +34,9 @@ public class UploadTransfer extends AbstractTransfer {
 
     public UploadTransfer(UploadAcceptor acceptor, String requestId, ServerConfig config) {
         super(acceptor, requestId, config);
-        this.frameWorker = new FrameWorker(this);
+        this.worker = new UploadWorker(this);
         this.uploadDir = acceptor.getUploadDir();
+        this.frameCtx = new FrameContext(this, uploadDir);
     }
 
     @Override
@@ -43,10 +45,23 @@ public class UploadTransfer extends AbstractTransfer {
     }
 
     @Override
-    public void begin() throws FileTransferException {
-        Thread workerThread = new Thread(frameWorker, "FileTransfer_FrameWorker");
-        workerThread.start();
-        super.begin();
+    public synchronized boolean isProcessingFrame() {
+        return processingFrame;
+    }
+
+    @Override
+    public synchronized void init() throws FileTransferException {
+        super.init();
+        try {
+            // start worker
+            Thread workerThread = new Thread(worker, "FileTransfer_UploadWorker");
+            workerThread.start();
+            // create temporary folder
+            tempUploadDir = Files.createTempDirectory(uploadDir, "temp");
+        } catch (Throwable t) {
+            transferFailed(t);
+            throw FileTransferExceptionBuilder.from(this, "Failed to initialize transfer").setCause(t).build();
+        }
     }
 
     @Override
@@ -54,13 +69,35 @@ public class UploadTransfer extends AbstractTransfer {
         throw FileTransferExceptionBuilder.from(this, "Transfer cannot send data in upload mode").build();
     }
 
+    public void onFrameFinished(FrameProcessor processor) throws CanceledException {
+        TransferStatus ts;
+        synchronized (this) {
+            if (isCanceled()) {
+                throw new CanceledException();
+            }
+            // update progress
+            status.addTransferedFrame(processor.getSeqNum(), processor.getDataSize());
+            // update current state if last frame
+            if (processor.isLast()) {
+                status.changeState(TransferState.TRANSFERED);
+            }
+            // copy status in synch block
+            ts = status.copy();
+        }
+        acceptor.onTransferProgress(ts);
+    }
+
+    public void workerFailed(Throwable cause) {
+        transferFailed(cause);
+    }
+
     @Override
     public void receiveFrame(Frame frame) throws FileTransferException {
         synchronized (this) {
-            TransferState currState = status.getState();
-            if (currState != TransferState.STARTED) {
+            TransferState ts = status.getState();
+            if (ts != TransferState.STARTED) {
                 throw FileTransferExceptionBuilder.from(this, "Transfer is unable to receive frame in current state")
-                        .addParam("currentState", currState).setCause(status.getFailureCause()).build();
+                        .addParam("currentState", ts).setCause(status.getFailureCause()).build();
             }
             if (processingFrame) {
                 throw FileTransferExceptionBuilder.from(this, "Transfer processing another frame").setCode(ErrorCode.BUSY)
@@ -70,6 +107,9 @@ public class UploadTransfer extends AbstractTransfer {
         }
         try {
             processFrame(frame);
+        } catch (Throwable t) {
+            transferFailed(t);
+            throw FileTransferExceptionBuilder.from(t.getMessage()).setCause(t.getCause()).build();
         } finally {
             synchronized (this) {
                 processingFrame = false;
@@ -77,57 +117,24 @@ public class UploadTransfer extends AbstractTransfer {
         }
     }
 
-    public void workerFinished(FrameContext frame) {
-        TransferStatus ts;
-        synchronized (this) {
-            status.addTransferedFrame(frame.getSeqNum(), frame.getDataSize());
-            // update current state if last frame
-            if (frame.isLast()) {
-                status.changeState(TransferState.TRANSFERED);
-            }
-            // copy status in synch block
-            ts = status.copy();
-            // notify canceling threads
-            notifyAll();
-        }
-        acceptor.onTransferProgress(ts);
-    }
-
-    public void workerFailed(Throwable cause) {
-        if (isCancelRequested() && cause instanceof CanceledException) {
-            transferCanceled();
-        } else {
-            transferFailed(cause);
-        }
-    }
-
-    private void processFrame(Frame frame) throws FileTransferException {
+    private void processFrame(Frame frame) throws CanceledException {
         if (frame.getSeqNum() != lastFrameSeqNum + 1) {
-            throw FileTransferExceptionBuilder.from(this, "Invalid frame sequential number")
+            throw TransferExceptionBuilder.from(this, "Invalid frame sequential number")
                     .addParam("expectedSeqNum", lastFrameSeqNum + 1).addParam("receivedSeqNum", frame.getSeqNum()).build();
         }
-        try {
-            Path dataFile = prepareFrameData(frame);
-            frameWorker.addFrame(frame, dataFile);
-            lastFrameSeqNum++;
-        } catch (CanceledException ce) {
-            transferCanceled();
-            // publish exception to client
-            throw FileTransferExceptionBuilder.from(this, "Transfer was canceled").build();
-        } catch (Throwable t) {
-            transferFailed(t);
-            // publish exception to client
-            throw FileTransferExceptionBuilder.from(t.getMessage()).setCause(t.getCause()).build();
+        if (isCanceled()) {
+            throw new CanceledException();
         }
+        Path dataFile = prepareFrameData(frame);
+        FrameProcessorImpl fp = FrameProcessorImpl.create(frame, frameCtx, dataFile);
+        worker.addFrame(fp);
+        lastFrameSeqNum++;
     }
 
     private Path prepareFrameData(Frame frame) throws CanceledException {
-        CanceledException.checkTransfer(this);
-
         String filePrefix = Integer.toString(frame.getSeqNum());
         try {
-            Path dir = getTempUploadDir();
-            Path file = Files.createTempFile(dir, filePrefix, null);
+            Path file = Files.createTempFile(tempUploadDir, filePrefix, null);
             try (InputStream is = frame.getData().getInputStream()) {
                 long length = Files.copy(is, file, StandardCopyOption.REPLACE_EXISTING);
                 if (length != frame.getDataSize()) {
@@ -140,12 +147,5 @@ public class UploadTransfer extends AbstractTransfer {
             throw TransferExceptionBuilder.from(this, "Failed to process frame data").addParam("frameSeqNum", frame.getSeqNum())
                     .setCause(e).build();
         }
-    }
-
-    private Path getTempUploadDir() throws IOException {
-        if (tempUploadDir == null) {
-            tempUploadDir = Files.createTempDirectory(uploadDir, "temp");
-        }
-        return tempUploadDir;
     }
 }

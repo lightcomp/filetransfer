@@ -11,10 +11,8 @@ import com.lightcomp.ft.client.ClientConfig;
 import com.lightcomp.ft.client.DownloadRequest;
 import com.lightcomp.ft.client.Transfer;
 import com.lightcomp.ft.client.UploadRequest;
-import com.lightcomp.ft.client.internal.upload.UploadTransfer;
 import com.lightcomp.ft.common.TaskExecutor;
-
-import cxf.FileTransferService;
+import com.lightcomp.ft.wsdl.v1.FileTransferService;
 
 public class ClientImpl implements Client {
 
@@ -31,14 +29,14 @@ public class ClientImpl implements Client {
     }
 
     @Override
-    public Transfer beginUpload(UploadRequest request) {
+    public Transfer upload(UploadRequest request) {
         AbstractTransfer transfer = new UploadTransfer(request, config, service);
         taskExecutor.addTask(transfer);
         return transfer;
     }
 
     @Override
-    public Transfer beginDownload(DownloadRequest request) {
+    public Transfer download(DownloadRequest request) {
         // TODO: client download impl
         throw new UnsupportedOperationException();
     }

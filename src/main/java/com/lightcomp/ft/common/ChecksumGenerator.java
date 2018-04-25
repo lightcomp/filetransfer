@@ -3,10 +3,13 @@ package com.lightcomp.ft.common;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.Validate;
 
 public class ChecksumGenerator {
+
+    public static final String ALGORITHM = "SHA-512";
+
+    public static final byte LENGTH = 64;
 
     private final MessageDigest md;
 
@@ -53,23 +56,22 @@ public class ChecksumGenerator {
     }
 
     /**
-     * Generates checksum as hex string. The generator is reset after this call is
-     * made.
+     * Generates checksum. The generator is reset after this call is made.
      */
-    public String generate() {
-        byte[] result = md.digest();
+    public byte[] generate() {
+        byte[] arr = md.digest();
         numProcessed = 0;
         currStreamPos = 0;
-        return Hex.encodeHexString(result);
+        return arr;
     }
 
     /**
-     * Creates checksum generator with default hash algorithm SHA-512.
+     * Creates checksum generator with hash algorithm SHA-512.
      */
-    public static ChecksumGenerator createDefault() {
+    public static ChecksumGenerator create() {
         MessageDigest md;
         try {
-            md = MessageDigest.getInstance("SHA-512");
+            md = MessageDigest.getInstance(ALGORITHM);
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }

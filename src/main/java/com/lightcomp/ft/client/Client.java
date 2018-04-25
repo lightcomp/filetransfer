@@ -10,14 +10,14 @@ public interface Client {
      * 
      * @return Instance of transfer.
      */
-    Transfer beginUpload(UploadRequest request);
+    Transfer upload(UploadRequest request);
 
     /**
      * Begin async download.
      * 
      * @return Instance of transfer.
      */
-    Transfer beginDownload(DownloadRequest request);
+    Transfer download(DownloadRequest request);
 
     /**
      * Start client.

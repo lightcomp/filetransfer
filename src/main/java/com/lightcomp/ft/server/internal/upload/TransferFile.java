@@ -14,7 +14,7 @@ import java.nio.file.attribute.FileTime;
 import org.apache.commons.lang3.Validate;
 
 import com.lightcomp.ft.common.ChecksumGenerator;
-import com.lightcomp.ft.common.channels.ChecksumWritableByteChannel;
+import com.lightcomp.ft.common.ChecksumWritableByteChannel;
 import com.lightcomp.ft.exception.TransferExceptionBuilder;
 
 public class TransferFile {
@@ -25,14 +25,14 @@ public class TransferFile {
 
     private final long size;
 
-    private final ChecksumGenerator checksumGenerator;
+    private final ChecksumGenerator chksmGenerator;
 
-    private String checksum;
+    private byte[] chksm;
 
     public TransferFile(Path path, long size) {
         this.path = path;
         this.size = size;
-        this.checksumGenerator = ChecksumGenerator.createDefault();
+        this.chksmGenerator = ChecksumGenerator.create();
     }
 
     public Path getPath() {
@@ -44,29 +44,17 @@ public class TransferFile {
     }
 
     public long getTransferedSize() {
-        return checksumGenerator.getNumProcessed();
-    }
-
-    public boolean isTransfered() {
-        return checksumGenerator.getNumProcessed() == size;
-    }
-
-    public String getChecksum() {
-        Validate.isTrue(isTransfered());
-        if (checksum == null) {
-            checksum = checksumGenerator.generate();
-        }
-        return checksum;
+        return chksmGenerator.getNumProcessed();
     }
 
     public void writeData(InputStream is, long offset, long length) {
         if (offset != getTransferedSize()) {
-            throw TransferExceptionBuilder.from("File must be written sequentially").addParam("path", path)
-                    .addParam("receivedOffset", offset).addParam("transferedSize", getTransferedSize()).build();
+            throw TransferExceptionBuilder.from("File must be written in sequence").addParam("path", path)
+                    .addParam("frameOffset", offset).addParam("transferedSize", getTransferedSize()).build();
         }
         long newSize = offset + length;
         if (newSize > size) {
-            throw TransferExceptionBuilder.from("Data block overlaps file size").addParam("path", path).build();
+            throw TransferExceptionBuilder.from("Data overlaps file size").addParam("path", path).build();
         }
         if (length == 0) {
             return;
@@ -78,11 +66,11 @@ public class TransferFile {
         try (SeekableByteChannel sbch = Files.newByteChannel(path, openOptions)) {
             Validate.isTrue(sbch.position() == offset);
             // wrap channel for checksum calculating
-            try (WritableByteChannel wbch = new ChecksumWritableByteChannel(sbch, checksumGenerator)) {
+            try (WritableByteChannel wbch = new ChecksumWritableByteChannel(sbch, chksmGenerator)) {
                 writeData(is, wbch, length);
             }
         } catch (IOException e) {
-            throw TransferExceptionBuilder.from("Failed to open transfer file").addParam("path", path).setCause(e).build();
+            throw TransferExceptionBuilder.from("Failed to open target file").addParam("path", path).setCause(e).build();
         }
     }
 

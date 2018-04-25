@@ -3,16 +3,20 @@ package com.lightcomp.ft.client.internal.operations;
 import com.lightcomp.ft.core.TransferInfo;
 import com.lightcomp.ft.exception.TransferException;
 import com.lightcomp.ft.exception.TransferExceptionBuilder;
+import com.lightcomp.ft.wsdl.v1.FileTransferException;
+import com.lightcomp.ft.wsdl.v1.FileTransferService;
 import com.lightcomp.ft.xsd.v1.FileTransferState;
 import com.lightcomp.ft.xsd.v1.FileTransferStatus;
-
-import cxf.FileTransferException;
-import cxf.FileTransferService;
 
 public class FinishOperation extends RecoverableOperation {
 
     public FinishOperation(TransferInfo transferInfo, RecoveryHandler handler) {
         super(transferInfo, handler);
+    }
+
+    @Override
+    public boolean isCancelable() {
+        return false;
     }
 
     @Override

@@ -7,14 +7,12 @@ import java.net.UnknownHostException;
 import org.apache.cxf.transport.http.HTTPException;
 
 import com.lightcomp.ft.core.TransferInfo;
-import com.lightcomp.ft.exception.CanceledException;
 import com.lightcomp.ft.exception.TransferException;
+import com.lightcomp.ft.wsdl.v1.FileTransferException;
+import com.lightcomp.ft.wsdl.v1.FileTransferService;
 import com.lightcomp.ft.xsd.v1.ErrorCode;
 import com.lightcomp.ft.xsd.v1.ErrorDescription;
 import com.lightcomp.ft.xsd.v1.FileTransferStatus;
-
-import cxf.FileTransferException;
-import cxf.FileTransferService;
 
 public abstract class RecoverableOperation {
 
@@ -33,7 +31,15 @@ public abstract class RecoverableOperation {
         this.handler = handler;
     }
 
-    public void execute(FileTransferService service) throws CanceledException {
+    public boolean isCancelable() {
+        return true;
+    }
+
+    /**
+     * @param service
+     * @return True when execute successfully, otherwise operation was canceled.
+     */
+    public boolean execute(FileTransferService service) {
         do {
             try {
                 executeInternal(service);
@@ -43,9 +49,12 @@ public abstract class RecoverableOperation {
                     throw createException(t);
                 }
                 recovery = true;
-                handler.waitBeforeRecovery();
+                if (handler.waitBeforeRecovery(isCancelable())) {
+                    return false;
+                }
             }
         } while (recovery);
+        return true;
     }
 
     protected abstract void send(FileTransferService service) throws FileTransferException;

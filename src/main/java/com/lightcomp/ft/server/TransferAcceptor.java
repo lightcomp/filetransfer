@@ -34,7 +34,7 @@ public interface TransferAcceptor {
     /**
      * Transfer canceled callback.
      */
-    void onTransferCanceled();
+    void onTransferCanceled(boolean clientAbort);
 
     /**
      * Transfer failed callback.

@@ -2,11 +2,10 @@ package com.lightcomp.ft.server.internal;
 
 import java.math.BigInteger;
 
+import com.lightcomp.ft.wsdl.v1.FileTransferException;
+import com.lightcomp.ft.wsdl.v1.FileTransferService;
 import com.lightcomp.ft.xsd.v1.FileTransferStatus;
 import com.lightcomp.ft.xsd.v1.Frame;
-
-import cxf.FileTransferException;
-import cxf.FileTransferService;
 
 public class FileTransferServiceImpl implements FileTransferService {
 
@@ -27,7 +26,7 @@ public class FileTransferServiceImpl implements FileTransferService {
         Transfer transfer = transferProvider.getTransfer(transferId);
         transfer.abort();
     }
-
+ 
     @Override
     public Frame receive(BigInteger frameSeqNum, String transferId) throws FileTransferException {
         Transfer transfer = transferProvider.getTransfer(transferId);
@@ -37,7 +36,7 @@ public class FileTransferServiceImpl implements FileTransferService {
     @Override
     public String begin(String requestId) throws FileTransferException {
         Transfer transfer = transferProvider.createTransfer(requestId);
-        transfer.begin();
+        transfer.init();
         return transfer.getTransferId();
     }
 

@@ -1,6 +1,6 @@
 package com.lightcomp.ft.server.internal;
 
-import cxf.FileTransferException;
+import com.lightcomp.ft.wsdl.v1.FileTransferException;
 
 public interface TransferProvider {
 

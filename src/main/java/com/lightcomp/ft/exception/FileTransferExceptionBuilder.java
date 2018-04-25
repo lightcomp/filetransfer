@@ -5,10 +5,9 @@ import java.util.Collections;
 import java.util.List;
 
 import com.lightcomp.ft.core.TransferInfo;
+import com.lightcomp.ft.wsdl.v1.FileTransferException;
 import com.lightcomp.ft.xsd.v1.ErrorCode;
 import com.lightcomp.ft.xsd.v1.ErrorDescription;
-
-import cxf.FileTransferException;
 
 public class FileTransferExceptionBuilder {
 

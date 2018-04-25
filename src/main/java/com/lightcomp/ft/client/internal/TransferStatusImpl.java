@@ -75,13 +75,8 @@ public class TransferStatusImpl implements TransferStatus {
 
     public void changeState(TransferState nextState) {
         Validate.notNull(nextState);
-
         state = nextState;
         updateActivity();
-
-        if (startTime == null) {
-            startTime = lastActivity;
-        }
     }
 
     public TransferStatusImpl copy() {
@@ -90,6 +85,9 @@ public class TransferStatusImpl implements TransferStatus {
 
     private void updateActivity() {
         lastActivity = LocalDateTime.now();
+        if (startTime == null) {
+            startTime = lastActivity;
+        }
         recoveryCount = 0;
     }
 

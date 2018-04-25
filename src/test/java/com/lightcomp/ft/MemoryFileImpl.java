@@ -6,8 +6,8 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.StandardCharsets;
 
-import com.lightcomp.ft.core.SourceDir;
-import com.lightcomp.ft.core.SourceFile;
+import com.lightcomp.ft.core.sender.items.SourceDir;
+import com.lightcomp.ft.core.sender.items.SourceFile;
 
 public class MemoryFileImpl implements SourceFile {
 

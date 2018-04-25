@@ -13,8 +13,7 @@ import com.lightcomp.ft.client.internal.operations.RecoveryHandler;
 import com.lightcomp.ft.exception.CanceledException;
 import com.lightcomp.ft.exception.TransferException;
 import com.lightcomp.ft.exception.TransferExceptionBuilder;
-
-import cxf.FileTransferService;
+import com.lightcomp.ft.wsdl.v1.FileTransferService;
 
 public abstract class AbstractTransfer implements Runnable, Transfer, RecoveryHandler {
 
@@ -49,7 +48,6 @@ public abstract class AbstractTransfer implements Runnable, Transfer, RecoveryHa
         return request.getRequestId();
     }
 
-    @Override
     public boolean isCancelRequested() {
         return cancelRequested;
     }
@@ -60,7 +58,7 @@ public abstract class AbstractTransfer implements Runnable, Transfer, RecoveryHa
     }
 
     @Override
-    public void waitBeforeRecovery() throws CanceledException {
+    public boolean waitBeforeRecovery(boolean cancelable) {
         TransferStatus ts;
         synchronized (this) {
             status.incrementRecoveryCount();
@@ -68,12 +66,12 @@ public abstract class AbstractTransfer implements Runnable, Transfer, RecoveryHa
             ts = status.copy();
         }
         request.onTransferProgress(ts);
+
         // wait before recovery
         int delay = config.getRecoveryDelay();
         synchronized (this) {
-            // we can throw canceled when not in transfered state (finish op)
-            if (cancelRequested && status.getState() != TransferState.TRANSFERED) {
-                throw new CanceledException();
+            if (cancelRequested && cancelable) {
+                return false;
             }
             try {
                 wait(delay * 1000);
@@ -81,6 +79,7 @@ public abstract class AbstractTransfer implements Runnable, Transfer, RecoveryHa
                 Thread.currentThread().interrupt();
                 throw new RuntimeException(e);
             }
+            return !cancelable || !cancelRequested;
         }
     }
 
@@ -134,8 +133,9 @@ public abstract class AbstractTransfer implements Runnable, Transfer, RecoveryHa
 
     private void finish() throws CanceledException {
         FinishOperation op = new FinishOperation(this, this);
-        op.execute(service);
-
+        if (!op.execute(service)) {
+            throw new CanceledException();
+        }
         synchronized (this) {
             status.changeState(TransferState.FINISHED);
             // notify canceling threads

@@ -25,11 +25,6 @@
 			<version>3.7</version>
 		</dependency>
 		<dependency>
-			<groupId>commons-codec</groupId>
-			<artifactId>commons-codec</artifactId>
-			<version>1.11</version>
-		</dependency>
-		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-collections4</artifactId>
 			<version>4.1</version>
@@ -86,19 +81,15 @@
 						<phase>generate-sources</phase>
 						<configuration>
 							<sourceRoot>target/generated-sources/api</sourceRoot>
-							<disableDirectoryScan>true</disableDirectoryScan>
 							<wsdlOptions>
 								<wsdlOption>
 									<wsdl>src/main/resources/wsdl/file-transfer-v1.wsdl</wsdl>
 									<bindingFiles>
 										<bindingFile>src/main/resources/wsdl/file-transfer-v1-bindings.xml</bindingFile>
 									</bindingFiles>
-									<markGenerated>false</markGenerated>
 									<extraargs>
 										<extraarg>-xjc-Xinheritance</extraarg>
-										<extraarg>-verbose</extraarg>
-										<extraarg>-wsdlLocation</extraarg>
-										<wsdlurl />
+										<!--<extraarg>-verbose</extraarg>-->
 									</extraargs>
 								</wsdlOption>
 							</wsdlOptions>

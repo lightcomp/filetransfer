@@ -16,7 +16,7 @@
 
 	<bindings schemaLocation="file-transfer-v1.xsd">
 		<bindings node="//xsd:complexType[@name='FrameBlock']">
-			<inh:implements>com.lightcomp.ft.core.blocks.BlockProcessor</inh:implements>
+			<inh:implements>com.lightcomp.ft.core.blocks.FrameBlockProcessor</inh:implements>
 		</bindings>
 		<bindings node="//xsd:complexType[@name='DirBegin']">
 			<class implClass="com.lightcomp.ft.core.blocks.DirBeginBlockImpl" />
@@ -34,5 +34,5 @@
 			<class implClass="com.lightcomp.ft.core.blocks.FileEndBlockImpl" />
 		</bindings>
 	</bindings>
-	
+
 </bindings>

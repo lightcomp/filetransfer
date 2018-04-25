@@ -22,8 +22,7 @@ import com.lightcomp.ft.server.TransferAcceptor.Mode;
 import com.lightcomp.ft.server.TransferReceiver;
 import com.lightcomp.ft.server.UploadAcceptor;
 import com.lightcomp.ft.server.internal.upload.UploadTransfer;
-
-import cxf.FileTransferException;
+import com.lightcomp.ft.wsdl.v1.FileTransferException;
 
 public class ServerImpl implements Server, TransferProvider {
 
@@ -132,7 +131,7 @@ public class ServerImpl implements Server, TransferProvider {
         // check empty transfer id
         if (StringUtils.isEmpty(transferId)) {
             throw TransferExceptionBuilder.from("Receiver supplied empty transfer id").addParam("requestId", requestId).build();
-        }
+        } 
         // create transfer
         AbstractTransfer transfer;
         if (acceptor.getMode().equals(Mode.UPLOAD)) {

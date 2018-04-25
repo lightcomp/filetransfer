@@ -15,7 +15,7 @@ public final class ClientConfig {
 
     private int recoveryDelay = 60;
 
-    private long maxFrameSize = 10485760;
+    private long maxFrameSize = 10 * 1024 * 1024;
 
     private int maxFrameBlocks = 10000;
 

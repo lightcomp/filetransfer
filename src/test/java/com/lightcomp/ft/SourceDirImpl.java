@@ -2,11 +2,12 @@ package com.lightcomp.ft;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 
-import com.lightcomp.ft.core.SourceDir;
-import com.lightcomp.ft.core.SourceFile;
-import com.lightcomp.ft.core.SourceItem;
+import com.lightcomp.ft.core.sender.items.SourceDir;
+import com.lightcomp.ft.core.sender.items.SourceFile;
+import com.lightcomp.ft.core.sender.items.SourceItem;
 
 public class SourceDirImpl implements SourceDir {
 
@@ -47,7 +48,7 @@ public class SourceDirImpl implements SourceDir {
     }
 
     @Override
-    public Collection<SourceItem> getItems() {
-        return children;
+    public Iterator<SourceItem> getItemIterator() {
+        return children.iterator();
     }
 }
