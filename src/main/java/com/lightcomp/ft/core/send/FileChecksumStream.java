@@ -1,4 +1,4 @@
-package com.lightcomp.ft.core.sender;
+package com.lightcomp.ft.core.send;
 
 import java.io.IOException;
 

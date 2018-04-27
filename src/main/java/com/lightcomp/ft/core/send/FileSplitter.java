@@ -1,4 +1,4 @@
-package com.lightcomp.ft.core.sender;
+package com.lightcomp.ft.core.send;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -10,7 +10,7 @@ import com.lightcomp.ft.common.ChecksumGenerator;
 import com.lightcomp.ft.core.blocks.FileBeginBlockImpl;
 import com.lightcomp.ft.core.blocks.FileDataBlockImpl;
 import com.lightcomp.ft.core.blocks.FileEndBlockImpl;
-import com.lightcomp.ft.core.sender.items.SourceFile;
+import com.lightcomp.ft.core.send.items.SourceFile;
 import com.lightcomp.ft.exception.TransferExceptionBuilder;
 
 class FileSplitter {
@@ -23,13 +23,17 @@ class FileSplitter {
 
     private final byte[] arrChksm;
 
+    private final SendProgressInfo progressInfo;
+
     private long offset = -1;
 
-    private FileSplitter(SourceFile srcFile, Path path, ChecksumGenerator chksmGenerator, byte[] arrChksm) {
+    private FileSplitter(SourceFile srcFile, Path path, ChecksumGenerator chksmGenerator, byte[] arrChksm,
+            SendProgressInfo progressInfo) {
         this.srcFile = srcFile;
         this.path = path;
         this.chksmGenerator = chksmGenerator;
         this.arrChksm = arrChksm;
+        this.progressInfo = progressInfo;
     }
 
     /**
@@ -100,7 +104,7 @@ class FileSplitter {
         FileDataBlockImpl b = new FileDataBlockImpl();
         b.setDs(size);
         b.setOff(offset);
-        FileBlockStream bs = new FileDataStream(srcFile, path, offset, size, chksmGenerator);
+        FileBlockStream bs = new FileDataStream(srcFile, path, offset, size, chksmGenerator, progressInfo);
 
         frameCtx.addBlock(b, bs);
         offset += size;
@@ -108,7 +112,7 @@ class FileSplitter {
         return true;
     }
 
-    public static FileSplitter create(SourceFile srcFile, Path path) {
+    public static FileSplitter create(SourceFile srcFile, Path path, SendProgressInfo progressInfo) {
         ChecksumGenerator chksmGenerator = null;
         byte[] arrChksm = null;
         // initialize checksum as array or his generator when not preset
@@ -122,6 +126,6 @@ class FileSplitter {
                         .addParam("checksumLength", arrChksm.length).build();
             }
         }
-        return new FileSplitter(srcFile, path, chksmGenerator, arrChksm);
+        return new FileSplitter(srcFile, path, chksmGenerator, arrChksm, progressInfo);
     }
 }

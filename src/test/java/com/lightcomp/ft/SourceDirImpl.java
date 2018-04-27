@@ -5,9 +5,9 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
-import com.lightcomp.ft.core.sender.items.SourceDir;
-import com.lightcomp.ft.core.sender.items.SourceFile;
-import com.lightcomp.ft.core.sender.items.SourceItem;
+import com.lightcomp.ft.core.send.items.SourceDir;
+import com.lightcomp.ft.core.send.items.SourceFile;
+import com.lightcomp.ft.core.send.items.SourceItem;
 
 public class SourceDirImpl implements SourceDir {
 

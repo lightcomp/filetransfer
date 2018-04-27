@@ -2,6 +2,7 @@ package com.lightcomp.ft.client.internal.operations;
 
 import com.lightcomp.ft.client.internal.UploadFrameContext;
 import com.lightcomp.ft.core.TransferInfo;
+import com.lightcomp.ft.exception.CanceledException;
 import com.lightcomp.ft.exception.TransferException;
 import com.lightcomp.ft.exception.TransferExceptionBuilder;
 import com.lightcomp.ft.wsdl.v1.FileTransferException;
@@ -26,7 +27,7 @@ public class SendOperation extends RecoverableOperation {
     }
 
     @Override
-    protected TransferException createException(Throwable cause) {
+    protected TransferException createException(Throwable cause) throws CanceledException {
         return TransferExceptionBuilder.from(transferInfo, "Failed to send frame").setCause(cause)
                 .addParam("seqNum", frameCtx.getSeqNum()).build();
     }

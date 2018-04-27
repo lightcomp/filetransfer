@@ -26,4 +26,14 @@ public interface TransferStatus {
      * Transfered size in bytes.
      */
     long getTransferedSize();
+
+    /**
+     * Sequential number of last processed frame.
+     */
+    int getLastFrameSeqNum();
+
+    /**
+     * Cause of transfer failure.
+     */
+    Throwable getFailureCause();
 }

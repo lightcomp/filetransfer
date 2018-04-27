@@ -25,7 +25,7 @@ import com.lightcomp.ft.client.Client;
 import com.lightcomp.ft.client.ClientConfig;
 import com.lightcomp.ft.client.Transfer;
 import com.lightcomp.ft.client.TransferState;
-import com.lightcomp.ft.core.sender.items.SourceItem;
+import com.lightcomp.ft.core.send.items.SourceItem;
 import com.lightcomp.ft.server.Server;
 import com.lightcomp.ft.server.ServerConfig;
 
@@ -95,7 +95,7 @@ public class TransferTest {
         client.start();
 
         UploadRequestImpl req = new UploadRequestImpl("trans1", (createTransferContent(3, 10)));
-        Transfer transfer = client.beginUpload(req);
+        Transfer transfer = client.upload(req);
 
         sleepUntilFinished(transfer, receiver);
     }

@@ -1,9 +1,9 @@
-package com.lightcomp.ft.core.sender;
+package com.lightcomp.ft.core.send;
 
 import java.nio.file.Path;
 import java.util.Iterator;
 
-import com.lightcomp.ft.core.sender.items.SourceItem;
+import com.lightcomp.ft.core.send.items.SourceItem;
 
 class DirContext {
 

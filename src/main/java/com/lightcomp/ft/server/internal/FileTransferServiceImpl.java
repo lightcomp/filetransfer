@@ -36,7 +36,7 @@ public class FileTransferServiceImpl implements FileTransferService {
     @Override
     public String begin(String requestId) throws FileTransferException {
         Transfer transfer = transferProvider.createTransfer(requestId);
-        transfer.init();
+        transfer.begin();
         return transfer.getTransferId();
     }
 

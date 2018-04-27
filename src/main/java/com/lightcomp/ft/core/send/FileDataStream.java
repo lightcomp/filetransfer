@@ -1,4 +1,4 @@
-package com.lightcomp.ft.core.sender;
+package com.lightcomp.ft.core.send;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -8,7 +8,7 @@ import java.nio.file.Path;
 import org.apache.commons.lang3.Validate;
 
 import com.lightcomp.ft.common.ChecksumGenerator;
-import com.lightcomp.ft.core.sender.items.SourceFile;
+import com.lightcomp.ft.core.send.items.SourceFile;
 import com.lightcomp.ft.exception.TransferExceptionBuilder;
 
 class FileDataStream implements FileBlockStream {
@@ -23,16 +23,20 @@ class FileDataStream implements FileBlockStream {
 
     private final ChecksumGenerator chksmGenerator;
 
+    private final SendProgressInfo progressInfo;
+
     private ReadableByteChannel rbch;
 
     private long remaining;
 
-    public FileDataStream(SourceFile srcFile, Path path, long offset, long size, ChecksumGenerator chksmGenerator) {
+    public FileDataStream(SourceFile srcFile, Path path, long offset, long size, ChecksumGenerator chksmGenerator,
+            SendProgressInfo progressInfo) {
         this.srcFile = srcFile;
         this.path = path;
         this.offset = offset;
         this.size = size;
         this.chksmGenerator = chksmGenerator;
+        this.progressInfo = progressInfo;
     }
 
     @Override
@@ -70,6 +74,8 @@ class FileDataStream implements FileBlockStream {
             chksmGenerator.update(b, off, len);
         }
         remaining -= len;
+        // report progress
+        progressInfo.onDataSend(len);
         return len;
     }
 

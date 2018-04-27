@@ -1,6 +1,7 @@
 package com.lightcomp.ft.client.internal.operations;
 
 import com.lightcomp.ft.core.TransferInfo;
+import com.lightcomp.ft.exception.CanceledException;
 import com.lightcomp.ft.exception.TransferException;
 import com.lightcomp.ft.exception.TransferExceptionBuilder;
 import com.lightcomp.ft.wsdl.v1.FileTransferException;
@@ -25,7 +26,7 @@ public class FinishOperation extends RecoverableOperation {
     }
 
     @Override
-    protected TransferException createException(Throwable cause) {
+    protected TransferException createException(Throwable cause) throws CanceledException {
         return TransferExceptionBuilder.from(transferInfo, "Failed to finish transfer").setCause(cause).build();
     }
 

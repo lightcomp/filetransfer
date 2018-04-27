@@ -1,4 +1,4 @@
-package com.lightcomp.ft.core.sender;
+package com.lightcomp.ft.core.send;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -7,18 +7,21 @@ import java.util.LinkedList;
 
 import com.lightcomp.ft.core.blocks.DirBeginBlockImpl;
 import com.lightcomp.ft.core.blocks.DirEndBlockImpl;
-import com.lightcomp.ft.core.sender.items.SourceDir;
-import com.lightcomp.ft.core.sender.items.SourceFile;
-import com.lightcomp.ft.core.sender.items.SourceItem;
+import com.lightcomp.ft.core.send.items.SourceDir;
+import com.lightcomp.ft.core.send.items.SourceFile;
+import com.lightcomp.ft.core.send.items.SourceItem;
 
 public class FrameBlockBuilder {
 
     private final LinkedList<DirContext> dirStack = new LinkedList<>();
 
+    private final SendProgressInfo progressInfo;
+    
     private FileSplitter currFileSpltr;
 
-    public FrameBlockBuilder(Iterator<SourceItem> sourceItemIt) {
+    public FrameBlockBuilder(Iterator<SourceItem> sourceItemIt, SendProgressInfo progressInfo) {
         dirStack.add(new DirContext(Paths.get(""), sourceItemIt));
+        this.progressInfo = progressInfo;
     }
 
     public void build(SendFrameContext frameCtx) {
@@ -89,6 +92,6 @@ public class FrameBlockBuilder {
 
     private void setFile(Path parentPath, SourceFile srcFile) {
         Path path = parentPath.resolve(srcFile.getName());
-        currFileSpltr = FileSplitter.create(srcFile, path);
+        currFileSpltr = FileSplitter.create(srcFile, path, progressInfo);
     }
 }

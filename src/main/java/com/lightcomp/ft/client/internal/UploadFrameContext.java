@@ -8,9 +8,9 @@ import javax.activation.DataHandler;
 import org.apache.commons.lang3.Validate;
 
 import com.lightcomp.ft.client.ClientConfig;
-import com.lightcomp.ft.core.sender.FileBlockStream;
-import com.lightcomp.ft.core.sender.FrameDataSource;
-import com.lightcomp.ft.core.sender.SendFrameContext;
+import com.lightcomp.ft.core.send.FileBlockStream;
+import com.lightcomp.ft.core.send.FrameDataSource;
+import com.lightcomp.ft.core.send.SendFrameContext;
 import com.lightcomp.ft.xsd.v1.Frame;
 import com.lightcomp.ft.xsd.v1.FrameBlock;
 import com.lightcomp.ft.xsd.v1.FrameBlocks;
@@ -37,19 +37,16 @@ public class UploadFrameContext implements SendFrameContext {
     public int getSeqNum() {
         return seqNum;
     }
-
+    
     public boolean isLast() {
         return last;
     }
-
+    
+    @Override
     public void setLast(boolean last) {
         this.last = last;
     }
-
-    public long getDataSize() {
-        return dataSize;
-    }
-
+    
     @Override
     public long getRemainingDataSize() {
         return config.getMaxFrameSize() - dataSize;
@@ -59,7 +56,22 @@ public class UploadFrameContext implements SendFrameContext {
     public boolean isBlockListFull() {
         return blocks.size() >= config.getMaxFrameBlocks();
     }
+    
+    @Override
+    public void addBlock(FrameBlock block) {
+        Validate.isTrue(blocks.size() < config.getMaxFrameBlocks());
+        blocks.add(block);
+    }
 
+    @Override
+    public void addBlock(FrameBlock block, FileBlockStream blockStream) {
+        long newSize = dataSize + blockStream.getSize();
+        Validate.isTrue(newSize <= config.getMaxFrameSize());
+        addBlock(block);
+        blockStreams.add(blockStream);
+        dataSize = newSize;
+    }
+    
     public Frame createFrame() {
         // create frame
         Frame frame = new Frame();
@@ -77,20 +89,5 @@ public class UploadFrameContext implements SendFrameContext {
         frame.setData(new DataHandler(ds));
 
         return frame;
-    }
-
-    @Override
-    public void addBlock(FrameBlock block) {
-        Validate.isTrue(blocks.size() < config.getMaxFrameBlocks());
-        blocks.add(block);
-    }
-
-    @Override
-    public void addBlock(FrameBlock block, FileBlockStream blockStream) {
-        long newSize = dataSize + blockStream.getSize();
-        Validate.isTrue(newSize <= config.getMaxFrameSize());
-        addBlock(block);
-        blockStreams.add(blockStream);
-        dataSize = newSize;
     }
 }

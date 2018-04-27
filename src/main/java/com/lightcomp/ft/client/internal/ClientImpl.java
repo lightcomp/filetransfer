@@ -1,5 +1,6 @@
 package com.lightcomp.ft.client.internal;
 
+import org.apache.commons.lang3.Validate;
 import org.apache.cxf.ext.logging.LoggingFeature;
 import org.apache.cxf.frontend.ClientProxy;
 import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
@@ -20,16 +21,17 @@ public class ClientImpl implements Client {
 
     private final ClientConfig config;
 
-    private final FileTransferService service;
+    private FileTransferService service;
 
     public ClientImpl(ClientConfig config) {
         this.taskExecutor = new TaskExecutor(config.getThreadPoolSize());
         this.config = config;
-        this.service = createService(config);
     }
 
     @Override
     public Transfer upload(UploadRequest request) {
+        Validate.isTrue(service != null);
+
         AbstractTransfer transfer = new UploadTransfer(request, config, service);
         taskExecutor.addTask(transfer);
         return transfer;
@@ -37,6 +39,8 @@ public class ClientImpl implements Client {
 
     @Override
     public Transfer download(DownloadRequest request) {
+        Validate.isTrue(service != null);
+
         // TODO: client download impl
         throw new UnsupportedOperationException();
     }
@@ -44,10 +48,12 @@ public class ClientImpl implements Client {
     @Override
     public void start() {
         taskExecutor.start();
+        service = createService(config);
     }
 
     @Override
     public void stop() {
+        service = null;
         taskExecutor.stop();
     }
 

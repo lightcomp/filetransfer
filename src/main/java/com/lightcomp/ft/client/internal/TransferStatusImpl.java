@@ -66,7 +66,7 @@ public class TransferStatusImpl implements TransferStatus {
         recoveryCount++;
     }
 
-    public void addTransferedSize(long size) {
+    public void addTransferedData(long size) {
         Validate.isTrue(size >= 0);
 
         transferedSize += size;

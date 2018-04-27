@@ -58,22 +58,27 @@ public class TransferStatusImpl implements TransferStatus {
         return transferedSize;
     }
 
+    @Override
     public int getLastFrameSeqNum() {
         return lastFrameSeqNum;
     }
 
+    @Override
     public Throwable getFailureCause() {
         return failureCause;
     }
 
     /* modify methods */
 
-    public void addTransferedFrame(int seqNum, long size) {
-        Validate.isTrue(seqNum > 0);
+    public void addTransferedData(long size) {
         Validate.isTrue(size >= 0);
 
-        lastFrameSeqNum = seqNum;
         transferedSize += size;
+        updateActivity();
+    }
+
+    public void incrementFrameSeqNum() {
+        lastFrameSeqNum++;
         updateActivity();
     }
 
@@ -87,10 +92,6 @@ public class TransferStatusImpl implements TransferStatus {
 
         state = nextState;
         updateActivity();
-
-        if (startTime == null) {
-            startTime = lastActivity;
-        }
     }
 
     public TransferStatusImpl copy() {
@@ -99,6 +100,9 @@ public class TransferStatusImpl implements TransferStatus {
 
     private void updateActivity() {
         lastActivity = LocalDateTime.now();
+        if (startTime == null) {
+            startTime = lastActivity;
+        }
     }
 
     @Override

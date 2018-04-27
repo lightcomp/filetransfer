@@ -1,5 +1,6 @@
 package com.lightcomp.ft.client.internal;
 
+import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,7 +20,7 @@ public abstract class AbstractTransfer implements Runnable, Transfer, RecoveryHa
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractTransfer.class);
 
-    private final TransferStatusImpl status = new TransferStatusImpl();
+    protected final TransferStatusImpl status = new TransferStatusImpl();
 
     protected final TransferRequest request;
 
@@ -29,7 +30,6 @@ public abstract class AbstractTransfer implements Runnable, Transfer, RecoveryHa
 
     private String transferId;
 
-    // flag if cancel was requested
     private volatile boolean cancelRequested;
 
     protected AbstractTransfer(TransferRequest request, ClientConfig config, FileTransferService service) {
@@ -48,49 +48,64 @@ public abstract class AbstractTransfer implements Runnable, Transfer, RecoveryHa
         return request.getRequestId();
     }
 
-    public boolean isCancelRequested() {
-        return cancelRequested;
-    }
-
     @Override
     public synchronized TransferStatus getStatus() {
         return status.copy();
+    }
+
+    public void checkCancelRequest() throws CanceledException {
+        if (cancelRequested) {
+            throw new CanceledException();
+        }
+    }
+
+    public void onLastFrameTransfered() {
+        TransferStatus ts;
+        synchronized (this) {
+            // check transfer state
+            Validate.isTrue(status.getState() == TransferState.STARTED);
+            // update current state
+            status.changeState(TransferState.TRANSFERED);
+            // copy status in synch block
+            ts = status.copy();
+        }
+        request.onTransferProgress(ts);
     }
 
     @Override
     public boolean waitBeforeRecovery(boolean cancelable) {
         TransferStatus ts;
         synchronized (this) {
+            if (cancelable && cancelRequested) {
+                return false;
+            }
+            // check transfer state
+            Validate.isTrue(status.getState().ordinal() < TransferState.FINISHED.ordinal());
+            // update status
             status.incrementRecoveryCount();
-            // copy status in synch block
+            // copy in synch block
             ts = status.copy();
         }
         request.onTransferProgress(ts);
+    }
 
-        // wait before recovery
-        int delay = config.getRecoveryDelay();
-        synchronized (this) {
-            if (cancelRequested && cancelable) {
-                return false;
-            }
-            try {
-                wait(delay * 1000);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException(e);
-            }
-            return !cancelable || !cancelRequested;
+    @Override
+    public synchronized void waitBeforeRecovery() {
+        int secDelay = config.getRecoveryDelay();
+        try {
+            wait(secDelay * 1000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 
     @Override
     public synchronized void cancel() {
-        if (!cancelRequested) {
-            // update volatile flag
-            cancelRequested = true;
-            // wake up transfer thread
-            notifyAll();
-        }
+        // update volatile flag
+        cancelRequested = true;
+        // wake up transfer thread
+        notifyAll();
+        // wait for termination
         TransferState ts = status.getState();
         while (!ts.equals(TransferState.CANCELED)) {
             if (ts == TransferState.FINISHED) {
@@ -120,55 +135,42 @@ public abstract class AbstractTransfer implements Runnable, Transfer, RecoveryHa
         }
     }
 
+    protected abstract void transfer() throws CanceledException;
+
     private void begin() throws CanceledException {
+        checkCancelRequest();
+        // try to send begin message
         try {
             transferId = service.begin(request.getRequestId());
         } catch (Throwable t) {
             throw TransferExceptionBuilder.from(this, "Failed to begin transfer").setCause(t).build();
         }
-        updateState(TransferState.STARTED);
+        // update state if succeed
+        TransferStatus ts = null;
+        synchronized (this) {
+            checkCancelRequest();
+            // update current state
+            status.changeState(TransferState.STARTED);
+            // copy status in synch block
+            ts = status.copy();
+        }
+        request.onTransferProgress(ts);
     }
 
-    protected abstract void transfer() throws CanceledException;
-
     private void finish() throws CanceledException {
+        checkCancelRequest();
+        // try to send finish message
         FinishOperation op = new FinishOperation(this, this);
-        if (!op.execute(service)) {
-            throw new CanceledException();
-        }
+        op.execute(service);
+        // update state if succeed
         synchronized (this) {
+            checkCancelRequest();
+            // update current state
             status.changeState(TransferState.FINISHED);
             // notify canceling threads
             notifyAll();
         }
         request.onTransferSuccess();
-    }
-
-    protected void updateState(TransferState newState) throws CanceledException {
-        TransferStatus ts = null;
-        synchronized (this) {
-            // update current state
-            status.changeState(newState);
-            // not finished transfers can be canceled
-            if (cancelRequested) {
-                throw new CanceledException();
-            }
-            // copy status in synch block
-            ts = status.copy();
-            // notify canceling threads
-            notifyAll();
-        }
-        request.onTransferProgress(ts);
-    }
-
-    protected void updateProgress(long transferedSize) {
-        TransferStatus ts;
-        synchronized (this) {
-            status.addTransferedSize(transferedSize);
-            // copy status in synch block
-            ts = status.copy();
-        }
-        request.onTransferProgress(ts);
     }
 
     private void transferFailed(Throwable cause) {

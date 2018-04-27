@@ -1,13 +1,15 @@
 package com.lightcomp.ft.client.internal;
 
 import com.lightcomp.ft.client.ClientConfig;
+import com.lightcomp.ft.client.TransferStatus;
 import com.lightcomp.ft.client.UploadRequest;
 import com.lightcomp.ft.client.internal.operations.SendOperation;
-import com.lightcomp.ft.core.sender.FrameBlockBuilder;
+import com.lightcomp.ft.core.send.FrameBlockBuilder;
+import com.lightcomp.ft.core.send.SendProgressInfo;
 import com.lightcomp.ft.exception.CanceledException;
 import com.lightcomp.ft.wsdl.v1.FileTransferService;
 
-public class UploadTransfer extends AbstractTransfer {
+public class UploadTransfer extends AbstractTransfer implements SendProgressInfo {
 
     private final FrameBlockBuilder frameBlockBuilder;
 
@@ -15,26 +17,38 @@ public class UploadTransfer extends AbstractTransfer {
 
     public UploadTransfer(UploadRequest request, ClientConfig config, FileTransferService service) {
         super(request, config, service);
-        this.frameBlockBuilder = new FrameBlockBuilder(request.getItemIterator());
+        this.frameBlockBuilder = new FrameBlockBuilder(request.getItemIterator(), this);
+    }
+
+    @Override
+    public void onDataSend(long size) {
+        TransferStatus ts;
+        synchronized (this) {
+            // update current state
+            status.addTransferedData(size);
+            // copy status in synch block
+            ts = status.copy();
+        }
+        request.onTransferProgress(ts);
     }
 
     @Override
     protected void transfer() throws CanceledException {
-        boolean lastFrame = false;
-        while (!lastFrame) {
+        while (true) {
+            checkCancelRequest();
             // increment last frame seq. number
             lastFrameSeqNum++;
             // prepare frame
             UploadFrameContext frameCtx = new UploadFrameContext(lastFrameSeqNum, config);
             frameBlockBuilder.build(frameCtx);
-            lastFrame = frameCtx.isLast();
             // send frame
             SendOperation op = new SendOperation(this, this, frameCtx);
-            if (!op.execute(service)) {
-                throw new CanceledException();
+            op.execute(service);
+            // notify transfer and exit if lasts
+            if (frameCtx.isLast()) {
+                onLastFrameTransfered();
+                break;
             }
-            // update progress
-            updateProgress(frameCtx.getDataSize());
         }
     }
 }

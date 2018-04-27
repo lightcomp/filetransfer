@@ -1,4 +1,4 @@
-package com.lightcomp.ft.core.receiver;
+package com.lightcomp.ft.core.recv;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -34,7 +34,7 @@ class FileWriter {
         this.chksmGenerator = ChecksumGenerator.create();
     }
 
-    public Object getPath() {
+    public Path getPath() {
         return path;
     }
 
@@ -60,10 +60,10 @@ class FileWriter {
             Validate.isTrue(sbch.position() == offset);
             // wrap channel for checksum calculating
             try (WritableByteChannel wbch = new ChecksumByteChannel(sbch, chksmGenerator)) {
-                copyFileData(rbch, wbch, length);
+                copyData(rbch, wbch, length);
             }
         } catch (IOException e) {
-            throw TransferExceptionBuilder.from("Failed to open destination file").addParam("path", path).setCause(e).build();
+            throw TransferExceptionBuilder.from("Failed to open file").addParam("path", path).setCause(e).build();
         }
     }
 
@@ -86,31 +86,38 @@ class FileWriter {
         }
     }
 
-    private void copyFileData(ReadableByteChannel rbch, WritableByteChannel wbch, long length) {
+    private void copyData(ReadableByteChannel rbch, WritableByteChannel wbch, long length) {
         ByteBuffer bb = ByteBuffer.allocate(BUFFER_SIZE);
 
-        while (true) {
+        while (length > 0) {
+            // set buffer limit to remaining length
             if (length < BUFFER_SIZE) {
                 bb.limit((int) length);
             }
             try {
-                if (rbch.read(bb) <= 0) {
+                int n = rbch.read(bb);
+                if (n <= 0) {
+                    // buffer limit is handled by while condition
+                    Validate.isTrue(n < 0);
+                    // stop copy when EOF
                     break;
                 }
-            } catch (IOException e) {
-                throw TransferExceptionBuilder.from("Failed to read file data").addParam("path", path).setCause(e).build();
+            } catch (Throwable t) {
+                throw TransferExceptionBuilder.from("Failed to read file data").addParam("path", path).setCause(t).build();
             }
+            // flip buffer for write
             bb.flip();
             try {
+                // try to write whole buffer
                 while (wbch.write(bb) > 0) {
                 }
-            } catch (IOException e) {
-                throw TransferExceptionBuilder.from("Failed to write file data").addParam("path", path).setCause(e).build();
+                // destination file must be large enough
+                Validate.isTrue(!bb.hasRemaining());
+            } catch (Throwable t) {
+                throw TransferExceptionBuilder.from("Failed to write file data").addParam("path", path).setCause(t).build();
             }
-            Validate.isTrue(!bb.hasRemaining());
             length -= bb.limit();
             bb.rewind();
         }
-        Validate.isTrue(length == 0);
     }
 }

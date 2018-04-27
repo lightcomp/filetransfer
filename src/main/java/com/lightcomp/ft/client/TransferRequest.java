@@ -2,10 +2,8 @@ package com.lightcomp.ft.client;
 
 import com.lightcomp.ft.exception.TransferException;
 
-/**
- * Transfer request supplies source data and implements transfer callbacks.
- */
 public interface TransferRequest {
+
     /**
      * Request id.
      */

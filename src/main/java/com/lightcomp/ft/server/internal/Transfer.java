@@ -9,9 +9,9 @@ public interface Transfer {
     String getTransferId();
 
     FileTransferStatus getStatus();
-
-    void init() throws FileTransferException;
     
+    void begin() throws FileTransferException;
+
     Frame sendFrame(long seqNum) throws FileTransferException;
 
     void receiveFrame(Frame frame) throws FileTransferException;
@@ -20,4 +20,3 @@ public interface Transfer {
 
     void abort() throws FileTransferException;
 }
- 

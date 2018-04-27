@@ -7,6 +7,7 @@ import java.net.UnknownHostException;
 import org.apache.cxf.transport.http.HTTPException;
 
 import com.lightcomp.ft.core.TransferInfo;
+import com.lightcomp.ft.exception.CanceledException;
 import com.lightcomp.ft.exception.TransferException;
 import com.lightcomp.ft.wsdl.v1.FileTransferException;
 import com.lightcomp.ft.wsdl.v1.FileTransferService;
@@ -22,48 +23,44 @@ public abstract class RecoverableOperation {
 
     protected final TransferInfo transferInfo;
 
-    private final RecoveryHandler handler;
+    protected final RecoveryHandler transfer;
 
     private boolean recovery;
 
-    protected RecoverableOperation(TransferInfo transferInfo, RecoveryHandler handler) {
+    protected RecoverableOperation(TransferInfo transferInfo, RecoveryHandler transfer) {
         this.transferInfo = transferInfo;
-        this.handler = handler;
+        this.transfer = transfer;
     }
 
     public boolean isCancelable() {
         return true;
     }
 
-    /**
-     * @param service
-     * @return True when execute successfully, otherwise operation was canceled.
-     */
-    public boolean execute(FileTransferService service) {
-        do {
+    public void execute(FileTransferService service) throws CanceledException {
+        while (true) {
             try {
                 executeInternal(service);
-                recovery = false;
+                return;
             } catch (Throwable t) {
-                if (!isRecoverable(t)) {
+                if (!isRecoverableException(t)) {
                     throw createException(t);
                 }
-                recovery = true;
-                if (handler.waitBeforeRecovery(isCancelable())) {
-                    return false;
+                boolean success = transfer.waitBeforeRecovery(isCancelable());
+                if (!success) {
+                    throw new CanceledException();
                 }
+                recovery = true;
             }
-        } while (recovery);
-        return true;
+        }
     }
 
     protected abstract void send(FileTransferService service) throws FileTransferException;
 
-    protected abstract TransferException createException(Throwable cause);
-
     protected abstract boolean isFinished(FileTransferStatus status);
 
-    protected boolean isRecoverable(Throwable t) {
+    protected abstract TransferException createException(Throwable cause) throws CanceledException;
+
+    private boolean isRecoverableException(Throwable t) {
         ExceptionType type = resolveExceptionType(t);
         if (type == ExceptionType.CONNECTION || type == ExceptionType.BUSY) {
             return true;

@@ -20,8 +20,8 @@ import com.lightcomp.ft.server.ServerConfig;
 import com.lightcomp.ft.server.TransferAcceptor;
 import com.lightcomp.ft.server.TransferAcceptor.Mode;
 import com.lightcomp.ft.server.TransferReceiver;
+import com.lightcomp.ft.server.TransferStatusStorage;
 import com.lightcomp.ft.server.UploadAcceptor;
-import com.lightcomp.ft.server.internal.upload.UploadTransfer;
 import com.lightcomp.ft.wsdl.v1.FileTransferException;
 
 public class ServerImpl implements Server, TransferProvider {
@@ -37,15 +37,18 @@ public class ServerImpl implements Server, TransferProvider {
 
     private final Map<String, AbstractTransfer> transferIdMap = new HashMap<>();
 
+    private final TransferStatusStorage statusStorage;
+    
     private final TransferReceiver receiver;
 
     private final ServerConfig config;
 
     private State state = State.INIT;
 
-    public ServerImpl(TransferReceiver receiver, ServerConfig config) {
+    public ServerImpl(TransferReceiver receiver, ServerConfig config, TransferStatusStorage statusStorage) {
         this.receiver = receiver;
         this.config = config;
+        this.statusStorage = statusStorage;
     }
 
     /* server methods */
@@ -70,7 +73,7 @@ public class ServerImpl implements Server, TransferProvider {
             state = State.STOPPING;
             // notify manager thread about stopping
             notify();
-            // wait until manager thread does not terminate
+            // wait until manager thread terminates
             while (state != State.TERMINATED) {
                 try {
                     wait(100);
@@ -131,7 +134,7 @@ public class ServerImpl implements Server, TransferProvider {
         // check empty transfer id
         if (StringUtils.isEmpty(transferId)) {
             throw TransferExceptionBuilder.from("Receiver supplied empty transfer id").addParam("requestId", requestId).build();
-        } 
+        }
         // create transfer
         AbstractTransfer transfer;
         if (acceptor.getMode().equals(Mode.UPLOAD)) {
@@ -180,7 +183,7 @@ public class ServerImpl implements Server, TransferProvider {
 
             synchronized (this) {
                 try {
-                    // wait for stopping notification or timeout
+                    // wait for next run
                     wait(1000);
                 } catch (InterruptedException e) {
                     // service cannot run without manager

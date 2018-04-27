@@ -1,4 +1,4 @@
-package com.lightcomp.ft.core.sender.items;
+package com.lightcomp.ft.core.send.items;
 
 import java.util.Iterator;
 

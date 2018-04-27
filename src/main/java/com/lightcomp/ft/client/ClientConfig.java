@@ -61,10 +61,10 @@ public final class ClientConfig {
 
     /**
      * @param requestTimeout
-     *            receiver request timeout in seconds, not negative
+     *            receiver request timeout in seconds, greater than zero
      */
     public void setRequestTimeout(int requestTimeout) {
-        Validate.isTrue(requestTimeout >= 0);
+        Validate.isTrue(requestTimeout > 0);
         this.requestTimeout = requestTimeout;
     }
 

@@ -1,4 +1,4 @@
-package com.lightcomp.ft.core.sender.items;
+package com.lightcomp.ft.core.send.items;
 
 import java.io.IOException;
 import java.nio.channels.ReadableByteChannel;

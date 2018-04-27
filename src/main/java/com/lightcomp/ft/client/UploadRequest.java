@@ -2,7 +2,7 @@ package com.lightcomp.ft.client;
 
 import java.util.Iterator;
 
-import com.lightcomp.ft.core.sender.items.SourceItem;
+import com.lightcomp.ft.core.send.items.SourceItem;
 
 public interface UploadRequest extends TransferRequest {
 

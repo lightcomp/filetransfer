@@ -1,4 +1,4 @@
-package com.lightcomp.ft.core.receiver;
+package com.lightcomp.ft.core.recv;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -11,16 +11,33 @@ import java.nio.file.Paths;
 import com.lightcomp.ft.common.ChecksumGenerator;
 import com.lightcomp.ft.exception.TransferExceptionBuilder;
 
-public class ReceiveContextImpl implements ReceiveContext {
+public class RecvContextImpl implements RecvContext {
 
+    private final RecvProgressInfo progressInfo;
+    
     private Path dirPath = Paths.get("");
 
     private FileWriter currFileWriter;
 
-    private ReadableByteChannel frameByteChannel;
+    private ReadableByteChannel inputChannel;
+    
+    public RecvContextImpl(RecvProgressInfo progressInfo) {
+        this.progressInfo = progressInfo;
+    }
 
-    public void setFrameByteChannel(ReadableByteChannel frameByteChannel) {
-        this.frameByteChannel = frameByteChannel;
+    @Override
+    public void setInputChannel(ReadableByteChannel inputChannel) {
+        this.inputChannel = inputChannel;
+    }
+
+    @Override
+    public Path getCurrentDir() {
+        return dirPath.getParent() != null ? dirPath : null;
+    }
+
+    @Override
+    public Path getCurrentFile() {
+        return currFileWriter != null ? currFileWriter.getPath() : null;
     }
 
     @Override
@@ -72,7 +89,8 @@ public class ReceiveContextImpl implements ReceiveContext {
 
     @Override
     public void writeFileData(long offset, long length) {
-        currFileWriter.write(frameByteChannel, offset, length);
+        currFileWriter.write(inputChannel, offset, length);
+        progressInfo.onDataReceived(length);
     }
 
     @Override
@@ -93,7 +111,7 @@ public class ReceiveContextImpl implements ReceiveContext {
 
     private byte[] readFileChecksum() throws IOException {
         ByteBuffer bb = ByteBuffer.allocate(ChecksumGenerator.LENGTH);
-        while (frameByteChannel.read(bb) > 0) {
+        while (inputChannel.read(bb) > 0) {
         }
         if (bb.hasRemaining()) {
             throw new IOException("Frame stream ended prematurely");
