@@ -32,7 +32,7 @@ public class UploadTransfer extends AbstractTransfer implements SendProgressInfo
     }
 
     @Override
-    protected boolean transferData() {
+    protected boolean transferFrames() {
         while (true) {
             // increment last frame seq. number
             lastFrameSeqNum++;

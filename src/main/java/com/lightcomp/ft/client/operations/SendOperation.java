@@ -14,8 +14,8 @@ public class SendOperation extends RecoverableOperation {
 
     private final UploadFrameContext frameCtx;
 
-    public SendOperation(OperationListener acceptor, TransferInfo transfer, UploadFrameContext frameCtx) {
-        super(acceptor, transfer);
+    public SendOperation(OperationListener listener, TransferInfo transfer, UploadFrameContext frameCtx) {
+        super(listener, transfer);
         this.frameCtx = frameCtx;
     }
 

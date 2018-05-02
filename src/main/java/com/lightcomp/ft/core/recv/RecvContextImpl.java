@@ -9,109 +9,119 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import com.lightcomp.ft.common.ChecksumGenerator;
+import com.lightcomp.ft.exception.TransferException;
 import com.lightcomp.ft.exception.TransferExceptionBuilder;
 
 public class RecvContextImpl implements RecvContext {
 
+    private static final Path ROOT_DIR = Paths.get("");
+
     private final RecvProgressInfo progressInfo;
-    
-    private Path dirPath = Paths.get("");
 
-    private FileWriter currFileWriter;
+    private final Path rootDir;
 
-    private ReadableByteChannel inputChannel;
-    
-    public RecvContextImpl(RecvProgressInfo progressInfo) {
+    private Path currDir;
+
+    private FileWriter currFileWritter;
+
+    private ReadableByteChannel rbch;
+
+    public RecvContextImpl(RecvProgressInfo progressInfo, Path rootDir) {
         this.progressInfo = progressInfo;
+        this.rootDir = rootDir;
+        this.currDir = ROOT_DIR;
     }
 
     @Override
-    public void setInputChannel(ReadableByteChannel inputChannel) {
-        this.inputChannel = inputChannel;
+    public void setInputChannel(ReadableByteChannel rbch) {
+        this.rbch = rbch;
     }
 
     @Override
     public Path getCurrentDir() {
-        return dirPath.getParent() != null ? dirPath : null;
+        return currDir.getParent() != null ? currDir : null;
     }
 
     @Override
     public Path getCurrentFile() {
-        return currFileWriter != null ? currFileWriter.getPath() : null;
+        return currFileWritter != null ? currFileWritter.getFile() : null;
     }
 
     @Override
     public void openDir(String name) {
-        Path path;
+        Path dir;
         try {
-            path = dirPath.resolve(name);
+            dir = currDir.resolve(name);
         } catch (InvalidPathException e) {
-            throw TransferExceptionBuilder.from("Invalid directory name").addParam("parentPath", dirPath).addParam("name", name)
+            throw TransferExceptionBuilder.from("Invalid directory name").addParam("parentPath", currDir).addParam("name", name)
                     .setCause(e).build();
         }
         try {
-            Files.createDirectory(path);
+            Path dstDir = rootDir.resolve(dir);
+            Files.createDirectory(dstDir);
         } catch (Throwable e) {
-            throw TransferExceptionBuilder.from("Failed to create directory").addParam("path", path).setCause(e).build();
+            throw TransferExceptionBuilder.from("Failed to create directory").addParam("path", dir).setCause(e).build();
         }
-        dirPath = path;
+        currDir = dir;
     }
 
     @Override
     public void closeDir() {
-        Path path = dirPath.getParent();
-        if (path == null) {
-            throw TransferExceptionBuilder.from("Failed to close directory, transfer at root level").build();
+        if (currDir == ROOT_DIR) {
+            throw new TransferException("Failed to close directory, transfer at root level");
         }
-        dirPath = path;
+        Path dir = currDir.getParent();
+        currDir = dir != null ? dir : ROOT_DIR;
     }
 
     @Override
     public void openFile(String name, long size) {
-        if (currFileWriter != null) {
+        if (currFileWritter != null) {
             throw TransferExceptionBuilder.from("Failed to open file, previous file must be closed first")
-                    .addParam("previousFilePath", currFileWriter.getPath()).build();
+                    .addParam("previousFilePath", currFileWritter.getFile()).build();
         }
-        Path path;
+        Path file;
         try {
-            path = dirPath.resolve(name);
+            file = currDir.resolve(name);
         } catch (InvalidPathException e) {
-            throw TransferExceptionBuilder.from("Invalid file name").addParam("dirPath", dirPath).addParam("name", name)
+            throw TransferExceptionBuilder.from("Invalid file name").addParam("dirPath", currDir).addParam("name", name)
                     .setCause(e).build();
         }
+        Path dstFile = rootDir.resolve(file);
         try {
-            Files.createFile(path);
+            Files.createFile(dstFile);
         } catch (IOException e) {
-            throw TransferExceptionBuilder.from("Failed to create file").addParam("path", path).setCause(e).build();
+            throw TransferExceptionBuilder.from("Failed to create file").addParam("path", file).setCause(e).build();
         }
-        currFileWriter = new FileWriter(path, size);
+        currFileWritter = new FileWriter(dstFile, size);
     }
 
     @Override
     public void writeFileData(long offset, long length) {
-        currFileWriter.write(inputChannel, offset, length);
+        currFileWritter.write(rbch, offset, length);
         progressInfo.onDataReceived(length);
     }
 
     @Override
     public void closeFile(long lastModified) {
-        if (currFileWriter == null) {
-            throw TransferExceptionBuilder.from("Failed to close file, no current file found").addParam("dirPath", dirPath)
+        if (currFileWritter == null) {
+            throw TransferExceptionBuilder.from("Failed to close file, no current file found").addParam("dirPath", currDir)
                     .build();
         }
         byte[] checksum;
         try {
             checksum = readFileChecksum();
         } catch (IOException e) {
-            throw TransferExceptionBuilder.from("Failed to read file checksum").addParam("path", currFileWriter.getPath())
+            throw TransferExceptionBuilder.from("Failed to read file checksum").addParam("path", currFileWritter.getFile())
                     .setCause(e).build();
         }
-        currFileWriter.finish(lastModified, checksum);
+        currFileWritter.finish(lastModified, checksum);
+        currFileWritter = null;
     }
 
     private byte[] readFileChecksum() throws IOException {
         ByteBuffer bb = ByteBuffer.allocate(ChecksumGenerator.LENGTH);
-        while (inputChannel.read(bb) > 0) {
+        while (rbch.read(bb) > 0) {
         }
         if (bb.hasRemaining()) {
             throw new IOException("Frame stream ended prematurely");

@@ -98,6 +98,8 @@ public abstract class AbstractTransfer implements Runnable, Transfer, OperationL
         synchronized (this) {
             // update current state
             status.changeState(TransferState.STARTED);
+            // set transfer id
+            this.transferId = transferId;
             // copy status in synch block
             ts = status.copy();
         }
@@ -155,12 +157,12 @@ public abstract class AbstractTransfer implements Runnable, Transfer, OperationL
     @Override
     public void run() {
         try {
-            BeginOperation bop = new BeginOperation(this, transferId);
+            BeginOperation bop = new BeginOperation(this, request.getRequestId());
             if (!bop.execute(service)) {
                 transferCanceled();
                 return;
             }
-            if (!transferData()) {
+            if (!transferFrames()) {
                 transferCanceled();
                 return;
             }
@@ -174,7 +176,7 @@ public abstract class AbstractTransfer implements Runnable, Transfer, OperationL
         }
     }
 
-    protected abstract boolean transferData();
+    protected abstract boolean transferFrames();
 
     private void transferCanceled() {
         synchronized (this) {

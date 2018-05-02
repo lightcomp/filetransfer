@@ -23,15 +23,15 @@ public class UploadFrameContext implements SendFrameContext {
 
     private final int seqNum;
 
-    private final ClientConfig config;
+    private final ClientConfig clientConfig;
 
     private long dataSize;
 
     private boolean last;
 
-    public UploadFrameContext(int seqNum, ClientConfig config) {
+    public UploadFrameContext(int seqNum, ClientConfig clientConfig) {
         this.seqNum = seqNum;
-        this.config = config;
+        this.clientConfig = clientConfig;
     }
 
     public int getSeqNum() {
@@ -49,24 +49,24 @@ public class UploadFrameContext implements SendFrameContext {
     
     @Override
     public long getRemainingDataSize() {
-        return config.getMaxFrameSize() - dataSize;
+        return clientConfig.getMaxFrameSize() - dataSize;
     }
 
     @Override
     public boolean isBlockListFull() {
-        return blocks.size() >= config.getMaxFrameBlocks();
+        return blocks.size() >= clientConfig.getMaxFrameBlocks();
     }
     
     @Override
     public void addBlock(FrameBlock block) {
-        Validate.isTrue(blocks.size() < config.getMaxFrameBlocks());
+        Validate.isTrue(blocks.size() < clientConfig.getMaxFrameBlocks());
         blocks.add(block);
     }
 
     @Override
     public void addBlock(FrameBlock block, FileBlockStream blockStream) {
         long newSize = dataSize + blockStream.getSize();
-        Validate.isTrue(newSize <= config.getMaxFrameSize());
+        Validate.isTrue(newSize <= clientConfig.getMaxFrameSize());
         addBlock(block);
         blockStreams.add(blockStream);
         dataSize = newSize;

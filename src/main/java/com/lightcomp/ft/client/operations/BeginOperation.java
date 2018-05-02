@@ -5,12 +5,12 @@ import com.lightcomp.ft.wsdl.v1.FileTransferService;
 
 public class BeginOperation implements Operation {
 
-    private final OperationListener acceptor;
+    private final OperationListener listener;
 
     private final String requestId;
 
-    public BeginOperation(OperationListener acceptor, String requestId) {
-        this.acceptor = acceptor;
+    public BeginOperation(OperationListener listener, String requestId) {
+        this.listener = listener;
         this.requestId = requestId;
     }
 
@@ -26,12 +26,12 @@ public class BeginOperation implements Operation {
 
     @Override
     public boolean execute(FileTransferService client) {
-        if (!acceptor.isOperationFeasible(this)) {
+        if (!listener.isOperationFeasible(this)) {
             return false;
         }
         try {
             String transferId = client.begin(requestId);
-            acceptor.onBeginSuccess(transferId);
+            listener.onBeginSuccess(transferId);
             return true;
         } catch (Throwable t) {
             throw TransferExceptionBuilder.from("Failed to begin transfer").addParam("requestId", requestId).setCause(t).build();

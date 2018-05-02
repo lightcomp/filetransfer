@@ -135,6 +135,7 @@ public class ServerImpl implements Server, TransferManager {
 
     @Override
     public AbstractTransfer createTransfer(String requestId) throws FileTransferException {
+        // we cannot sync yet because of receiver call
         if (state != State.RUNNING) {
             throw new FileTransferException("Server is not running");
         }
@@ -145,22 +146,22 @@ public class ServerImpl implements Server, TransferManager {
         }
         // initialize transfer
         try {
-            AbstractTransfer transfer = createTransfer(requestId, acceptor);
-            // publish transfer
             synchronized (this) {
                 if (state != State.RUNNING) {
                     throw new TransferException("Server is not running");
                 }
-                String transferId = transfer.getTransferId();
-                if (transferIdMap.putIfAbsent(transferId, transfer) == null) {
+                AbstractTransfer transfer = createTransfer(requestId, acceptor);
+                if (transferIdMap.putIfAbsent(transfer.getTransferId(), transfer) == null) {
                     return transfer;
                 }
-                throw TransferExceptionBuilder.from("Duplicit transfer id", transfer).build();
+                throw new IllegalStateException("Transfer id supplied by acceptor already exists");
             }
         } catch (Throwable t) {
-            logger.error("Transfer initialization failed", t);
+            String msg = TransferExceptionBuilder.from(t.getMessage()).addParam("transferId", acceptor.getTransferId())
+                    .addParam("requestId", requestId).setCause(t).buildMsg();
+            logger.error(msg, t);
             acceptor.onTransferFailed(t);
-            throw FileTransferExceptionBuilder.from("Transfer initialization failed").setCause(t).build();
+            throw FileTransferExceptionBuilder.from(msg).setCause(t).build();
         }
     }
 
@@ -168,13 +169,13 @@ public class ServerImpl implements Server, TransferManager {
         String transferId = acceptor.getTransferId();
         // check empty transfer id
         if (StringUtils.isEmpty(transferId)) {
-            throw TransferExceptionBuilder.from("Acceptor supplied empty transfer id").addParam("requestId", requestId).build();
+            throw new IllegalArgumentException("Acceptor with empty transfer id");
         }
         // create transfer
         if (acceptor.getMode().equals(Mode.UPLOAD)) {
             if (!(acceptor instanceof UploadAcceptor)) {
-                throw TransferExceptionBuilder.from("UploadAcceptor implementation expected")
-                        .addParam("givenImpl", acceptor.getClass()).addParam("requestId", requestId).build();
+                throw TransferExceptionBuilder.from("Acceptor for upload must implement UploadAcceptor")
+                        .addParam("givenImpl", acceptor.getClass()).build();
             }
             UploadTransfer transfer = new UploadTransfer((UploadAcceptor) acceptor, requestId, config);
             transfer.init();

@@ -20,15 +20,9 @@ public class TransferExceptionBuilder {
         this.message = message;
     }
 
-    public TransferExceptionBuilder setTransfer(TransferInfo transferInfo) {
-        String transferId = transferInfo.getTransferId();
-        if (transferId != null) {
-            params.add(new MessageParam("transferId", transferId, 1));
-        }
-        String requestId = transferInfo.getRequestId();
-        if (requestId != null) {
-            params.add(new MessageParam("requestId", requestId, 2));
-        }
+    public TransferExceptionBuilder setTransfer(TransferInfo transfer) {
+        params.add(new MessageParam("transferId", transfer.getTransferId(), 1));
+        params.add(new MessageParam("requestId", transfer.getRequestId(), 2));
         return this;
     }
 
@@ -43,18 +37,16 @@ public class TransferExceptionBuilder {
     }
 
     public TransferException build() {
-        String message = buildMessage();
-
-        return new TransferException(message, cause);
+        return new TransferException(buildMsg(), cause);
     }
 
     public void log(Logger logger) {
-        logger.error(buildMessage(), cause);
+        logger.error(buildMsg(), cause);
     }
 
-    private String buildMessage() {
+    public String buildMsg() {
         if (params.isEmpty()) {
-            return null;
+            return message;
         }
         Collections.sort(params);
 
@@ -69,7 +61,7 @@ public class TransferExceptionBuilder {
         return new TransferExceptionBuilder(message);
     }
 
-    public static TransferExceptionBuilder from(String message, TransferInfo transferInfo) {
-        return new TransferExceptionBuilder(message).setTransfer(transferInfo);
+    public static TransferExceptionBuilder from(String message, TransferInfo transfer) {
+        return new TransferExceptionBuilder(message).setTransfer(transfer);
     }
 }

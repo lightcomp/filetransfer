@@ -5,7 +5,7 @@ import java.nio.file.Path;
 
 public interface RecvContext {
 
-    void setInputChannel(ReadableByteChannel inputChannel);
+    void setInputChannel(ReadableByteChannel rbch);
 
     Path getCurrentDir();
 

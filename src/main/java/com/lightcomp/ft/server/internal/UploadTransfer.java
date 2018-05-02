@@ -28,22 +28,24 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
 
     private final String requestId;
 
+    private final Path rootDir;
+
     private final RecvContextImpl recvCtx;
 
     private final UploadFrameWorker frameWorker;
 
-    private final Path uploadDir;
+    private Path tempDir;
 
-    private Path tempUploadDir;
+    private boolean lastFrameReceived;
 
-    private boolean processingFrame;
+    private boolean transferingFrame;
 
     public UploadTransfer(UploadAcceptor acceptor, String requestId, ServerConfig serverConfig) {
         super(acceptor, serverConfig);
         this.requestId = requestId;
-        this.recvCtx = new RecvContextImpl(this);
+        this.rootDir = acceptor.getUploadDir();
+        this.recvCtx = new RecvContextImpl(this, rootDir);
         this.frameWorker = new UploadFrameWorker(this);
-        this.uploadDir = acceptor.getUploadDir();
     }
 
     @Override
@@ -52,8 +54,8 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
     }
 
     @Override
-    protected boolean isProcessingFrame() {
-        return processingFrame;
+    public synchronized boolean isProcessingLastFrame() {
+        return lastFrameReceived;
     }
 
     public synchronized void init() {
@@ -63,12 +65,24 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
         frameWorkerThread.start();
         // create temporary folder
         try {
-            tempUploadDir = Files.createTempDirectory(uploadDir, "temp");
+            tempDir = Files.createTempDirectory(rootDir, "temp");
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to create temporary upload folder", e);
         }
         // update current state
         status.changeState(TransferState.STARTED);
+    }
+
+    @Override
+    public void onDataReceived(long size) {
+        TransferStatus ts;
+        synchronized (this) {
+            // update current state
+            status.addTransferedData(size);
+
+            ts = status.copy();
+        }
+        acceptor.onTransferProgress(ts);
     }
 
     /**
@@ -122,20 +136,8 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
     }
 
     @Override
-    public void onDataReceived(long size) {
-        TransferStatus ts;
-        synchronized (this) {
-            // update current state
-            status.addTransferedData(size);
-
-            ts = status.copy();
-        }
-        acceptor.onTransferProgress(ts);
-    }
-
-    @Override
     public Frame sendFrame(long seqNum) throws FileTransferException {
-        throw FileTransferExceptionBuilder.from(this, "Transfer cannot send data in upload mode").build();
+        throw FileTransferExceptionBuilder.from("Transfer cannot send data in upload mode", this).build();
     }
 
     @Override
@@ -144,7 +146,7 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
             // check current transfer state
             TransferState ts = status.getState();
             if (ts != TransferState.STARTED) {
-                throw FileTransferExceptionBuilder.from(this, "Unable to receive frame")
+                throw FileTransferExceptionBuilder.from("Unable to receive frame", this)
                         .addParam("currentState", TransferState.convert(ts)).setCause(status.getFailureCause()).build();
             }
             // check if frame number is sequential
@@ -153,15 +155,20 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
                 throw TransferExceptionBuilder.from("Invalid frame sequential number", this).addParam("nextSeqNum", nextSeqNum)
                         .addParam("receivedSeqNum", frame.getSeqNum()).build();
             }
+            // check if last frame received
+            if (lastFrameReceived) {
+                throw FileTransferExceptionBuilder.from("Server already received last frame", this).build();
+            }
             // we can process only one frame at same time
-            if (processingFrame) {
-                throw FileTransferExceptionBuilder.from(this, "Transfer processing another frame").setCode(ErrorCode.BUSY)
+            if (transferingFrame) {
+                throw FileTransferExceptionBuilder.from("Server already transferring a frame", this).setCode(ErrorCode.BUSY)
                         .build();
             }
-            processingFrame = true;
+            lastFrameReceived = Boolean.TRUE.equals(frame.isLast());
+            transferingFrame = true;
         }
         try {
-            processFrame(frame);
+            transferFrame(frame);
         } catch (Throwable t) {
             // we must change internal state and notify acceptor
             frameProcessingFailed(t);
@@ -169,7 +176,7 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
             throw FileTransferExceptionBuilder.from(t.getMessage()).setCause(t.getCause()).build();
         } finally {
             synchronized (this) {
-                processingFrame = false;
+                transferingFrame = false;
             }
         }
     }
@@ -177,10 +184,10 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
     @Override
     protected void clearResources() {
         frameWorker.terminate();
-        if (tempUploadDir != null) {
+        if (tempDir != null) {
             try {
                 // create folder iterator with directory at last position
-                Iterator<Path> itemIt = Files.walk(tempUploadDir).sorted(Comparator.reverseOrder()).iterator();
+                Iterator<Path> itemIt = Files.walk(tempDir).sorted(Comparator.reverseOrder()).iterator();
                 // delete all content (temp directory included)
                 while (itemIt.hasNext()) {
                     Files.delete(itemIt.next());
@@ -191,16 +198,20 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
         }
     }
 
-    private void processFrame(Frame frame) {
-        Path dataFile = createFrameDataFile(frame);
-        RecvFrameProcessor rfp = RecvFrameProcessor.create(frame, recvCtx, dataFile);
+    /**
+     * Receives frame data and adds frame to worker for processing. Caller must
+     * ensure synchronization.
+     */
+    private void transferFrame(Frame frame) {
+        Path frameData = prepareFrameData(frame);
+        RecvFrameProcessor rfp = RecvFrameProcessor.create(frame, recvCtx, frameData);
         frameWorker.addProcessor(rfp);
     }
 
-    private Path createFrameDataFile(Frame frame) {
+    private Path prepareFrameData(Frame frame) {
         String seqNum = Integer.toString(frame.getSeqNum());
         try {
-            Path dataFile = Files.createTempFile(tempUploadDir, seqNum, null);
+            Path dataFile = Files.createTempFile(tempDir, seqNum, null);
             // copy whole data stream to temp file
             try (InputStream is = frame.getData().getInputStream()) {
                 long length = Files.copy(is, dataFile, StandardCopyOption.REPLACE_EXISTING);

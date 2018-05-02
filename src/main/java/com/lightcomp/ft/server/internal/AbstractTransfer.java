@@ -25,11 +25,11 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
 
     protected final TransferAcceptor acceptor;
 
-    protected final ServerConfig serverConfig;
+    protected final ServerConfig config;
 
-    protected AbstractTransfer(TransferAcceptor acceptor, ServerConfig serverConfig) {
+    protected AbstractTransfer(TransferAcceptor acceptor, ServerConfig config) {
         this.acceptor = acceptor;
-        this.serverConfig = serverConfig;
+        this.config = config;
     }
 
     @Override
@@ -37,23 +37,21 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
         return acceptor.getTransferId();
     }
 
-    protected abstract boolean isProcessingFrame();
-
-    protected abstract void clearResources();
-
     public synchronized TransferStatus getStatus() {
         return status.copy();
     }
+
+    public abstract boolean isProcessingLastFrame();
 
     @Override
     public void finish() throws FileTransferException {
         synchronized (this) {
             TransferState ts = status.getState();
-            if (ts == TransferState.STARTED && isProcessingFrame()) {
-                throw FileTransferExceptionBuilder.from(this, "Transfer is busy").setCode(ErrorCode.BUSY).build();
+            if (ts == TransferState.STARTED && isProcessingLastFrame()) {
+                throw FileTransferExceptionBuilder.from("Transfer is busy", this).setCode(ErrorCode.BUSY).build();
             }
             if (ts != TransferState.TRANSFERED) {
-                throw FileTransferExceptionBuilder.from(this, "Unable to finish transfer")
+                throw FileTransferExceptionBuilder.from("Unable to finish transfer", this)
                         .addParam("currentState", TransferState.convert(ts)).setCause(status.getFailureCause()).build();
             }
             // update current state
@@ -68,7 +66,7 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
         synchronized (this) {
             TransferState ts = status.getState();
             if (ts == TransferState.FINISHED) {
-                throw FileTransferExceptionBuilder.from(this, "Finished transfer cannot be aborted").build();
+                throw FileTransferExceptionBuilder.from("Finished transfer cannot be aborted", this).build();
             }
             if (ts == TransferState.CANCELED || ts == TransferState.FAILED) {
                 return; // failed will be handled as canceled
@@ -109,7 +107,7 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
             try {
                 acceptor.onTransferFailed(failureCause);
             } catch (Throwable t) {
-                TransferExceptionBuilder.from("Acceptor failure callback cause error", this).setCause(t).log(logger);
+                TransferExceptionBuilder.from("Acceptor callback cause error during terminate", this).setCause(t).log(logger);
             }
         }
         clearResources();
@@ -120,7 +118,7 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
         synchronized (this) {
             if (status.getState().ordinal() < TransferState.FINISHED.ordinal()) {
                 // test for inactive transfer
-                int timeout = serverConfig.getInactiveTimeout();
+                int timeout = config.getInactiveTimeout();
                 LocalDateTime timeoutLimit = LocalDateTime.now().minus(timeout, ChronoUnit.SECONDS);
                 LocalDateTime lastActivity = status.getLastActivity();
                 if (timeoutLimit.isBefore(lastActivity)) {
@@ -135,10 +133,12 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
             try {
                 acceptor.onTransferFailed(failureCause);
             } catch (Throwable t) {
-                TransferExceptionBuilder.from("Acceptor failure callback cause error", this).setCause(t).log(logger);
+                TransferExceptionBuilder.from("Acceptor callback cause error during terminate", this).setCause(t).log(logger);
             }
         }
         clearResources();
         return true;
     }
+
+    protected abstract void clearResources();
 }

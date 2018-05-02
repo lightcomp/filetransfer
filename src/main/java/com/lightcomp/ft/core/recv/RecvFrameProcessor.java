@@ -30,22 +30,22 @@ public class RecvFrameProcessor {
 
     private final RecvContext recvCtx;
 
-    private final Path dataFile;
+    private final Path frameData;
 
     private ReadableByteChannel channel;
 
     private long dataPos;
 
     private RecvFrameProcessor(int seqNum, boolean last, long dataSize, Collection<FrameBlock> blocks, RecvContext recvCtx,
-            Path dataFile) {
+            Path frameData) {
         this.seqNum = seqNum;
         this.last = last;
         this.dataSize = dataSize;
         this.blocks = blocks;
         this.recvCtx = recvCtx;
-        this.dataFile = dataFile;
+        this.frameData = frameData;
     }
-    
+
     public int getSeqNum() {
         return seqNum;
     }
@@ -74,11 +74,11 @@ public class RecvFrameProcessor {
     private void prepareChannel() {
         Validate.isTrue(channel == null);
         try {
-            channel = Files.newByteChannel(dataFile, StandardOpenOption.READ);
+            channel = Files.newByteChannel(frameData, StandardOpenOption.READ);
             recvCtx.setInputChannel(new FrameByteChannelWrapper());
         } catch (IOException e) {
             throw TransferExceptionBuilder.from("Failed to open frame data").addParam("frameSeqNum", seqNum)
-                    .addParam("dataPath", dataFile).setCause(e).build();
+                    .addParam("dataPath", frameData).setCause(e).build();
         }
     }
 
@@ -108,16 +108,16 @@ public class RecvFrameProcessor {
                 channel.close();
                 channel = null;
             }
-            Files.deleteIfExists(dataFile);
+            Files.deleteIfExists(frameData);
         } catch (Throwable t) {
             logger.error("Failed to clear frame resources", t);
         }
     }
 
-    public static RecvFrameProcessor create(Frame frame, RecvContext receiveCtx, Path dataFile) {
-        boolean lastFrame = frame.isLast() != null ? frame.isLast() : false;
+    public static RecvFrameProcessor create(Frame frame, RecvContext receiveCtx, Path frameData) {
+        boolean lastFrame = Boolean.TRUE.equals(frame.isLast());
         Collection<FrameBlock> frameBlocks = frame.getBlocks().getDesAndFdsAndFes();
-        return new RecvFrameProcessor(frame.getSeqNum(), lastFrame, frame.getDataSize(), frameBlocks, receiveCtx, dataFile);
+        return new RecvFrameProcessor(frame.getSeqNum(), lastFrame, frame.getDataSize(), frameBlocks, receiveCtx, frameData);
     }
 
     private class FrameByteChannelWrapper implements ReadableByteChannel {

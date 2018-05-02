@@ -23,6 +23,12 @@ public class FileTransferExceptionBuilder {
         this.message = message;
     }
 
+    public FileTransferExceptionBuilder setTransfer(TransferInfo transfer) {
+        params.add(new MessageParam("transferId", transfer.getTransferId(), 1));
+        params.add(new MessageParam("requestId", transfer.getRequestId(), 2));
+        return this;
+    }
+
     public FileTransferExceptionBuilder setCause(Throwable cause) {
         this.cause = cause;
         return this;
@@ -39,16 +45,16 @@ public class FileTransferExceptionBuilder {
     }
 
     public FileTransferException build() {
-        String message = buildMessage();
+        String msg = buildMsg();
 
         ErrorDescription errorDesc = new ErrorDescription();
         errorDesc.setErrorCode(errorCode);
-        errorDesc.setDetail(message);
+        errorDesc.setDetail(msg);
 
-        return new FileTransferException(message, errorDesc, cause);
+        return new FileTransferException(msg, errorDesc, cause);
     }
 
-    private String buildMessage() {
+    private String buildMsg() {
         if (params.isEmpty()) {
             return null;
         }
@@ -61,23 +67,11 @@ public class FileTransferExceptionBuilder {
         return sb.toString();
     }
 
-    private FileTransferExceptionBuilder setTransfer(TransferInfo transferInfo) {
-        String transferId = transferInfo.getTransferId();
-        if (transferId != null) {
-            params.add(new MessageParam("transferId", transferId, 1));
-        }
-        String requestId = transferInfo.getRequestId();
-        if (requestId != null) {
-            params.add(new MessageParam("requestId", requestId, 2));
-        }
-        return this;
-    }
-
     public static FileTransferExceptionBuilder from(String message) {
         return new FileTransferExceptionBuilder(message);
     }
 
-    public static FileTransferExceptionBuilder from(TransferInfo transferInfo, String message) {
-        return new FileTransferExceptionBuilder(message).setTransfer(transferInfo);
+    public static FileTransferExceptionBuilder from(String message, TransferInfo transfer) {
+        return new FileTransferExceptionBuilder(message).setTransfer(transfer);
     }
 }

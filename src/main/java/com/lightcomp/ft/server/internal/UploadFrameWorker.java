@@ -87,6 +87,6 @@ public class UploadFrameWorker implements Runnable {
         if (state != State.RUNNING) {
             return null;
         }
-        return queue.getFirst();
+        return queue.removeFirst();
     }
 }
