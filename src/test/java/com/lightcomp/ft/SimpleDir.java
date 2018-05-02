@@ -9,13 +9,13 @@ import com.lightcomp.ft.core.send.items.SourceDir;
 import com.lightcomp.ft.core.send.items.SourceFile;
 import com.lightcomp.ft.core.send.items.SourceItem;
 
-public class SourceDirImpl implements SourceDir {
+public class SimpleDir implements SourceDir {
 
     private final List<SourceItem> children = new ArrayList<>();
 
     private final String name;
 
-    public SourceDirImpl(String name) {
+    public SimpleDir(String name) {
         this.name = name;
     }
 
@@ -39,12 +39,12 @@ public class SourceDirImpl implements SourceDir {
         throw new UnsupportedOperationException();
     }
 
-    public void addChild(SourceItem child) {
-        children.add(child);
+    public void addChild(SourceItem item) {
+        children.add(item);
     }
 
-    public void addChildren(Collection<SourceItem> children) {
-        this.children.addAll(children);
+    public void addChildren(Collection<SourceItem> items) {
+        children.addAll(items);
     }
 
     @Override

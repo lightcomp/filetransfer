@@ -27,14 +27,16 @@ public class TaskExecutor {
 
     private volatile State state = State.INIT;
 
-    private Thread managerThread;
-
     public TaskExecutor(int threadPoolSize) {
         Validate.isTrue(threadPoolSize > 0);
 
         this.processingTasks = new ArrayList<>(threadPoolSize);
         this.executorService = Executors.newFixedThreadPool(threadPoolSize);
         this.threadPoolSize = threadPoolSize;
+    }
+
+    public synchronized boolean isIddle() {
+        return taskQueue.isEmpty() && processingTasks.isEmpty();
     }
 
     /**
@@ -44,7 +46,7 @@ public class TaskExecutor {
         Validate.isTrue(state == State.INIT);
 
         state = State.RUNNING;
-        managerThread = new Thread(this::run, "TaskExecutorManager");
+        Thread managerThread = new Thread(this::run, "TaskExecutorManager");
         managerThread.start();
     }
 
@@ -91,7 +93,6 @@ public class TaskExecutor {
                 try {
                     wait();
                 } catch (InterruptedException e) {
-                    // NOP -> continue
                 }
                 continue;
             }

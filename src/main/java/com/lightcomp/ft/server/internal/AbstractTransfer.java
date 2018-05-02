@@ -41,13 +41,13 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
         return status.copy();
     }
 
-    public abstract boolean isProcessingLastFrame();
+    protected abstract boolean isProcessingFrame();
 
     @Override
     public void finish() throws FileTransferException {
         synchronized (this) {
             TransferState ts = status.getState();
-            if (ts == TransferState.STARTED && isProcessingLastFrame()) {
+            if (ts == TransferState.STARTED && isProcessingFrame()) {
                 throw FileTransferExceptionBuilder.from("Transfer is busy", this).setCode(ErrorCode.BUSY).build();
             }
             if (ts != TransferState.TRANSFERED) {

@@ -16,15 +16,20 @@ public class UploadAcceptorImpl implements UploadAcceptor {
 
     private final Path uploadDir;
 
-    private volatile boolean terminated;
+    private volatile String failureMsg;
+
+    private volatile boolean finished;
 
     public UploadAcceptorImpl(String transferId, Path uploadDir) {
         this.transferId = transferId;
         this.uploadDir = uploadDir;
     }
 
-    public boolean isTerminated() {
-        return terminated;
+    public boolean isFinished() {
+        if (failureMsg != null) {
+            throw new RuntimeException(failureMsg);
+        }
+        return finished;
     }
 
     @Override
@@ -44,24 +49,22 @@ public class UploadAcceptorImpl implements UploadAcceptor {
 
     @Override
     public void onTransferProgress(TransferStatus status) {
-        logger.info("Receiver: transfer progress, transferId={}, detail: {}", transferId, status);
+        logger.info("Acceptor: transfer progress, transferId={}, detail: {}", transferId, status);
     }
 
     @Override
     public void onTransferSuccess() {
-        logger.info("Receiver: transfer success, transferId={}", transferId);
-        terminated = true;
+        logger.info("Acceptor: transfer success, transferId={}", transferId);
+        finished = true;
     }
 
     @Override
     public void onTransferCanceled() {
-        logger.warn("Receiver: transfer canceled, transferId={}", transferId);
-        terminated = true;
+        failureMsg = "Acceptor: transfer canceled, transferId=" + transferId;
     }
 
     @Override
     public void onTransferFailed(Throwable cause) {
-        // logged internally
-        terminated = true;
+        failureMsg = "Acceptor: transfer failed, transferId=" + transferId + ", detail=" + cause.getMessage();
     }
 }

@@ -18,9 +18,20 @@ public class UploadRequestImpl implements UploadRequest {
 
     private final Collection<SourceItem> items;
 
+    private volatile String failureMsg;
+
+    private volatile boolean finished;
+
     public UploadRequestImpl(String requestId, Collection<SourceItem> items) {
         this.requestId = requestId;
         this.items = items;
+    }
+
+    public boolean isFinished() {
+        if (failureMsg != null) {
+            throw new RuntimeException(failureMsg);
+        }
+        return finished;
     }
 
     @Override
@@ -41,15 +52,16 @@ public class UploadRequestImpl implements UploadRequest {
     @Override
     public void onTransferSuccess() {
         logger.info("Sender: transfer success, requestId={}", requestId);
+        finished = true;
     }
 
     @Override
     public void onTransferCanceled() {
-        logger.warn("Sender: transfer canceled, requestId={}", requestId);
+        failureMsg = "Request: transfer canceled, requestId=" + requestId;
     }
 
     @Override
     public void onTransferFailed(Throwable cause) {
-        // logged internally
+        failureMsg = "Request: transfer failed, requestId=" + requestId + ", detail=" + cause.getMessage();
     }
 }

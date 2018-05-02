@@ -110,7 +110,8 @@ public class RecvFrameProcessor {
             }
             Files.deleteIfExists(frameData);
         } catch (Throwable t) {
-            logger.error("Failed to clear frame resources", t);
+            TransferExceptionBuilder.from("Failed to clear frame temporary data").addParam("frameSeqNum", seqNum).setCause(t)
+                    .log(logger);
         }
     }
 
