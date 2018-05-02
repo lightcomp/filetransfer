@@ -9,46 +9,44 @@ import com.lightcomp.ft.xsd.v1.Frame;
 
 public class FileTransferServiceImpl implements FileTransferService {
 
-    private final TransferProvider transferProvider;
+    private final TransferManager manager;
 
-    public FileTransferServiceImpl(TransferProvider transferProvider) {
-        this.transferProvider = transferProvider;
+    public FileTransferServiceImpl(TransferManager transferProvider) {
+        this.manager = transferProvider;
     }
 
     @Override
     public FileTransferStatus status(String transferId) throws FileTransferException {
-        Transfer transfer = transferProvider.getTransfer(transferId);
-        return transfer.getStatus();
+        return manager.getStatus(transferId);
     }
 
     @Override
     public void abort(String transferId) throws FileTransferException {
-        Transfer transfer = transferProvider.getTransfer(transferId);
+        Transfer transfer = manager.getTransfer(transferId);
         transfer.abort();
     }
- 
+
     @Override
     public Frame receive(BigInteger frameSeqNum, String transferId) throws FileTransferException {
-        Transfer transfer = transferProvider.getTransfer(transferId);
+        Transfer transfer = manager.getTransfer(transferId);
         return transfer.sendFrame(frameSeqNum.longValue());
     }
 
     @Override
     public String begin(String requestId) throws FileTransferException {
-        Transfer transfer = transferProvider.createTransfer(requestId);
-        transfer.begin();
+        Transfer transfer = manager.createTransfer(requestId);
         return transfer.getTransferId();
     }
 
     @Override
     public void finish(String transferId) throws FileTransferException {
-        Transfer transfer = transferProvider.getTransfer(transferId);
+        Transfer transfer = manager.getTransfer(transferId);
         transfer.finish();
     }
 
     @Override
     public void send(Frame frame, String transferId) throws FileTransferException {
-        Transfer transfer = transferProvider.getTransfer(transferId);
-        transfer.receiveFrame(frame);
+        Transfer transfer = manager.getTransfer(transferId);
+        transfer.recvFrame(frame);
     }
 }

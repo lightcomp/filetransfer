@@ -3,10 +3,9 @@ package com.lightcomp.ft.client.internal;
 import com.lightcomp.ft.client.ClientConfig;
 import com.lightcomp.ft.client.TransferStatus;
 import com.lightcomp.ft.client.UploadRequest;
-import com.lightcomp.ft.client.internal.operations.SendOperation;
+import com.lightcomp.ft.client.operations.SendOperation;
 import com.lightcomp.ft.core.send.FrameBlockBuilder;
 import com.lightcomp.ft.core.send.SendProgressInfo;
-import com.lightcomp.ft.exception.CanceledException;
 import com.lightcomp.ft.wsdl.v1.FileTransferService;
 
 public class UploadTransfer extends AbstractTransfer implements SendProgressInfo {
@@ -33,21 +32,21 @@ public class UploadTransfer extends AbstractTransfer implements SendProgressInfo
     }
 
     @Override
-    protected void transfer() throws CanceledException {
+    protected boolean transferData() {
         while (true) {
-            checkCancelRequest();
             // increment last frame seq. number
             lastFrameSeqNum++;
             // prepare frame
             UploadFrameContext frameCtx = new UploadFrameContext(lastFrameSeqNum, config);
             frameBlockBuilder.build(frameCtx);
             // send frame
-            SendOperation op = new SendOperation(this, this, frameCtx);
-            op.execute(service);
-            // notify transfer and exit if lasts
+            SendOperation sop = new SendOperation(this, this, frameCtx);
+            if (!sop.execute(service)) {
+                return false;
+            }
+            // exit if last
             if (frameCtx.isLast()) {
-                onLastFrameTransfered();
-                break;
+                return true;
             }
         }
     }

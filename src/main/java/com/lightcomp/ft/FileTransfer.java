@@ -3,9 +3,10 @@ package com.lightcomp.ft;
 import com.lightcomp.ft.client.Client;
 import com.lightcomp.ft.client.ClientConfig;
 import com.lightcomp.ft.client.internal.ClientImpl;
-import com.lightcomp.ft.server.TransferReceiver;
-import com.lightcomp.ft.server.ServerConfig;
 import com.lightcomp.ft.server.Server;
+import com.lightcomp.ft.server.ServerConfig;
+import com.lightcomp.ft.server.TransferReceiver;
+import com.lightcomp.ft.server.TransferStatusStorage;
 import com.lightcomp.ft.server.internal.ServerImpl;
 
 public class FileTransfer {
@@ -15,8 +16,8 @@ public class FileTransfer {
         return client;
     }
 
-    public static Server createServer(TransferReceiver beginTransferListener, ServerConfig config) {
-        ServerImpl impl = new ServerImpl(beginTransferListener, config);
+    public static Server createServer(TransferReceiver receiver, ServerConfig config, TransferStatusStorage statusStorage) {
+        ServerImpl impl = new ServerImpl(receiver, config, statusStorage);
         return impl;
     }
 }

@@ -1,7 +1,5 @@
 package com.lightcomp.ft.client;
 
-import com.lightcomp.ft.exception.TransferException;
-
 public interface TransferRequest {
 
     /**
@@ -27,5 +25,5 @@ public interface TransferRequest {
     /**
      * Transfer failed callback.
      */
-    void onTransferFailed(TransferException cause);
+    void onTransferFailed(Throwable cause);
 }

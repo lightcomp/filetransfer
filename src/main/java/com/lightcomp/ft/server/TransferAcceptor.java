@@ -37,7 +37,7 @@ public interface TransferAcceptor {
      * @param aborted
      *            if true transfer was canceled by client
      */
-    void onTransferCanceled(boolean aborted);
+    void onTransferCanceled();
 
     /**
      * Transfer failed callback.

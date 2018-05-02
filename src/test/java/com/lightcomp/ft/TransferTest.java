@@ -28,6 +28,7 @@ import com.lightcomp.ft.client.TransferState;
 import com.lightcomp.ft.core.send.items.SourceItem;
 import com.lightcomp.ft.server.Server;
 import com.lightcomp.ft.server.ServerConfig;
+import com.lightcomp.ft.server.TransferStatusStorage;
 
 public class TransferTest {
 
@@ -78,7 +79,7 @@ public class TransferTest {
 
         Collection<SourceItem> items = Collections.singletonList(new SourceDirImpl("testF1"));
         UploadRequestImpl req = new UploadRequestImpl("trans1", items); // createTransferContent(0, 1)
-        Transfer transfer = client.beginUpload(req);
+        Transfer transfer = client.upload(req);
 
         sleepUntilFinished(transfer, receiver);
     }
@@ -112,7 +113,8 @@ public class TransferTest {
 
     public static TransferReceiverImpl publishEndpoint(Path transferId, ServerConfig cfg) {
         TransferReceiverImpl receiverImpl = new TransferReceiverImpl(transferId);
-        Server receiver = FileTransfer.createServer(receiverImpl, cfg);
+        TransferStatusStorage tss = new TransferStatusStorageImpl();
+        Server receiver = FileTransfer.createServer(receiverImpl, cfg, tss);
 
         Bus bus = BusFactory.newInstance().createBus();
         BusFactory.setThreadDefaultBus(bus);
@@ -139,7 +141,6 @@ public class TransferTest {
             } else {
                 String fileContent = "siblingId=" + i + ", siblingSize=" + size;
                 long lastModified = System.currentTimeMillis();
-                // TODO: what to do with invalid file name ?
                 MemoryFileImpl file = MemoryFileImpl.fromStr("file-" + i + ".txt", fileContent, lastModified);
                 items.add(file);
             }

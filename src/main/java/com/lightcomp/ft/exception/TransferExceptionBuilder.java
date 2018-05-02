@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.slf4j.Logger;
+
 import com.lightcomp.ft.core.TransferInfo;
 
 public class TransferExceptionBuilder {
@@ -46,7 +48,11 @@ public class TransferExceptionBuilder {
         return new TransferException(message, cause);
     }
 
-    public String buildMessage() {
+    public void log(Logger logger) {
+        logger.error(buildMessage(), cause);
+    }
+
+    private String buildMessage() {
         if (params.isEmpty()) {
             return null;
         }
@@ -58,12 +64,12 @@ public class TransferExceptionBuilder {
         }
         return sb.toString();
     }
-
+    
     public static TransferExceptionBuilder from(String message) {
         return new TransferExceptionBuilder(message);
     }
 
-    public static TransferExceptionBuilder from(TransferInfo transferInfo, String message) {
+    public static TransferExceptionBuilder from(String message, TransferInfo transferInfo) {
         return new TransferExceptionBuilder(message).setTransfer(transferInfo);
     }
 }

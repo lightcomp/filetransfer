@@ -62,8 +62,8 @@ public class TransferStatusImpl implements TransferStatus {
 
     /* modify methods */
 
-    public void incrementRecoveryCount() {
-        recoveryCount++;
+    public void setRecoveryCount(int recoveryCount) {
+        this.recoveryCount = recoveryCount;
     }
 
     public void addTransferedData(long size) {
@@ -88,7 +88,6 @@ public class TransferStatusImpl implements TransferStatus {
         if (startTime == null) {
             startTime = lastActivity;
         }
-        recoveryCount = 0;
     }
 
     @Override

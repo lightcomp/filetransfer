@@ -1,15 +1,37 @@
 package com.lightcomp.ft;
 
+import java.util.Collection;
+import java.util.Iterator;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.lightcomp.ft.client.TransferRequest;
 import com.lightcomp.ft.client.TransferStatus;
-import com.lightcomp.ft.exception.TransferException;
+import com.lightcomp.ft.client.UploadRequest;
+import com.lightcomp.ft.core.send.items.SourceItem;
 
-public class TransferListenerImpl implements TransferRequest {
+public class UploadRequestImpl implements UploadRequest {
 
     private final Logger logger = LoggerFactory.getLogger(UploadRequestImpl.class);
+
+    private final String requestId;
+
+    private final Collection<SourceItem> items;
+
+    public UploadRequestImpl(String requestId, Collection<SourceItem> items) {
+        this.requestId = requestId;
+        this.items = items;
+    }
+
+    @Override
+    public String getRequestId() {
+        return requestId;
+    }
+
+    @Override
+    public Iterator<SourceItem> getItemIterator() {
+        return items.iterator();
+    }
 
     @Override
     public void onTransferProgress(TransferStatus status) {
@@ -27,7 +49,7 @@ public class TransferListenerImpl implements TransferRequest {
     }
 
     @Override
-    public void onTransferFailed(TransferException cause) {
+    public void onTransferFailed(Throwable cause) {
         // logged internally
     }
 }

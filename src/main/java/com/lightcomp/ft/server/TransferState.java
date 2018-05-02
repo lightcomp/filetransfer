@@ -1,5 +1,7 @@
 package com.lightcomp.ft.server;
 
+import com.lightcomp.ft.xsd.v1.FileTransferState;
+
 /**
  * Internal receiver transfer state. <i>Implementation note: Do not change
  * defined order, ordinal is used.</i>
@@ -29,4 +31,19 @@ public enum TransferState {
      * File transfer is canceled.
      */
     CANCELED;
+
+    public static FileTransferState convert(TransferState state) {
+        switch (state) {
+            case STARTED:
+            case TRANSFERED:
+                return FileTransferState.ACTIVE;
+            case FINISHED:
+                return FileTransferState.FINISHED;
+            case FAILED:
+            case CANCELED:
+                return FileTransferState.FAILED;
+            default:
+                throw new IllegalStateException();
+        }
+    }
 }

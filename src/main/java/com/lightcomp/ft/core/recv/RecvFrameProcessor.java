@@ -12,12 +12,11 @@ import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.lightcomp.ft.core.FrameInfo;
 import com.lightcomp.ft.exception.TransferExceptionBuilder;
 import com.lightcomp.ft.xsd.v1.Frame;
 import com.lightcomp.ft.xsd.v1.FrameBlock;
 
-public class RecvFrameProcessor implements FrameInfo {
+public class RecvFrameProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(RecvFrameProcessor.class);
 
@@ -46,20 +45,13 @@ public class RecvFrameProcessor implements FrameInfo {
         this.recvCtx = recvCtx;
         this.dataFile = dataFile;
     }
-
-    @Override
+    
     public int getSeqNum() {
         return seqNum;
     }
 
-    @Override
     public boolean isLast() {
         return last;
-    }
-
-    @Override
-    public long getDataSize() {
-        return dataSize;
     }
 
     public void process() {

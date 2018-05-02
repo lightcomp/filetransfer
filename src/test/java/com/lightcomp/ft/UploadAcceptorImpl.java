@@ -54,8 +54,8 @@ public class UploadAcceptorImpl implements UploadAcceptor {
     }
 
     @Override
-    public void onTransferCanceled(boolean clientAbort) {
-        logger.warn("Receiver: transfer canceled, transferId={}, clientAbort={}", transferId, clientAbort);
+    public void onTransferCanceled() {
+        logger.warn("Receiver: transfer canceled, transferId={}", transferId);
         terminated = true;
     }
 

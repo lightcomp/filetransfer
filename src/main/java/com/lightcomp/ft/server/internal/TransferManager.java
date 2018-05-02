@@ -1,8 +1,11 @@
 package com.lightcomp.ft.server.internal;
 
 import com.lightcomp.ft.wsdl.v1.FileTransferException;
+import com.lightcomp.ft.xsd.v1.FileTransferStatus;
 
-public interface TransferProvider {
+public interface TransferManager {
+
+    FileTransferStatus getStatus(String transferId) throws FileTransferException;
 
     Transfer createTransfer(String requestId) throws FileTransferException;
 

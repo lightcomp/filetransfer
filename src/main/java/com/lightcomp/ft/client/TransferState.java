@@ -9,7 +9,7 @@ public enum TransferState {
      */
     INITIALIZED,
     /**
-     * Data is transferring.
+     * Transfer was successfully started and data being transferred.
      */
     STARTED,
     /**

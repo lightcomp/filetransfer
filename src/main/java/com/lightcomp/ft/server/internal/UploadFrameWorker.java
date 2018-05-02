@@ -15,7 +15,7 @@ public class UploadFrameWorker implements Runnable {
         RUNNING, STOPPING, TERMINATED
     }
 
-    private final LinkedList<RecvFrameProcessor> processorQueue = new LinkedList<>();
+    private final LinkedList<RecvFrameProcessor> queue = new LinkedList<>();
 
     private final UploadTransfer transfer;
 
@@ -27,8 +27,8 @@ public class UploadFrameWorker implements Runnable {
 
     public synchronized void addProcessor(RecvFrameProcessor processor) {
         Validate.isTrue(state == State.RUNNING);
-
-        processorQueue.addLast(processor);
+        // ad processor at the end of queue
+        queue.addLast(processor);
         // notify worker thread
         notify();
     }
@@ -38,7 +38,7 @@ public class UploadFrameWorker implements Runnable {
             state = State.STOPPING;
             // notify worker thread
             notify();
-            // wait until worker thread terminates
+            // wait until thread terminates
             while (state != State.TERMINATED) {
                 try {
                     wait(100);
@@ -54,41 +54,39 @@ public class UploadFrameWorker implements Runnable {
     public void run() {
         while (true) {
             try {
-                RecvFrameProcessor rfp = getNextProcessor();
+                RecvFrameProcessor rfp = getNext();
                 if (rfp == null) {
-                    break; // stopping
+                    break; // terminating worker
                 }
                 rfp.process();
-                // notify upload
-                transfer.onFrameFinished(rfp);
-                // terminate if last
+                if (!transfer.addProcessedFrame(rfp.getSeqNum(), rfp.isLast())) {
+                    break; // terminated transfer
+                }
                 if (rfp.isLast()) {
-                    break;
+                    break; // terminate after last frame
                 }
             } catch (Throwable t) {
-                transfer.transferFailed(t);
+                transfer.frameProcessingFailed(t);
                 break;
             }
         }
         synchronized (this) {
             state = State.TERMINATED;
-            // notify stopping threads
-            notifyAll();
+            queue.clear();
         }
     }
 
-    private synchronized RecvFrameProcessor getNextProcessor() {
-        while (processorQueue.isEmpty() && state == State.RUNNING) {
+    private synchronized RecvFrameProcessor getNext() {
+        while (queue.isEmpty() && state == State.RUNNING) {
             try {
                 wait();
             } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
                 throw new RuntimeException(e);
             }
         }
         if (state != State.RUNNING) {
-            return null; // stopping
+            return null;
         }
-        return processorQueue.getFirst();
+        return queue.getFirst();
     }
 }
