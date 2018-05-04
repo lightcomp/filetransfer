@@ -60,12 +60,14 @@ public class TaskExecutor {
         if (state == State.RUNNING) {
             state = State.STOPPING;
             // notify manager thread about stopping
-            notify();
-            // wait until manager thread does not terminate
+            notifyAll();
+            // wait for termination
             while (state != State.TERMINATED) {
                 try {
-                    Thread.sleep(100);
+                    wait(100);
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException(e);
                 }
             }
         }
@@ -77,13 +79,13 @@ public class TaskExecutor {
      * @return False when task already in queue.
      */
     public synchronized void addTask(Runnable task) {
-        Validate.isTrue(state.ordinal() <= State.RUNNING.ordinal());
+        Validate.isTrue(state.ordinal() < State.STOPPING.ordinal());
         Validate.notNull(task);
 
         taskQueue.addLast(task);
         // notify manager thread about new task
         if (processingTasks.size() < threadPoolSize) {
-            notify();
+            notifyAll();
         }
     }
 
@@ -91,8 +93,9 @@ public class TaskExecutor {
         while (state == State.RUNNING) {
             if (processingTasks.size() >= threadPoolSize || taskQueue.isEmpty()) {
                 try {
-                    wait();
+                    wait(100);
                 } catch (InterruptedException e) {
+                    break;
                 }
                 continue;
             }
@@ -109,13 +112,15 @@ public class TaskExecutor {
             });
         }
         state = State.TERMINATED;
+        // notify stopping thread about termination
+        notifyAll();
     }
 
     private synchronized void onTaskFinished(Runnable task) {
         processingTasks.remove(task);
         // notify manager thread about ended task
         if (taskQueue.size() > 0) {
-            notify();
+            notifyAll();
         }
     }
 }

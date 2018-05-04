@@ -23,55 +23,55 @@ public class UploadFrameContext implements SendFrameContext {
 
     private final int seqNum;
 
-    private final ClientConfig clientConfig;
+    private final ClientConfig config;
 
     private long dataSize;
 
     private boolean last;
 
-    public UploadFrameContext(int seqNum, ClientConfig clientConfig) {
+    public UploadFrameContext(int seqNum, ClientConfig config) {
         this.seqNum = seqNum;
-        this.clientConfig = clientConfig;
+        this.config = config;
     }
 
     public int getSeqNum() {
         return seqNum;
     }
-    
+
     public boolean isLast() {
         return last;
     }
-    
+
     @Override
     public void setLast(boolean last) {
         this.last = last;
     }
-    
+
     @Override
     public long getRemainingDataSize() {
-        return clientConfig.getMaxFrameSize() - dataSize;
+        return config.getMaxFrameSize() - dataSize;
     }
 
     @Override
     public boolean isBlockListFull() {
-        return blocks.size() >= clientConfig.getMaxFrameBlocks();
+        return blocks.size() >= config.getMaxFrameBlocks();
     }
-    
+
     @Override
     public void addBlock(FrameBlock block) {
-        Validate.isTrue(blocks.size() < clientConfig.getMaxFrameBlocks());
+        Validate.isTrue(blocks.size() < config.getMaxFrameBlocks());
         blocks.add(block);
     }
 
     @Override
     public void addBlock(FrameBlock block, FileBlockStream blockStream) {
         long newSize = dataSize + blockStream.getSize();
-        Validate.isTrue(newSize <= clientConfig.getMaxFrameSize());
+        Validate.isTrue(newSize <= config.getMaxFrameSize());
         addBlock(block);
         blockStreams.add(blockStream);
         dataSize = newSize;
     }
-    
+
     public Frame createFrame() {
         // create frame
         Frame frame = new Frame();

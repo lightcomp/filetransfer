@@ -1,6 +1,7 @@
 package com.lightcomp.ft.server.internal;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -11,7 +12,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.lightcomp.ft.exception.FileTransferExceptionBuilder;
-import com.lightcomp.ft.exception.TransferException;
 import com.lightcomp.ft.exception.TransferExceptionBuilder;
 import com.lightcomp.ft.server.Server;
 import com.lightcomp.ft.server.ServerConfig;
@@ -38,18 +38,18 @@ public class ServerImpl implements Server, TransferManager {
 
     private final Map<String, AbstractTransfer> transferIdMap = new HashMap<>();
 
-    private final TransferStatusStorage statusStorage;
+    private final ServerConfig config;
 
     private final TransferReceiver receiver;
 
-    private final ServerConfig config;
+    private final TransferStatusStorage statusStorage;
 
     private State state = State.INIT;
 
-    public ServerImpl(TransferReceiver receiver, ServerConfig config, TransferStatusStorage statusStorage) {
-        this.receiver = receiver;
+    public ServerImpl(ServerConfig config) {
         this.config = config;
-        this.statusStorage = statusStorage;
+        this.receiver = config.getReceiver();
+        this.statusStorage = config.getStatusStorage();
     }
 
     @Override
@@ -98,22 +98,21 @@ public class ServerImpl implements Server, TransferManager {
     }
 
     @Override
-    public FileTransferStatus getStatus(String transferId) throws FileTransferException {
-        TransferStatus ts = null;
+    public TransferStatus getTransferStatus(String transferId) {
         synchronized (this) {
-            if (state != State.RUNNING) {
-                throw new FileTransferException("Server is not running");
-            }
             AbstractTransfer transfer = transferIdMap.get(transferId);
             if (transfer != null) {
-                ts = transfer.getStatus();
+                return transfer.getStatus();
             }
         }
+        return statusStorage.getTransferStatus(transferId);
+    }
+
+    @Override
+    public FileTransferStatus getFileTransferStatus(String transferId) throws FileTransferException {
+        TransferStatus ts = getTransferStatus(transferId);
         if (ts == null) {
-            ts = statusStorage.getTransferStatus(transferId);
-            if (ts == null) {
-                throw FileTransferExceptionBuilder.from("Transfer not found").addParam("transferId", transferId).build();
-            }
+            throw FileTransferExceptionBuilder.from("Transfer status not found").addParam("transferId", transferId).build();
         }
         FileTransferStatus fts = new FileTransferStatus();
         fts.setLastFrameSeqNum(ts.getLastFrameSeqNum());
@@ -135,7 +134,7 @@ public class ServerImpl implements Server, TransferManager {
 
     @Override
     public AbstractTransfer createTransfer(String requestId) throws FileTransferException {
-        // we cannot sync yet because of receiver call
+        // we cannot sync yet because of receiver callback
         if (state != State.RUNNING) {
             throw new FileTransferException("Server is not running");
         }
@@ -148,13 +147,13 @@ public class ServerImpl implements Server, TransferManager {
         try {
             synchronized (this) {
                 if (state != State.RUNNING) {
-                    throw new TransferException("Server is not running");
+                    throw new IllegalStateException("Server is not running");
                 }
                 AbstractTransfer transfer = createTransfer(requestId, acceptor);
-                if (transferIdMap.putIfAbsent(transfer.getTransferId(), transfer) == null) {
-                    return transfer;
+                if (transferIdMap.putIfAbsent(transfer.getTransferId(), transfer) != null) {
+                    throw new IllegalStateException("Transfer id supplied by acceptor already exists");
                 }
-                throw new IllegalStateException("Transfer id supplied by acceptor already exists");
+                return transfer;
             }
         } catch (Throwable t) {
             String msg = TransferExceptionBuilder.from(t.getMessage()).addParam("transferId", acceptor.getTransferId())
@@ -177,7 +176,7 @@ public class ServerImpl implements Server, TransferManager {
                 throw TransferExceptionBuilder.from("Acceptor for upload must implement UploadAcceptor")
                         .addParam("givenImpl", acceptor.getClass()).build();
             }
-            UploadTransfer transfer = new UploadTransfer((UploadAcceptor) acceptor, requestId, config);
+            UploadTransfer transfer = new UploadTransfer((UploadAcceptor) acceptor, config.getInactiveTimeout(), requestId);
             transfer.init();
             return transfer;
         }
@@ -186,30 +185,23 @@ public class ServerImpl implements Server, TransferManager {
     }
 
     private void run() {
+        List<AbstractTransfer> currentTransfers;
+
         while (true) {
-            List<AbstractTransfer> inactiveTransfers;
             synchronized (this) {
+                // copy map values in sync block
+                currentTransfers = new ArrayList<>(transferIdMap.values());
+                // exit loop if not running
                 if (state != State.RUNNING) {
-                    state = State.TERMINATED;
-                    // notify stopping threads
-                    notifyAll();
-                    // break thread loop
                     break;
                 }
-                // copy map values in sync block
-                inactiveTransfers = new ArrayList<>(transferIdMap.values());
             }
-            // terminate all inactive transfer and remove active from list
-            inactiveTransfers.removeIf(t -> {
-                if (t.terminateIfInactive()) {
-                    statusStorage.saveTransferStatus(t.getTransferId(), t.getStatus());
-                    return false;
-                }
-                return true;
-            });
+            // terminate all inactive transfer
+            List<String> terminatedTransferIds = terminateInactiveTransfers(currentTransfers);
+
             synchronized (this) {
                 // remove all terminated transfers
-                inactiveTransfers.forEach(t -> transferIdMap.remove(t.getTransferId()));
+                terminatedTransferIds.forEach(transferIdMap::remove);
                 // wait for next run
                 try {
                     wait(1000);
@@ -219,8 +211,41 @@ public class ServerImpl implements Server, TransferManager {
                 }
             }
         }
-        // no one can access transferIdMap in terminated state thus thread-safe
-        transferIdMap.values().forEach(AbstractTransfer::terminate);
-        transferIdMap.clear();
+        terminateTransfers(currentTransfers);
+        synchronized (this) {
+            state = State.TERMINATED;
+            // notify stopping threads
+            notifyAll();
+            // clear all transfers
+            transferIdMap.clear();
+        }
+    }
+
+    private List<String> terminateInactiveTransfers(Collection<AbstractTransfer> currentTransfers) {
+        List<String> terminatedTransferIds = new ArrayList<>();
+        for (AbstractTransfer transfer : currentTransfers) {
+            if (transfer.terminateIfInactive()) {
+                try {
+                    statusStorage.saveTransferStatus(transfer.getTransferId(), transfer.getStatus());
+                    terminatedTransferIds.add(transfer.getTransferId());
+                } catch (Throwable t) {
+                    // log and ignore this exception, no easy recovery
+                    logger.error("FATAL: failed to store terminated transfer", t);
+                }
+            }
+        }
+        return terminatedTransferIds;
+    }
+
+    private void terminateTransfers(Collection<AbstractTransfer> currentTransfers) {
+        for (AbstractTransfer transfer : currentTransfers) {
+            transfer.terminate();
+            try {
+                statusStorage.saveTransferStatus(transfer.getTransferId(), transfer.getStatus());
+            } catch (Throwable t) {
+                // log and ignore this exception, no easy recovery
+                logger.error("FATAL: failed to store terminated transfer", t);
+            }
+        }
     }
 }

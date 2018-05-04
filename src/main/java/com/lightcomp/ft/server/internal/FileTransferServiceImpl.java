@@ -17,7 +17,7 @@ public class FileTransferServiceImpl implements FileTransferService {
 
     @Override
     public FileTransferStatus status(String transferId) throws FileTransferException {
-        return manager.getStatus(transferId);
+        return manager.getFileTransferStatus(transferId);
     }
 
     @Override

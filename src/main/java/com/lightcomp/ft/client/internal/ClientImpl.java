@@ -17,14 +17,14 @@ import com.lightcomp.ft.wsdl.v1.FileTransferService;
 
 public class ClientImpl implements Client {
 
-    private final TaskExecutor taskExecutor;
+    private final TaskExecutor transferExecutor;
 
     private final ClientConfig config;
 
     private FileTransferService service;
 
     public ClientImpl(ClientConfig config) {
-        this.taskExecutor = new TaskExecutor(config.getThreadPoolSize());
+        this.transferExecutor = new TaskExecutor(config.getThreadPoolSize());
         this.config = config;
     }
 
@@ -33,7 +33,7 @@ public class ClientImpl implements Client {
         Validate.isTrue(service != null);
 
         AbstractTransfer transfer = new UploadTransfer(request, config, service);
-        taskExecutor.addTask(transfer);
+        transferExecutor.addTask(transfer);
         return transfer;
     }
 
@@ -47,14 +47,14 @@ public class ClientImpl implements Client {
 
     @Override
     public void start() {
-        taskExecutor.start();
+        transferExecutor.start();
         service = createService(config);
     }
 
     @Override
     public void stop() {
         service = null;
-        taskExecutor.stop();
+        transferExecutor.stop();
     }
 
     private static FileTransferService createService(ClientConfig config) {
@@ -69,12 +69,12 @@ public class ClientImpl implements Client {
         org.apache.cxf.endpoint.Client client = ClientProxy.getClient(service);
         HTTPConduit httpConduit = (HTTPConduit) client.getConduit();
 
-        configureTimeouts(httpConduit, config);
+        configureTimeout(httpConduit, config);
 
         return service;
     }
 
-    private static void configureTimeouts(HTTPConduit httpConduit, ClientConfig config) {
+    private static void configureTimeout(HTTPConduit httpConduit, ClientConfig config) {
         long ms = config.getRequestTimeout() * 1000;
         HTTPClientPolicy cp = new HTTPClientPolicy();
         cp.setConnectionTimeout(ms);

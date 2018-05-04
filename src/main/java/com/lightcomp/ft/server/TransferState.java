@@ -32,6 +32,14 @@ public enum TransferState {
      */
     CANCELED;
 
+    public static boolean isTerminal(TransferState state) {
+        return state.ordinal() >= FINISHED.ordinal();
+    }
+
+    /**
+     * Returns converted state or null when state cannot be converted e.g.
+     * INITIALIZED.
+     */
     public static FileTransferState convert(TransferState state) {
         switch (state) {
             case STARTED:
@@ -43,7 +51,7 @@ public enum TransferState {
             case CANCELED:
                 return FileTransferState.FAILED;
             default:
-                throw new IllegalStateException();
+                return null;
         }
     }
 }

@@ -17,7 +17,6 @@ import com.lightcomp.ft.core.recv.RecvFrameProcessor;
 import com.lightcomp.ft.core.recv.RecvProgressInfo;
 import com.lightcomp.ft.exception.FileTransferExceptionBuilder;
 import com.lightcomp.ft.exception.TransferExceptionBuilder;
-import com.lightcomp.ft.server.ServerConfig;
 import com.lightcomp.ft.server.TransferState;
 import com.lightcomp.ft.server.TransferStatus;
 import com.lightcomp.ft.server.UploadAcceptor;
@@ -43,8 +42,8 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
 
     private boolean transferingFrame;
 
-    public UploadTransfer(UploadAcceptor acceptor, String requestId, ServerConfig serverConfig) {
-        super(acceptor, serverConfig);
+    public UploadTransfer(UploadAcceptor acceptor, int inactiveTimeout, String requestId) {
+        super(acceptor, inactiveTimeout);
         this.requestId = requestId;
         this.rootDir = acceptor.getUploadDir();
         this.recvCtx = new RecvContextImpl(this, rootDir);
@@ -56,32 +55,34 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
     }
 
     @Override
-    public boolean isProcessingFrame() {
-        return !frameExecutor.isIddle();
+    public synchronized boolean isProcessingFrame() {
+        return transferingFrame || !frameExecutor.isIddle();
     }
 
-    public synchronized void init() {
-        Validate.isTrue(status.getState() == TransferState.INITIALIZED);
-        // start frame executor
-        frameExecutor.start();
-        // create temporary folder
-        try {
-            tempDir = Files.createTempDirectory(rootDir, "temp");
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+    public void init() {
+        TransferStatus ts;
+        synchronized (this) {
+            Validate.isTrue(status.getState() == TransferState.INITIALIZED);
+            // start frame executor
+            frameExecutor.start();
+            // create temporary folder
+            try {
+                tempDir = Files.createTempDirectory(rootDir, "temp");
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+            // update current state
+            status.changeState(TransferState.STARTED);
+            // copy status in synch block
+            ts = status.copy();
         }
-        // update current state
-        status.changeState(TransferState.STARTED);
+        acceptor.onTransferProgress(ts);
     }
 
     @Override
     public void onDataReceived(long size) {
         TransferStatus ts;
         synchronized (this) {
-            // do not report if canceled or failed
-            if (status.getState().ordinal() > TransferState.FINISHED.ordinal()) {
-                return;
-            }
             // update current state
             status.addTransferedData(size);
             // copy status in synch block
@@ -108,19 +109,19 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
             if (lastFrameReceived) {
                 throw FileTransferExceptionBuilder.from("Server already received last frame", this).build();
             }
-            // check last sequence number
-            if (lastFrameSeqNum + 1 != frame.getSeqNum()) {
-                throw FileTransferExceptionBuilder.from("Invalid frame seqNum", this).addParam("expected", lastFrameSeqNum + 1)
-                        .addParam("given", frame.getSeqNum()).build();
-            }
             // we can process only one frame at same time
             if (transferingFrame) {
                 throw FileTransferExceptionBuilder.from("Server already transferring a frame", this).setCode(ErrorCode.BUSY)
                         .build();
             }
+            // check last sequence number
+            if (lastFrameSeqNum + 1 != frame.getSeqNum()) {
+                throw FileTransferExceptionBuilder.from("Invalid frame seqNum", this).addParam("expected", lastFrameSeqNum + 1)
+                        .addParam("given", frame.getSeqNum()).build();
+            }
             lastFrameReceived = Boolean.TRUE.equals(frame.isLast());
-            lastFrameSeqNum++;
             transferingFrame = true;
+            lastFrameSeqNum++;
         }
         try {
             transferFrame(frame);
@@ -143,7 +144,7 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
     private boolean addProcessedFrame(int seqNum, boolean last) {
         TransferStatus ts;
         synchronized (this) {
-            if (status.getState().ordinal() >= TransferState.FINISHED.ordinal()) {
+            if (TransferState.isTerminal(status.getState())) {
                 return false; // terminated transfer
             }
             // check transfer state and last frame number

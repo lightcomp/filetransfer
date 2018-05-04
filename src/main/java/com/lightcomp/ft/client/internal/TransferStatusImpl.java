@@ -62,8 +62,12 @@ public class TransferStatusImpl implements TransferStatus {
 
     /* modify methods */
 
-    public void setRecoveryCount(int recoveryCount) {
-        this.recoveryCount = recoveryCount;
+    public void resetRecoveryCount() {
+        recoveryCount = 0;
+    }
+
+    public void incrementRecoveryCount() {
+        recoveryCount++;
     }
 
     public void addTransferedData(long size) {

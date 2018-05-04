@@ -2,7 +2,6 @@ package com.lightcomp.ft.client.operations;
 
 import com.lightcomp.ft.client.internal.UploadFrameContext;
 import com.lightcomp.ft.core.TransferInfo;
-import com.lightcomp.ft.exception.TransferException;
 import com.lightcomp.ft.exception.TransferExceptionBuilder;
 import com.lightcomp.ft.wsdl.v1.FileTransferException;
 import com.lightcomp.ft.wsdl.v1.FileTransferService;
@@ -14,8 +13,8 @@ public class SendOperation extends RecoverableOperation {
 
     private final UploadFrameContext frameCtx;
 
-    public SendOperation(OperationListener listener, TransferInfo transfer, UploadFrameContext frameCtx) {
-        super(listener, transfer);
+    public SendOperation(TransferInfo transfer, RecoveryHandler handler, UploadFrameContext frameCtx) {
+        super(transfer, handler);
         this.frameCtx = frameCtx;
     }
 
@@ -25,18 +24,15 @@ public class SendOperation extends RecoverableOperation {
     }
 
     @Override
-    public TransferException prepareException(Throwable cause) {
-        return TransferExceptionBuilder.from("Failed to send frame", transfer).setCause(cause)
-                .addParam("seqNum", frameCtx.getSeqNum()).build();
+    public TransferExceptionBuilder prepareException(Throwable cause) {
+        return TransferExceptionBuilder.from("Failed to send frame", transfer).setCause(cause).addParam("seqNum",
+                frameCtx.getSeqNum());
     }
 
     @Override
     protected void send(FileTransferService service) throws FileTransferException {
         Frame frame = frameCtx.createFrame();
         service.send(frame, transfer.getTransferId());
-        if (frame.isLast()) {
-            listener.onLastFrameSuccess();
-        }
     }
 
     @Override

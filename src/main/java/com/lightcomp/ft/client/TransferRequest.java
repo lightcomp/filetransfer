@@ -8,6 +8,11 @@ public interface TransferRequest {
     String getRequestId();
 
     /**
+     * Transfer begin callback.
+     */
+    void onTransferBegin(Transfer transfer);
+
+    /**
      * Transfer progress callback.
      */
     void onTransferProgress(TransferStatus status);

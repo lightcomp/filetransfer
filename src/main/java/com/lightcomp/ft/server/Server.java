@@ -31,4 +31,9 @@ public interface Server {
      *             When transfer does not exist or already finished/failed.
      */
     void cancelTransfer(String transferId);
+    
+    /**
+     * Returns current transfer status or null when not found.
+     */
+    TransferStatus getTransferStatus(String transferId);
 }

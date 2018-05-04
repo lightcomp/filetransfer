@@ -5,7 +5,7 @@ import com.lightcomp.ft.xsd.v1.FileTransferStatus;
 
 public interface TransferManager {
 
-    FileTransferStatus getStatus(String transferId) throws FileTransferException;
+    FileTransferStatus getFileTransferStatus(String transferId) throws FileTransferException;
 
     Transfer createTransfer(String requestId) throws FileTransferException;
 

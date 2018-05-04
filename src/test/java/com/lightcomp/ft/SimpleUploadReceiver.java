@@ -4,22 +4,30 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
 
+import com.lightcomp.ft.server.Server;
 import com.lightcomp.ft.server.TransferAcceptor;
 import com.lightcomp.ft.server.TransferReceiver;
 
-public class SimpleUploadReceiver implements TransferReceiver {
+import net.jodah.concurrentunit.Waiter;
 
-    private List<UploadAcceptorImpl> uploadAcceptors = new ArrayList<>();
+public class SimpleUploadReceiver implements TransferReceiver {
 
     private final Path transferDir;
 
+    private final Waiter waiter;
+    
+    private Server server;
+
     private int lastTransferId;
 
-    public SimpleUploadReceiver(Path transferDir) {
+    public SimpleUploadReceiver(Path transferDir, Waiter waiter) {
         this.transferDir = transferDir;
+        this.waiter = waiter;
+    }
+
+    public void setServer(Server server) {
+        this.server = server;
     }
 
     @Override
@@ -33,13 +41,11 @@ public class SimpleUploadReceiver implements TransferReceiver {
             throw new UncheckedIOException(e);
         }
         // add acceptor
-        UploadAcceptorImpl acceptor = new UploadAcceptorImpl(transferId, uploadDir);
-        uploadAcceptors.add(acceptor);
+        UploadAcceptorImpl acceptor = new UploadAcceptorImpl(transferId, uploadDir, server, waiter);
         return acceptor;
     }
 
-    public synchronized boolean isTerminated() {
-        uploadAcceptors.removeIf(UploadAcceptorImpl::isFinished);
-        return uploadAcceptors.isEmpty();
+    public synchronized String getLastTransferId() {
+        return Integer.toString(lastTransferId);
     }
 }

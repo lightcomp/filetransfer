@@ -26,7 +26,7 @@ public final class ClientConfig {
      *            receiver address
      */
     public ClientConfig(String address) {
-        this.address = Validate.notEmpty(address);
+        this.address = Validate.notBlank(address);
     }
 
     /**

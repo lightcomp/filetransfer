@@ -13,7 +13,7 @@ public enum TransferState {
      */
     STARTED,
     /**
-     * Data is transfered.
+     * All data were transfered, waiting for transfer finish.
      */
     TRANSFERED,
     /**

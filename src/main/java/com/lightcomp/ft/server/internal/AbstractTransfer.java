@@ -10,7 +10,6 @@ import com.lightcomp.ft.core.TransferInfo;
 import com.lightcomp.ft.exception.FileTransferExceptionBuilder;
 import com.lightcomp.ft.exception.TransferException;
 import com.lightcomp.ft.exception.TransferExceptionBuilder;
-import com.lightcomp.ft.server.ServerConfig;
 import com.lightcomp.ft.server.TransferAcceptor;
 import com.lightcomp.ft.server.TransferState;
 import com.lightcomp.ft.server.TransferStatus;
@@ -25,11 +24,11 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
 
     protected final TransferAcceptor acceptor;
 
-    protected final ServerConfig config;
+    protected final int inactiveTimeout;
 
-    protected AbstractTransfer(TransferAcceptor acceptor, ServerConfig config) {
+    protected AbstractTransfer(TransferAcceptor acceptor, int inactiveTimeout) {
         this.acceptor = acceptor;
-        this.config = config;
+        this.inactiveTimeout = inactiveTimeout;
     }
 
     @Override
@@ -98,7 +97,7 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
     public void terminate() {
         TransferException failureCause = null;
         synchronized (this) {
-            if (status.getState().ordinal() < TransferState.FINISHED.ordinal()) {
+            if (!TransferState.isTerminal(status.getState())) {
                 failureCause = new TransferException("Transfer terminated");
                 status.changeStateToFailed(failureCause);
             }
@@ -107,6 +106,7 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
             try {
                 acceptor.onTransferFailed(failureCause);
             } catch (Throwable t) {
+                // exception is only logged
                 TransferExceptionBuilder.from("Acceptor callback cause error during terminate", this).setCause(t).log(logger);
             }
         }
@@ -116,10 +116,9 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
     public boolean terminateIfInactive() {
         TransferException failureCause = null;
         synchronized (this) {
-            if (status.getState().ordinal() < TransferState.FINISHED.ordinal()) {
+            if (!TransferState.isTerminal(status.getState())) {
                 // test for inactive transfer
-                int timeout = config.getInactiveTimeout();
-                LocalDateTime timeoutLimit = LocalDateTime.now().minus(timeout, ChronoUnit.SECONDS);
+                LocalDateTime timeoutLimit = LocalDateTime.now().minus(inactiveTimeout, ChronoUnit.SECONDS);
                 LocalDateTime lastActivity = status.getLastActivity();
                 if (timeoutLimit.isBefore(lastActivity)) {
                     return false; // transfer still active
@@ -133,6 +132,7 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
             try {
                 acceptor.onTransferFailed(failureCause);
             } catch (Throwable t) {
+                // exception is only logged
                 TransferExceptionBuilder.from("Acceptor callback cause error during terminate", this).setCause(t).log(logger);
             }
         }

@@ -4,8 +4,25 @@ import org.apache.commons.lang3.Validate;
 
 public class ServerConfig {
 
-    private int inactiveTimeout;
+    private final TransferReceiver receiver;
+    
+    private final TransferStatusStorage statusStorage;    
+    
+    private int inactiveTimeout = 60 * 5;
+    
+    public ServerConfig(TransferReceiver receiver, TransferStatusStorage statusStorage) {
+        this.receiver = Validate.notNull(receiver);
+        this.statusStorage = Validate.notNull(statusStorage);
+    }
 
+    public TransferReceiver getReceiver() {
+        return receiver;
+    }
+
+    public TransferStatusStorage getStatusStorage() {
+        return statusStorage;
+    }
+    
     /**
      * @return Number of seconds until consider inactive.
      */
