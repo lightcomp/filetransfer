@@ -33,9 +33,9 @@
 	<wsdl:message name="EmptyMessage">
 		<wsdl:documentation>Prázdná zpráva pro metody bez návratové hodnoty. Používá se, aby nedocházelo k asynchronnímu zpracování takových metod.</wsdl:documentation>
 	</wsdl:message>
-	<wsdl:message name="RequestId">
+	<wsdl:message name="BeginRequest">
 		<wsdl:documentation>Identifikátor požadavku přenosu. Parametr metody Begin.</wsdl:documentation>
-		<wsdl:part name="requestId" type="xs:string"/>
+		<wsdl:part name="request" type="ft:GenericData"/>
 	</wsdl:message>
 	<wsdl:message name="StatusResponse">
 		<wsdl:documentation>Stav přenosu</wsdl:documentation>
@@ -44,6 +44,10 @@
 	<wsdl:message name="TransferId">
 		<wsdl:documentation>Jedinečný identifikátor přenosu. Server musí garantovat jedinečnost tohoto identifikátoru. Identifikátor vzniká jako odpověď na metodu Begin.</wsdl:documentation>
 		<wsdl:part name="transferId" type="xs:string"/>
+	</wsdl:message>
+	<wsdl:message name="FinishResponse">
+		<wsdl:documentation>Odpověď na ukončení přenosu.</wsdl:documentation>
+		<wsdl:part name="response" type="ft:GenericData"/>
 	</wsdl:message>
 	<wsdl:portType name="FileTransferService">
 		<wsdl:documentation>Služba pro přenos souborů. API je tvořeno pěti přenosovými metodami a šestou pro zjištění stavu přenosu (Status).</wsdl:documentation>
@@ -58,14 +62,14 @@ Pokud již přenos není možné přerušit nebo server o takovém přenosu nic 
 		<wsdl:operation name="Begin">
 			<wsdl:documentation>Klient pošle požadavek na zahájení přenosu. Server musí držet tento přenos aktivní dokud nebude dokončen, přerušen, neselže, nebo nedojde k vypršení časových limitů.
 Odpovědí na zahájení přenosu je TransferId. Jedná se o jednoznačný identifikátor přenosu.</wsdl:documentation>
-			<wsdl:input name="requestId" message="tns:RequestId"/>
+			<wsdl:input name="requestId" message="tns:BeginRequest"/>
 			<wsdl:output name="transferId" message="tns:TransferId"/>
 			<wsdl:fault name="fileTransferException" message="tns:FileTransferException"/>
 		</wsdl:operation>
 		<wsdl:operation name="Finish">
 			<wsdl:documentation>Klient notifikuje server o dokončení přenosu.</wsdl:documentation>
 			<wsdl:input name="transferId" message="tns:TransferId"/>
-			<wsdl:output name="emptyMessage" message="tns:EmptyMessage"/>
+			<wsdl:output name="finishResponse" message="tns:FinishResponse"/>
 			<wsdl:fault name="fileTransferException" message="tns:FileTransferException"/>
 		</wsdl:operation>
 		<wsdl:operation name="Receive">
@@ -96,7 +100,9 @@ Při volání metody může dojít k výjimce FileTransferException. Volající 
 		<wsdl:documentation>Volání služby probíhá stylem "document", kdy jsou přenášeny jednotlivé zprávy.</wsdl:documentation>
 		<soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
 		<wsdl:operation name="Abort">
-			<wsdl:documentation>Způsob napojení rozhraní do přenosového protokolu SOAP. Vlastní metody a jejich funkce jsou popsány v části PortTypes.</wsdl:documentation>
+			<wsdl:documentation>Klient pošle požadavek na přerušení. Lze jej provést pouze pokud je přenos aktivní. Po přerušení nelze pokračovat v přenosu dat.
+
+Pokud již přenos není možné přerušit nebo server o takovém přenosu nic neví, tak dojde k výjimce FileTransferException.</wsdl:documentation>
 			<soap:operation soapAction="Abort" style="document"/>
 			<wsdl:input name="transferId">
 				<soap:body use="literal"/>
@@ -109,7 +115,8 @@ Při volání metody může dojít k výjimce FileTransferException. Volající 
 			</wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="Begin">
-			<wsdl:documentation>Způsob napojení rozhraní do přenosového protokolu SOAP. Vlastní metody a jejich funkce jsou popsány v části PortTypes.</wsdl:documentation>
+			<wsdl:documentation>Klient pošle požadavek na zahájení přenosu. Server musí držet tento přenos aktivní dokud nebude dokončen, přerušen, neselže, nebo nedojde k vypršení časových limitů.
+Odpovědí na zahájení přenosu je TransferId. Jedná se o jednoznačný identifikátor přenosu.</wsdl:documentation>
 			<soap:operation soapAction="Begin" style="document"/>
 			<wsdl:input name="requestId">
 				<soap:body use="literal"/>
@@ -122,12 +129,12 @@ Při volání metody může dojít k výjimce FileTransferException. Volající 
 			</wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="Finish">
-			<wsdl:documentation>Způsob napojení rozhraní do přenosového protokolu SOAP. Vlastní metody a jejich funkce jsou popsány v části PortTypes.</wsdl:documentation>
+			<wsdl:documentation>Klient notifikuje server o dokončení přenosu.</wsdl:documentation>
 			<soap:operation soapAction="Finish" style="document"/>
 			<wsdl:input name="transferId">
 				<soap:body use="literal"/>
 			</wsdl:input>
-			<wsdl:output name="emptyMessage">
+			<wsdl:output name="finishResponse">
 				<soap:body use="literal"/>
 			</wsdl:output>
 			<wsdl:fault name="fileTransferException">
@@ -135,7 +142,9 @@ Při volání metody může dojít k výjimce FileTransferException. Volající 
 			</wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="Receive">
-			<wsdl:documentation>Způsob napojení rozhraní do přenosového protokolu SOAP. Vlastní metody a jejich funkce jsou popsány v části PortTypes.</wsdl:documentation>
+			<wsdl:documentation>Klient vyžádává data ze serveru. Identifikací rámce je jeho pořadové číslo.
+
+Při volání metody může dojít k výjimce FileTransferException. Volající musí respektovat stav BUSY a pokusit se o pokračování přenosu až to bude možné.</wsdl:documentation>
 			<soap:operation soapAction="Receive" style="document"/>
 			<wsdl:input name="receiveRequest">
 				<soap:body use="literal"/>
@@ -148,7 +157,7 @@ Při volání metody může dojít k výjimce FileTransferException. Volající 
 			</wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="Status">
-			<wsdl:documentation>Způsob napojení rozhraní do přenosového protokolu SOAP. Vlastní metody a jejich funkce jsou popsány v části PortTypes.</wsdl:documentation>
+			<wsdl:documentation>Získání stavu přenosu od serveru. Lze také využít jako ping metodu při obnovení spojení (např. při kódu výjimky BUSY).</wsdl:documentation>
 			<soap:operation soapAction="Status" style="document"/>
 			<wsdl:input name="transferId">
 				<soap:body use="literal"/>
@@ -161,9 +170,11 @@ Při volání metody může dojít k výjimce FileTransferException. Volající 
 			</wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="Send">
-			<wsdl:documentation>Způsob napojení rozhraní do přenosového protokolu SOAP. Vlastní metody a jejich funkce jsou popsány v části PortTypes.</wsdl:documentation>
+			<wsdl:documentation>Klient odesílá data na server. Rámec je reprezentován streamem dat a bloky, které popisují přenášené složky a soubory.
+Při volání metody může dojít k výjimce FileTransferException. Volající musí respektovat stav BUSY a pokusit se o pokračování přenosu až to bude možné.</wsdl:documentation>
 			<soap:operation soapAction="Send" style="document"/>
 			<wsdl:input name="sendRequest">
+				<wsdl:documentation>Přenášená data</wsdl:documentation>
 				<soap:body use="literal"/>
 			</wsdl:input>
 			<wsdl:output name="emptyMessage">

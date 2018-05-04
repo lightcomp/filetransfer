@@ -3,6 +3,9 @@
 	<xs:annotation>
 		<xs:documentation>Definice datových typů - XSD schéma</xs:documentation>
 	</xs:annotation>
+	<xs:simpleType name="BinData">
+		<xs:restriction base="xs:base64Binary"/>
+	</xs:simpleType>
 	<xs:simpleType name="ErrorCode">
 		<xs:annotation>
 			<xs:documentation>	- FATAL - nelze pokračovat v daném přenosu
@@ -118,7 +121,9 @@
 		<xs:annotation>
 			<xs:documentation>Reprezentuje stav příjemce přenosu. Včetně aktuálního stavu obsahuje i pořadové číslo posledního přijatého rámce (použito např. při obnově spojení).</xs:documentation>
 		</xs:annotation>
-		<xs:sequence/>
+		<xs:sequence>
+			<xs:element name="resp" type="ft:GenericData" minOccurs="0" maxOccurs="1"/>
+		</xs:sequence>
 		<xs:attribute name="lastFrameSeqNum" use="required" type="xs:int">
 			<xs:annotation>
 				<xs:documentation>Vrací pořadové číslo posledního zpracovaného rámce. Pokud nebyl žádný rámec přijat/odeslán je vrácena nulová hodnota.</xs:documentation>
@@ -138,7 +143,10 @@
 			<xs:element name="blocks" type="ft:FrameBlocks" minOccurs="1" maxOccurs="1"/>
 			<xs:element name="data" type="xs:base64Binary" xmime:expectedContentTypes="application/octet-stream" minOccurs="1" maxOccurs="1">
 				<xs:annotation>
-					<xs:documentation>Přenášená data souborů. Implementace by měly podporovat rozšíření MTOM pro efektivní přenos binárních dat.</xs:documentation>
+					<xs:documentation>Přenášená data souborů. Implementace by měly podporovat rozšíření MTOM pro efektivní přenos binárních dat.
+
+Implementační poznámka k vytváření XSD: 
+If you would like to use MTOM you have to add the xmime:expectedContentTypes="application/octet-stream" attribute (namespace is predefined).</xs:documentation>
 				</xs:annotation>
 			</xs:element>
 		</xs:sequence>
@@ -181,5 +189,19 @@ Každý blok se týká nějaké položka. ID položky musí být v bloku vždy u
 				<xs:element name="db" type="ft:DirBegin" minOccurs="0" maxOccurs="1"/>
 			</xs:choice>
 		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="GenericData">
+		<xs:sequence>
+			<xs:choice minOccurs="0" maxOccurs="1">
+				<xs:element name="binData" type="ft:BinData" minOccurs="0" maxOccurs="1"/>
+				<xs:any processContents="lax" minOccurs="0" maxOccurs="1"/>
+			</xs:choice>
+		</xs:sequence>
+		<xs:attribute name="id" use="optional" type="xs:string"/>
+		<xs:attribute name="type" use="required" type="xs:string">
+			<xs:annotation>
+				<xs:documentation>Druh zaslané odpovědi</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
 	</xs:complexType>
 </xs:schema>
