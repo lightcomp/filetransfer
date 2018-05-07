@@ -17,7 +17,7 @@ public class InMemoryFile implements SourceFile {
 
     private final long lastModified;
 
-    private String checksum;
+    private byte[] checksum;
 
     public InMemoryFile(String name, byte[] data, long lastModified) {
         this.name = name;
@@ -56,11 +56,11 @@ public class InMemoryFile implements SourceFile {
     }
 
     @Override
-    public String getChecksum() {
+    public byte[] getChecksum() {
         return checksum;
     }
 
-    public void setChecksum(String checksum) {
+    public void setChecksum(byte[] checksum) {
         this.checksum = checksum;
     }
 

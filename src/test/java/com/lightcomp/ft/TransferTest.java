@@ -8,19 +8,21 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 
+import javax.xml.bind.DatatypeConverter;
 import javax.xml.ws.Endpoint;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.cxf.Bus;
 import org.apache.cxf.BusFactory;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Test;
 
 import com.lightcomp.ft.client.Client;
@@ -28,46 +30,54 @@ import com.lightcomp.ft.client.ClientConfig;
 import com.lightcomp.ft.client.Transfer;
 import com.lightcomp.ft.client.TransferState;
 import com.lightcomp.ft.client.TransferStatus;
+import com.lightcomp.ft.client.UploadRequest;
+import com.lightcomp.ft.client.internal.AbstractTransfer;
+import com.lightcomp.ft.client.internal.ClientImpl;
+import com.lightcomp.ft.client.internal.UploadFrameContext;
+import com.lightcomp.ft.client.internal.UploadTransfer;
+import com.lightcomp.ft.client.operations.SendOperation;
+import com.lightcomp.ft.core.blocks.DirBeginBlockImpl;
+import com.lightcomp.ft.core.blocks.DirEndBlockImpl;
 import com.lightcomp.ft.core.send.items.SourceItem;
 import com.lightcomp.ft.server.Server;
 import com.lightcomp.ft.server.ServerConfig;
+import com.lightcomp.ft.xsd.v1.DirBegin;
 
 import net.jodah.concurrentunit.Waiter;
 
 public class TransferTest {
 
-    public static Path tempDir;
+    private static final String SERVER_ADDR = "http://localhost:7979/";
 
-    public Server publishEndpoint(String address, ServerConfig cfg) {
-        Server server = FileTransfer.createServer(cfg);
+    private static final Path SYS_TEMP;
 
-        Bus bus = BusFactory.newInstance().createBus();
-        BusFactory.setThreadDefaultBus(bus);
+    private static int testCount;
 
-        Endpoint.publish(address, server.getImplementor());
+    private Path tempDir;
 
-        server.start();
+    private Server server;
 
-        return server;
+    private Waiter waiter;
+
+    static {
+        String path = System.getProperty("java.io.tmpdir");
+        SYS_TEMP = Paths.get(path);
     }
 
-    @BeforeClass
-    public static void beforeClass() throws IOException {
-        String temp = System.getProperty("java.io.tmpdir");
-        Path tempPath = Paths.get(temp);
-        tempDir = Files.createTempDirectory(tempPath, "file-transfer-tests");
-    }
-
-    @AfterClass
-    public static void afterClass() throws IOException {
-        if (tempDir != null) {
-            Files.delete(tempDir);
-            tempDir = null;
-        }
+    @Before
+    public void before() throws IOException {
+        waiter = new Waiter();
+        tempDir = Files.createTempDirectory(SYS_TEMP, "file-transfer-tests");
     }
 
     @After
     public void after() throws IOException {
+        if (server != null) {
+            server.stop();
+        }
+        if (tempDir == null) {
+            return;
+        }
         Files.walkFileTree(tempDir, new SimpleFileVisitor<Path>() {
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
@@ -77,35 +87,50 @@ public class TransferTest {
 
             @Override
             public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
-                if (!tempDir.equals(dir)) {
-                    Files.delete(dir);
-                }
+                Files.delete(dir);
                 return FileVisitResult.CONTINUE;
             }
         });
     }
 
-    @Test
-    public void testSingleFolder() throws TimeoutException {
-        Waiter waiter = new Waiter();
+    public String publishEndpoint(ServerConfig cfg) {
+        server = FileTransfer.createServer(cfg);
 
-        SimpleUploadReceiver ur = new SimpleUploadReceiver(tempDir, waiter);
+        Bus bus = BusFactory.newInstance().createBus();
+        BusFactory.setThreadDefaultBus(bus);
+
+        testCount++;
+        String address = SERVER_ADDR + testCount;
+        Endpoint.publish(address, server.getImplementor());
+
+        server.start();
+
+        return address;
+    }
+
+    @Test
+    public void testFolderUpload() throws TimeoutException {
+        UploadReceiver ur = new UploadReceiver(tempDir) {
+            @Override
+            public AcceptorInterceptor createInterceptor(String transferId) {
+                return new AcceptorInterceptorImpl(server, waiter, transferId, com.lightcomp.ft.server.TransferState.FINISHED);
+            }
+        };
         SimpleStatusStorage ss = new SimpleStatusStorage();
         ServerConfig scfg = new ServerConfig(ur, ss);
         scfg.setInactiveTimeout(60);
 
-        Server server = publishEndpoint("http://localhost:7979/1", scfg);
-        ur.setServer(server);
+        String addr = publishEndpoint(scfg);
 
-        ClientConfig ccfg = new ClientConfig("http://localhost:7979/1");
+        ClientConfig ccfg = new ClientConfig(addr);
         ccfg.setRecoveryDelay(2);
-        ccfg.setSoapLogging(true);
+        // ccfg.setSoapLogging(true);
         Client client = FileTransfer.createClient(ccfg);
 
         client.start();
 
-        Collection<SourceItem> items = Collections.singletonList(new SimpleDir("test"));
-        UploadRequestImpl request = new UploadRequestImpl("req", items, waiter);
+        List<SourceItem> items = Collections.singletonList(new SimpleDir("test"));
+        UploadRequestImpl request = new UploadRequestImpl("req", items, waiter, TransferState.FINISHED);
 
         Transfer transfer = client.upload(request);
 
@@ -114,6 +139,9 @@ public class TransferTest {
         TransferStatus cts = transfer.getStatus();
         Assert.assertTrue(cts.getState() == TransferState.FINISHED);
         Assert.assertTrue(cts.getTransferedSize() == 0);
+
+        // store will have status after server stop
+        Assert.assertTrue(ss.getTransferStatus(ur.getLastTransferId()) == null);
 
         server.stop();
 
@@ -124,35 +152,37 @@ public class TransferTest {
         Assert.assertTrue(sts.getLastFrameSeqNum() == 1);
     }
 
-    @Test(expected = AssertionError.class)
+    @Test
     public void testInactiveTransfer() throws TimeoutException {
-        Waiter waiter = new Waiter();
-
-        SimpleUploadReceiver ur = new SimpleUploadReceiver(tempDir, waiter);
+        UploadReceiver ur = new UploadReceiver(tempDir) {
+            @Override
+            public AcceptorInterceptor createInterceptor(String transferId) {
+                return new AcceptorInterceptorImpl(server, waiter, transferId, com.lightcomp.ft.server.TransferState.FAILED);
+            }
+        };
         SimpleStatusStorage ss = new SimpleStatusStorage();
         ServerConfig scfg = new ServerConfig(ur, ss);
-        scfg.setInactiveTimeout(1); // short enough to get terminated
+        scfg.setInactiveTimeout(2); // short enough to get terminated
 
-        Server server = publishEndpoint("http://localhost:7979/2", scfg);
-        ur.setServer(server);
+        String addr = publishEndpoint(scfg);
 
-        ClientConfig ccfg = new ClientConfig("http://localhost:7979/2");
+        ClientConfig ccfg = new ClientConfig(addr);
         ccfg.setRecoveryDelay(5);
-        ccfg.setSoapLogging(true);
+        // ccfg.setSoapLogging(true);
         Client client = FileTransfer.createClient(ccfg);
 
         client.start();
 
-        Collection<SourceItem> items = Collections.singletonList(new SimpleDir("test"));
-        UploadRequestImpl request = new UploadRequestImpl("req", items, waiter) {
+        List<SourceItem> items = Collections.singletonList(new SimpleDir("test"));
+        UploadRequestImpl request = new UploadRequestImpl("req", items, waiter, TransferState.FAILED) {
             @Override
             public void onTransferProgress(TransferStatus status) {
-                super.onTransferProgress(status);
                 try {
-                    Thread.sleep(1000 * 2); // delay long enough to cause inactive failure
+                    Thread.sleep(5000);
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
+                super.onTransferProgress(status);
             }
         };
 
@@ -162,20 +192,22 @@ public class TransferTest {
     }
 
     @Test
-    public void testDifferentFileSize() throws TimeoutException {
-        Waiter waiter = new Waiter();
-
-        SimpleUploadReceiver ur = new SimpleUploadReceiver(tempDir, waiter);
+    public void testMaxFrameSizeUpload() throws TimeoutException {
+        UploadReceiver ur = new UploadReceiver(tempDir) {
+            @Override
+            public AcceptorInterceptor createInterceptor(String transferId) {
+                return new AcceptorInterceptorImpl(server, waiter, transferId, com.lightcomp.ft.server.TransferState.FINISHED);
+            }
+        };
         SimpleStatusStorage ss = new SimpleStatusStorage();
         ServerConfig scfg = new ServerConfig(ur, ss);
         scfg.setInactiveTimeout(60);
 
-        Server server = publishEndpoint("http://localhost:7979/3", scfg);
-        ur.setServer(server);
+        String addr = publishEndpoint(scfg);
 
-        ClientConfig ccfg = new ClientConfig("http://localhost:7979/3");
+        ClientConfig ccfg = new ClientConfig(addr);
         ccfg.setRecoveryDelay(2);
-        ccfg.setSoapLogging(true);
+        // ccfg.setSoapLogging(true);
         ccfg.setMaxFrameSize(100 * 1024); // 100kB
         Client client = FileTransfer.createClient(ccfg);
 
@@ -185,7 +217,8 @@ public class TransferTest {
         dir.addChild(new InMemoryFile("1.txt", new byte[0], 0)); // empty
         dir.addChild(new InMemoryFile("2.txt", new byte[] { 0x41, 0x42, 0x43, 0x44, 0x45 }, 0)); // 5 bytes
         dir.addChild(new GeneratedFile("3.txt", 100 * 1024, 0)); // 100kB which overlaps first frame by 5 bytes
-        UploadRequestImpl request = new UploadRequestImpl("req", Collections.singletonList(dir), waiter);
+        List<SourceItem> items = Collections.singletonList(dir);
+        UploadRequestImpl request = new UploadRequestImpl("req", items, waiter, TransferState.FINISHED);
 
         client.upload(request);
 
@@ -200,26 +233,187 @@ public class TransferTest {
         Assert.assertTrue(sts.getLastFrameSeqNum() == 2);
     }
 
-    // TODO: rework to stream and use as test
-    public static Collection<SourceItem> createTransferContent(int depth, int size) {
-        List<SourceItem> items = new ArrayList<>(size);
-        int nextDepth = depth - 1;
+    @Test
+    public void testMaxFrameBlocksUpload() throws TimeoutException {
+        UploadReceiver ur = new UploadReceiver(tempDir) {
+            @Override
+            public AcceptorInterceptor createInterceptor(String transferId) {
+                return new AcceptorInterceptorImpl(server, waiter, transferId, com.lightcomp.ft.server.TransferState.FINISHED);
+            }
+        };
+        SimpleStatusStorage ss = new SimpleStatusStorage();
+        ServerConfig scfg = new ServerConfig(ur, ss);
+        scfg.setInactiveTimeout(60);
 
+        String addr = publishEndpoint(scfg);
+
+        ClientConfig ccfg = new ClientConfig(addr);
+        ccfg.setRecoveryDelay(2);
+        ccfg.setMaxFrameBlocks(5); // 3 directories = 6 blocks, must be 2 frames
+        // ccfg.setSoapLogging(true);
+        Client client = FileTransfer.createClient(ccfg);
+
+        client.start();
+
+        List<SourceItem> items = Arrays.asList(new SimpleDir("1"), new SimpleDir("2"), new SimpleDir("3"));
+        UploadRequestImpl request = new UploadRequestImpl("req", items, waiter, TransferState.FINISHED);
+
+        client.upload(request);
+
+        waiter.await(10 * 1000, 2);
+
+        server.stop();
+
+        // test storage status after server stopped
+        com.lightcomp.ft.server.TransferStatus sts = ss.getTransferStatus(ur.getLastTransferId());
+        Assert.assertTrue(sts.getState() == com.lightcomp.ft.server.TransferState.FINISHED);
+        Assert.assertTrue(sts.getTransferedSize() == 0);
+        Assert.assertTrue(sts.getLastFrameSeqNum() == 2);
+    }
+
+    @Test
+    public void testInvalidChecksum() throws TimeoutException {
+        UploadReceiver ur = new UploadReceiver(tempDir) {
+            @Override
+            public AcceptorInterceptor createInterceptor(String transferId) {
+                return new AcceptorInterceptorImpl(server, waiter, transferId, com.lightcomp.ft.server.TransferState.FAILED);
+            }
+        };
+        SimpleStatusStorage ss = new SimpleStatusStorage();
+        ServerConfig scfg = new ServerConfig(ur, ss);
+        scfg.setInactiveTimeout(60);
+
+        String addr = publishEndpoint(scfg);
+
+        ClientConfig ccfg = new ClientConfig(addr);
+        ccfg.setRecoveryDelay(2);
+        ccfg.setMaxFrameBlocks(5); // 3 directories = 6 blocks, must be 2 frames
+        // ccfg.setSoapLogging(true);
+        Client client = FileTransfer.createClient(ccfg);
+
+        client.start();
+
+        InMemoryFile file = new InMemoryFile("1.txt", new byte[] { 0x41, 0x42, 0x43, 0x44, 0x45 }, 0); // ABCDE
+        // valid checksum
+        byte[] chksm = DatatypeConverter.parseHexBinary(
+                "9989A8FCBC29044B5883A0A36C146FE7415B1439E995B4D806EA0AF7DA9CA4390EB92A604B3ECFA3D75F9911C768FBE2AECC59EFF1E48DCAECA1957BDDE01DFB");
+        // invalid checksum
+        chksm[0] = 0x00;
+        file.setChecksum(chksm);
+        UploadRequestImpl request = new UploadRequestImpl("req", Collections.singletonList(file), waiter, TransferState.FAILED);
+
+        client.upload(request);
+
+        waiter.await(10 * 1000, 2);
+    }
+
+    @Test
+    public void testMixedContentUpload() throws TimeoutException {
+        int blockMax = 5;
+
+        UploadReceiver ur = new UploadReceiver(tempDir) {
+            @Override
+            public AcceptorInterceptor createInterceptor(String transferId) {
+                return new AcceptorInterceptorImpl(server, waiter, transferId, com.lightcomp.ft.server.TransferState.FINISHED);
+            }
+        };
+        SimpleStatusStorage ss = new SimpleStatusStorage();
+        ServerConfig scfg = new ServerConfig(ur, ss);
+        scfg.setInactiveTimeout(60);
+
+        String addr = publishEndpoint(scfg);
+
+        ClientConfig ccfg = new ClientConfig(addr);
+        ccfg.setRecoveryDelay(2);
+        ccfg.setMaxFrameBlocks(blockMax);
+        // ccfg.setSoapLogging(true);
+        Client client = FileTransfer.createClient(ccfg);
+
+        client.start();
+
+        Pair<Collection<SourceItem>, Integer> pair = createMixedContent(3, blockMax);
+        UploadRequestImpl request = new UploadRequestImpl("req", pair.getLeft(), waiter, TransferState.FINISHED);
+
+        client.upload(request);
+
+        waiter.await(10 * 1000, 2);
+
+        server.stop();
+
+        // test storage status after server stopped
+        int blockCount = pair.getRight() / blockMax * 2;
+        com.lightcomp.ft.server.TransferStatus sts = ss.getTransferStatus(ur.getLastTransferId());
+        Assert.assertTrue(sts.getLastFrameSeqNum() == blockCount);
+        Assert.assertTrue(sts.getTransferedSize() == 0);
+    }
+
+    @Test
+    public void testInvalidFrameUpload() throws TimeoutException {
+        UploadReceiver ur = new UploadReceiver(tempDir) {
+            @Override
+            public AcceptorInterceptor createInterceptor(String transferId) {
+                return new AcceptorInterceptorImpl(server, waiter, transferId, com.lightcomp.ft.server.TransferState.FAILED);
+            }
+        };
+        SimpleStatusStorage ss = new SimpleStatusStorage();
+        ServerConfig scfg = new ServerConfig(ur, ss);
+        scfg.setInactiveTimeout(60);
+
+        String addr = publishEndpoint(scfg);
+
+        ClientConfig ccfg = new ClientConfig(addr);
+        ccfg.setRecoveryDelay(2);
+        // ccfg.setSoapLogging(true);
+        
+        Client client = new ClientImpl(ccfg) {
+            @Override
+            public Transfer upload(UploadRequest request) {
+                AbstractTransfer transfer = new UploadTransfer(request, config, service) {
+                    @Override
+                    protected boolean transferFrames() {
+                        UploadFrameContext frameCtx = new UploadFrameContext(1, config);
+                        DirBegin db = new DirBeginBlockImpl();
+                        db.setN("test");
+                        frameCtx.addBlock(db);
+                        frameCtx.addBlock(db); // unclosed child directory -> failure 
+                        frameCtx.addBlock(new DirEndBlockImpl());
+                        frameCtx.setLast(true);
+                        SendOperation op = new SendOperation(this, this, frameCtx);
+                        return op.execute(service);
+                    }
+                };
+                transferExecutor.addTask(transfer);
+                return transfer;
+            }
+        };
+
+        client.start();
+
+        UploadRequestImpl request = new UploadRequestImpl("req", Collections.emptyList(), waiter, TransferState.FAILED);
+
+        client.upload(request);
+
+        waiter.await(10 * 1000, 2);
+    }
+
+    public static Pair<Collection<SourceItem>, Integer> createMixedContent(int depth, int size) {
+        List<SourceItem> items = new ArrayList<>(size);
+        int count = size;
         for (int i = 1; i <= size; i++) {
+            String cnt = Integer.toString(i);
             if (i % 2 == 0) {
-                SimpleDir dir = new SimpleDir(Integer.toString(i));
+                SimpleDir dir = new SimpleDir(cnt);
                 items.add(dir);
-                if (nextDepth >= 0) {
-                    Collection<SourceItem> children = createTransferContent(nextDepth, size);
-                    dir.addChildren(children);
+                if (depth > 0) {
+                    Pair<Collection<SourceItem>, Integer> pair = createMixedContent(depth - 1, size);
+                    dir.addChildren(pair.getLeft());
+                    count += pair.getRight();
                 }
             } else {
-                String content = "ABCDEFGHCHIJKLMNOPQRSTUVWXYZ !@#$%^&*()_+{}:\"|<>?-=[];',./\\ 1234567890 ěščřžýáíéť";
-                long lastModified = System.currentTimeMillis();
-                InMemoryFile file = InMemoryFile.fromString(i + ".txt", lastModified, content);
+                InMemoryFile file = new InMemoryFile(cnt, new byte[0], 0);
                 items.add(file);
             }
         }
-        return items;
+        return Pair.of(items, count);
     }
 }

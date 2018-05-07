@@ -4,12 +4,14 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ReadableByteChannel;
-import java.util.Arrays;
 
 import com.lightcomp.ft.core.send.items.SourceDir;
 import com.lightcomp.ft.core.send.items.SourceFile;
 
 public class GeneratedFile implements SourceFile {
+
+    private static final byte[] CHARS = { 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0x6a, 0x6b, 0x6c, 0x6d, 0x6e,
+            0x6f, 0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x7a };
 
     private final String name;
 
@@ -54,7 +56,7 @@ public class GeneratedFile implements SourceFile {
     }
 
     @Override
-    public String getChecksum() {
+    public byte[] getChecksum() {
         return null;
     }
 
@@ -82,13 +84,25 @@ public class GeneratedFile implements SourceFile {
                 if (pos == size) {
                     return 0;
                 }
-                int len = (int) Math.min(size - pos, dst.remaining());
-                byte[] data = new byte[len];
-                Arrays.fill(data, (byte) 0x41); // fills with A char
+                long rem = size - pos;
+                int len = (int) Math.min(rem, dst.remaining());
+                byte[] data = createDataSeq(len);
                 dst.put(data, 0, len);
                 pos += len;
                 return len;
             }
         };
+    }
+
+    private static byte[] createDataSeq(int len) {
+        byte[] data = new byte[len];
+        int cindex = 0;
+        for (int i = 0; i < len; i++) {
+            data[i] = CHARS[cindex++];
+            if (cindex == CHARS.length) {
+                cindex = 0;
+            }
+        }
+        return data;
     }
 }

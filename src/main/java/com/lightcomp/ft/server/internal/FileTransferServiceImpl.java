@@ -6,6 +6,7 @@ import com.lightcomp.ft.wsdl.v1.FileTransferException;
 import com.lightcomp.ft.wsdl.v1.FileTransferService;
 import com.lightcomp.ft.xsd.v1.FileTransferStatus;
 import com.lightcomp.ft.xsd.v1.Frame;
+import com.lightcomp.ft.xsd.v1.GenericData;
 
 public class FileTransferServiceImpl implements FileTransferService {
 
@@ -33,15 +34,15 @@ public class FileTransferServiceImpl implements FileTransferService {
     }
 
     @Override
-    public String begin(String requestId) throws FileTransferException {
-        Transfer transfer = manager.createTransfer(requestId);
+    public String begin(GenericData request) throws FileTransferException {
+        Transfer transfer = manager.createTransfer(request);
         return transfer.getTransferId();
     }
 
     @Override
-    public void finish(String transferId) throws FileTransferException {
+    public GenericData finish(String transferId) throws FileTransferException {
         Transfer transfer = manager.getTransfer(transferId);
-        transfer.finish();
+        return transfer.finish();
     }
 
     @Override

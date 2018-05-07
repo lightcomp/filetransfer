@@ -1,26 +1,23 @@
 package com.lightcomp.ft.client;
 
+import com.lightcomp.ft.xsd.v1.GenericData;
+
 public interface TransferRequest {
 
     /**
-     * Request id.
+     * Request data.
      */
-    String getRequestId();
+    GenericData getData();
 
     /**
      * Transfer begin callback.
      */
-    void onTransferBegin(Transfer transfer);
+    void onTransferInitialized(Transfer transfer);
 
     /**
      * Transfer progress callback.
      */
     void onTransferProgress(TransferStatus status);
-
-    /**
-     * Transfer success callback.
-     */
-    void onTransferSuccess();
 
     /**
      * Transfer canceled callback.

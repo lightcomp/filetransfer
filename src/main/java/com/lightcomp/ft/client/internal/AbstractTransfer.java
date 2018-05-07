@@ -13,6 +13,7 @@ import com.lightcomp.ft.client.operations.FinishOperation;
 import com.lightcomp.ft.client.operations.RecoveryHandler;
 import com.lightcomp.ft.exception.TransferExceptionBuilder;
 import com.lightcomp.ft.wsdl.v1.FileTransferService;
+import com.lightcomp.ft.xsd.v1.GenericData;
 
 public abstract class AbstractTransfer implements Runnable, Transfer, RecoveryHandler {
 
@@ -43,7 +44,7 @@ public abstract class AbstractTransfer implements Runnable, Transfer, RecoveryHa
 
     @Override
     public String getRequestId() {
-        return request.getRequestId();
+        return request.getData().getId();
     }
 
     @Override
@@ -81,7 +82,7 @@ public abstract class AbstractTransfer implements Runnable, Transfer, RecoveryHa
         }
         return true;
     }
-    
+
     @Override
     public void onRecoverySuccess() {
         TransferStatus ts = null;
@@ -122,7 +123,7 @@ public abstract class AbstractTransfer implements Runnable, Transfer, RecoveryHa
     @Override
     public void run() {
         try {
-            request.onTransferBegin(this);
+            request.onTransferInitialized(this);
             // execute all phases
             if (!begin()) {
                 transferCanceled();
@@ -143,12 +144,14 @@ public abstract class AbstractTransfer implements Runnable, Transfer, RecoveryHa
 
     protected abstract boolean transferFrames();
 
+    protected abstract void handleSuccess(GenericData response);
+
     private boolean begin() {
         if (cancelRequested) {
             return false;
         }
         try {
-            String transferId = service.begin(request.getRequestId());
+            String transferId = service.begin(request.getData());
             this.transferId = Validate.notBlank(transferId, "Invalid transfer id");
         } catch (Throwable t) {
             throw TransferExceptionBuilder.from("Failed to begin transfer", this).setCause(t).build();
@@ -200,7 +203,7 @@ public abstract class AbstractTransfer implements Runnable, Transfer, RecoveryHa
             // notify canceling threads
             notifyAll();
         }
-        request.onTransferSuccess();
+        handleSuccess(op.getResponse());
         return true;
     }
 

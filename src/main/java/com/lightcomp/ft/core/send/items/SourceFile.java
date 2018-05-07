@@ -12,7 +12,7 @@ public interface SourceFile extends SourceItem {
 
     long getLastModified();
 
-    String getChecksum();
+    byte[] getChecksum();
 
     ReadableByteChannel openChannel(long position) throws IOException;
 }

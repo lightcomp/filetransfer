@@ -6,11 +6,18 @@ import com.lightcomp.ft.wsdl.v1.FileTransferException;
 import com.lightcomp.ft.wsdl.v1.FileTransferService;
 import com.lightcomp.ft.xsd.v1.FileTransferState;
 import com.lightcomp.ft.xsd.v1.FileTransferStatus;
+import com.lightcomp.ft.xsd.v1.GenericData;
 
 public class FinishOperation extends RecoverableOperation {
 
+    private GenericData response;
+
     public FinishOperation(TransferInfo transfer, RecoveryHandler handler) {
         super(transfer, handler);
+    }
+
+    public GenericData getResponse() {
+        return response;
     }
 
     @Override
@@ -19,13 +26,13 @@ public class FinishOperation extends RecoverableOperation {
     }
 
     @Override
-    public TransferExceptionBuilder prepareException(Throwable cause) {
+    protected TransferExceptionBuilder prepareException(Throwable cause) {
         return TransferExceptionBuilder.from("Failed to finish transfer", transfer).setCause(cause);
     }
 
     @Override
     protected void send(FileTransferService service) throws FileTransferException {
-        service.finish(transfer.getTransferId());
+        response = service.finish(transfer.getTransferId());
     }
 
     @Override

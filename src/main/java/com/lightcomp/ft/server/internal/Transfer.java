@@ -2,6 +2,7 @@ package com.lightcomp.ft.server.internal;
 
 import com.lightcomp.ft.wsdl.v1.FileTransferException;
 import com.lightcomp.ft.xsd.v1.Frame;
+import com.lightcomp.ft.xsd.v1.GenericData;
 
 public interface Transfer {
 
@@ -11,7 +12,7 @@ public interface Transfer {
 
     Frame sendFrame(long seqNum) throws FileTransferException;
 
-    void finish() throws FileTransferException;
+    GenericData finish() throws FileTransferException;
 
     void abort() throws FileTransferException;
 }

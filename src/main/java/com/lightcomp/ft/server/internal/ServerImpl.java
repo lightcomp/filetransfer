@@ -24,6 +24,7 @@ import com.lightcomp.ft.server.TransferStatusStorage;
 import com.lightcomp.ft.server.UploadAcceptor;
 import com.lightcomp.ft.wsdl.v1.FileTransferException;
 import com.lightcomp.ft.xsd.v1.FileTransferStatus;
+import com.lightcomp.ft.xsd.v1.GenericData;
 
 public class ServerImpl implements Server, TransferManager {
 
@@ -133,12 +134,12 @@ public class ServerImpl implements Server, TransferManager {
     }
 
     @Override
-    public AbstractTransfer createTransfer(String requestId) throws FileTransferException {
+    public AbstractTransfer createTransfer(GenericData request) throws FileTransferException {
         // we cannot sync yet because of receiver callback
         if (state != State.RUNNING) {
             throw new FileTransferException("Server is not running");
         }
-        TransferAcceptor acceptor = receiver.onTransferBegin(requestId);
+        TransferAcceptor acceptor = receiver.onTransferBegin(request);
         // check if rejected
         if (acceptor == null) {
             throw FileTransferExceptionBuilder.from("Transfer was rejected by server").addParam("requestId", requestId).build();

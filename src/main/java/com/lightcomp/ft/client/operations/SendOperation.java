@@ -24,7 +24,7 @@ public class SendOperation extends RecoverableOperation {
     }
 
     @Override
-    public TransferExceptionBuilder prepareException(Throwable cause) {
+    protected TransferExceptionBuilder prepareException(Throwable cause) {
         return TransferExceptionBuilder.from("Failed to send frame", transfer).setCause(cause).addParam("seqNum",
                 frameCtx.getSeqNum());
     }

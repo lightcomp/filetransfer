@@ -7,16 +7,17 @@ import com.lightcomp.ft.client.operations.SendOperation;
 import com.lightcomp.ft.core.send.FrameBlockBuilder;
 import com.lightcomp.ft.core.send.SendProgressInfo;
 import com.lightcomp.ft.wsdl.v1.FileTransferService;
+import com.lightcomp.ft.xsd.v1.GenericData;
 
 public class UploadTransfer extends AbstractTransfer implements SendProgressInfo {
 
-    private final FrameBlockBuilder frameBlockBuilder;
+    private final UploadRequest request;
 
     private int lastFrameSeqNum;
 
     public UploadTransfer(UploadRequest request, ClientConfig config, FileTransferService service) {
         super(request, config, service);
-        this.frameBlockBuilder = new FrameBlockBuilder(request.getItemIterator(), this);
+        this.request = request;
     }
 
     @Override
@@ -33,12 +34,13 @@ public class UploadTransfer extends AbstractTransfer implements SendProgressInfo
 
     @Override
     protected boolean transferFrames() {
+        FrameBlockBuilder fbBuilder = new FrameBlockBuilder(request.getItemIterator(), this);
         while (true) {
             // increment last frame seq. number
             lastFrameSeqNum++;
             // prepare frame
             UploadFrameContext frameCtx = new UploadFrameContext(lastFrameSeqNum, config);
-            frameBlockBuilder.build(frameCtx);
+            fbBuilder.build(frameCtx);
             // send frame
             SendOperation op = new SendOperation(this, this, frameCtx);
             if (!op.execute(service)) {
@@ -49,5 +51,10 @@ public class UploadTransfer extends AbstractTransfer implements SendProgressInfo
                 return true;
             }
         }
+    }
+
+    @Override
+    protected void handleSuccess(GenericData response) {
+        request.onTransferSuccess(response);
     }
 }

@@ -23,15 +23,18 @@ public class UploadRequestImpl implements UploadRequest {
     private final Collection<SourceItem> items;
 
     private final Waiter waiter;
-    
+
+    private final TransferState terminalState;
+
     private Transfer transfer;
 
     private TransferState progressState;
-    
-    public UploadRequestImpl(String requestId, Collection<SourceItem> items, Waiter waiter) {
+
+    public UploadRequestImpl(String requestId, Collection<SourceItem> items, Waiter waiter, TransferState terminalState) {
         this.requestId = requestId;
         this.items = items;
         this.waiter = waiter;
+        this.terminalState = terminalState;
     }
 
     @Override
@@ -45,7 +48,7 @@ public class UploadRequestImpl implements UploadRequest {
     }
 
     @Override
-    public void onTransferBegin(Transfer transfer) {
+    public void onTransferInitialized(Transfer transfer) {
         waiter.assertEquals(null, this.transfer);
         waiter.assertNotNull(transfer);
         this.transfer = transfer;
@@ -53,7 +56,7 @@ public class UploadRequestImpl implements UploadRequest {
 
     @Override
     public void onTransferProgress(TransferStatus status) {
-        logger.info("Sender: transfer progress, requestId={}, detail: {}", requestId, status);
+        logger.info("Client transfer progressed, transferId={}, detail: {}", transfer.getTransferId(), status);
 
         TransferState state = status.getState();
         if (progressState == null) {
@@ -71,24 +74,37 @@ public class UploadRequestImpl implements UploadRequest {
 
     @Override
     public void onTransferSuccess() {
-        logger.info("Sender: transfer success, requestId={}", requestId);
-
         TransferStatus ts = transfer.getStatus();
         waiter.assertEquals(TransferState.FINISHED, ts.getState());
-        waiter.resume();
+
+        if (terminalState != TransferState.FINISHED) {
+            waiter.fail("Client transfer succeeded");
+        } else {
+            waiter.resume();
+        }
     }
 
     @Override
     public void onTransferCanceled() {
         TransferStatus ts = transfer.getStatus();
         waiter.assertEquals(TransferState.CANCELED, ts.getState());
-        waiter.fail("Request: transfer canceled, requestId=" + requestId);
+
+        if (terminalState != TransferState.CANCELED) {
+            waiter.fail("Client transfer canceled");
+        } else {
+            waiter.resume();
+        }
     }
 
     @Override
     public void onTransferFailed(Throwable cause) {
         TransferStatus ts = transfer.getStatus();
         waiter.assertEquals(TransferState.FAILED, ts.getState());
-        waiter.fail("Request: transfer failed, requestId=" + requestId + ", detail=" + cause.getMessage());
+
+        if (terminalState != TransferState.FAILED) {
+            waiter.fail("Client transfer failed, detail: " + cause.getMessage());
+        } else {
+            waiter.resume();
+        }
     }
 }

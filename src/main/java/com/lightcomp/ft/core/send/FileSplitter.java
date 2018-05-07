@@ -1,9 +1,7 @@
 package com.lightcomp.ft.core.send;
 
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 
 import com.lightcomp.ft.common.ChecksumGenerator;
@@ -21,18 +19,18 @@ class FileSplitter {
 
     private final ChecksumGenerator chksmGenerator;
 
-    private final byte[] arrChksm;
+    private final byte[] chksm;
 
     private final SendProgressInfo progressInfo;
 
     private long offset = -1;
 
-    private FileSplitter(SourceFile srcFile, Path path, ChecksumGenerator chksmGenerator, byte[] arrChksm,
+    private FileSplitter(SourceFile srcFile, Path path, ChecksumGenerator chksmGenerator, byte[] chksm,
             SendProgressInfo progressInfo) {
         this.srcFile = srcFile;
         this.path = path;
         this.chksmGenerator = chksmGenerator;
-        this.arrChksm = arrChksm;
+        this.chksm = chksm;
         this.progressInfo = progressInfo;
     }
 
@@ -86,7 +84,7 @@ class FileSplitter {
         }
         FileEndBlockImpl b = new FileEndBlockImpl();
         b.setLm(srcFile.getLastModified());
-        FileBlockStream bs = new FileChecksumStream(chksmGenerator, arrChksm);
+        FileBlockStream bs = new FileChecksumStream(chksmGenerator, chksm);
 
         frameCtx.addBlock(b, bs);
         offset += size;
@@ -114,18 +112,16 @@ class FileSplitter {
 
     public static FileSplitter create(SourceFile srcFile, Path path, SendProgressInfo progressInfo) {
         ChecksumGenerator chksmGenerator = null;
-        byte[] arrChksm = null;
+        byte[] chksm = srcFile.getChecksum();
         // initialize checksum as array or his generator when not preset
-        String chksm = StringUtils.trimToNull(srcFile.getChecksum());
         if (chksm == null) {
             chksmGenerator = ChecksumGenerator.create();
         } else {
-            arrChksm = chksm.getBytes(StandardCharsets.UTF_8);
-            if (arrChksm.length != ChecksumGenerator.LENGTH) {
+            if (chksm.length != ChecksumGenerator.LENGTH) {
                 throw TransferExceptionBuilder.from("File checksum has invalid length").addParam("path", path)
-                        .addParam("checksumLength", arrChksm.length).build();
+                        .addParam("checksumLength", chksm.length).build();
             }
         }
-        return new FileSplitter(srcFile, path, chksmGenerator, arrChksm, progressInfo);
+        return new FileSplitter(srcFile, path, chksmGenerator, chksm, progressInfo);
     }
 }

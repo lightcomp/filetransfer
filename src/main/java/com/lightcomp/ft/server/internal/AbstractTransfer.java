@@ -15,6 +15,7 @@ import com.lightcomp.ft.server.TransferState;
 import com.lightcomp.ft.server.TransferStatus;
 import com.lightcomp.ft.wsdl.v1.FileTransferException;
 import com.lightcomp.ft.xsd.v1.ErrorCode;
+import com.lightcomp.ft.xsd.v1.GenericData;
 
 public abstract class AbstractTransfer implements Transfer, TransferInfo {
 
@@ -43,7 +44,7 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
     protected abstract boolean isProcessingFrame();
 
     @Override
-    public void finish() throws FileTransferException {
+    public GenericData finish() throws FileTransferException {
         synchronized (this) {
             TransferState ts = status.getState();
             if (ts == TransferState.STARTED && isProcessingFrame()) {

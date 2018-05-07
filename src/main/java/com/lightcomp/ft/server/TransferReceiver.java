@@ -1,5 +1,7 @@
 package com.lightcomp.ft.server;
 
+import com.lightcomp.ft.xsd.v1.GenericData;
+
 /**
  * Receiver will be notified about any transfer request.
  */
@@ -8,9 +10,9 @@ public interface TransferReceiver {
     /**
      * Creates acceptor for upload request.
      * 
-     * @param requestId
-     *            external request id
+     * @param request
+     *            client request
      * @return Returns acceptor for incoming transfer or null when rejected.
      */
-    TransferAcceptor onTransferBegin(String requestId);
+    TransferAcceptor onTransferBegin(GenericData request);
 }

@@ -71,8 +71,7 @@ class FileWriter {
         }
         byte[] chksm = chksmGenerator.generate();
         if (!Arrays.equals(chksm, checksum)) {
-            throw TransferExceptionBuilder.from("File checksums does not match").addParam("path", file)
-                    .addParam("expectedChecksum", chksm).addParam("receivedChecksum", checksum).build();
+            throw TransferExceptionBuilder.from("File checksums does not match").addParam("path", file).build();
         }
         FileTime lm = FileTime.fromMillis(lastModified);
         try {

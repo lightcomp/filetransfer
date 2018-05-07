@@ -39,7 +39,7 @@ public class RecvContextImpl implements RecvContext {
 
     @Override
     public Path getCurrentDir() {
-        return currDir.getParent() != null ? currDir : null;
+        return ROOT_DIR.equals(currDir) ? null : currDir;
     }
 
     @Override
@@ -67,7 +67,7 @@ public class RecvContextImpl implements RecvContext {
 
     @Override
     public void closeDir() {
-        if (currDir == ROOT_DIR) {
+        if (ROOT_DIR.equals(currDir)) {
             throw new TransferException("Failed to close directory, transfer at root level");
         }
         Path dir = currDir.getParent();

@@ -17,11 +17,11 @@ import com.lightcomp.ft.wsdl.v1.FileTransferService;
 
 public class ClientImpl implements Client {
 
-    private final TaskExecutor transferExecutor;
+    protected final TaskExecutor transferExecutor;
 
-    private final ClientConfig config;
+    protected final ClientConfig config;
 
-    private FileTransferService service;
+    protected FileTransferService service;
 
     public ClientImpl(ClientConfig config) {
         this.transferExecutor = new TaskExecutor(config.getThreadPoolSize());

@@ -5,29 +5,17 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import com.lightcomp.ft.server.Server;
 import com.lightcomp.ft.server.TransferAcceptor;
 import com.lightcomp.ft.server.TransferReceiver;
 
-import net.jodah.concurrentunit.Waiter;
-
-public class SimpleUploadReceiver implements TransferReceiver {
+public abstract class UploadReceiver implements TransferReceiver {
 
     private final Path transferDir;
 
-    private final Waiter waiter;
-    
-    private Server server;
-
     private int lastTransferId;
 
-    public SimpleUploadReceiver(Path transferDir, Waiter waiter) {
+    public UploadReceiver(Path transferDir) {
         this.transferDir = transferDir;
-        this.waiter = waiter;
-    }
-
-    public void setServer(Server server) {
-        this.server = server;
     }
 
     @Override
@@ -41,11 +29,14 @@ public class SimpleUploadReceiver implements TransferReceiver {
             throw new UncheckedIOException(e);
         }
         // add acceptor
-        UploadAcceptorImpl acceptor = new UploadAcceptorImpl(transferId, uploadDir, server, waiter);
+        AcceptorInterceptor interceptor = createInterceptor(transferId);
+        UploadAcceptorImpl acceptor = new UploadAcceptorImpl(transferId, uploadDir, interceptor);
         return acceptor;
     }
 
     public synchronized String getLastTransferId() {
         return Integer.toString(lastTransferId);
     }
+
+    public abstract AcceptorInterceptor createInterceptor(String transferId);
 }

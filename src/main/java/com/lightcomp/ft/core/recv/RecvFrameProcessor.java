@@ -108,7 +108,7 @@ public class RecvFrameProcessor {
                 channel.close();
                 channel = null;
             }
-            Files.deleteIfExists(frameData);
+            Files.delete(frameData);
         } catch (Throwable t) {
             TransferExceptionBuilder.from("Failed to clear frame temporary data").addParam("frameSeqNum", seqNum).setCause(t)
                     .log(logger);
