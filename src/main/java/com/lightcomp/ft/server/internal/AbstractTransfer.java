@@ -6,20 +6,18 @@ import java.time.temporal.ChronoUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.lightcomp.ft.core.TransferInfo;
 import com.lightcomp.ft.exception.FileTransferExceptionBuilder;
 import com.lightcomp.ft.exception.TransferException;
 import com.lightcomp.ft.exception.TransferExceptionBuilder;
 import com.lightcomp.ft.server.TransferAcceptor;
 import com.lightcomp.ft.server.TransferState;
-import com.lightcomp.ft.server.TransferStatus;
 import com.lightcomp.ft.wsdl.v1.FileTransferException;
 import com.lightcomp.ft.xsd.v1.ErrorCode;
 import com.lightcomp.ft.xsd.v1.GenericData;
 
-public abstract class AbstractTransfer implements Transfer, TransferInfo {
+public abstract class AbstractTransfer implements Transfer {
 
-    protected static final Logger logger = LoggerFactory.getLogger(AbstractTransfer.class);
+    private static final Logger logger = LoggerFactory.getLogger(AbstractTransfer.class);
 
     protected final TransferStatusImpl status = new TransferStatusImpl();
 
@@ -37,28 +35,53 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
         return acceptor.getTransferId();
     }
 
-    public synchronized TransferStatus getStatus() {
-        return status.copy();
+    public TransferAcceptor getAcceptor() {
+        return acceptor;
     }
 
-    protected abstract boolean isProcessingFrame();
+    public synchronized boolean isBusy() {
+        return isFinishBusy();
+    }
+
+    public synchronized boolean isFinishBusy() {
+        return status.getState() == TransferState.FINISHING;
+    }
+
+    public synchronized TransferStatusImpl getStatus() {
+        TransferStatusImpl ts = status.copy();
+        ts.setBusy(isBusy());
+        return ts;
+    }
 
     @Override
     public GenericData finish() throws FileTransferException {
         synchronized (this) {
+            // check if transfer is busy
+            if (isFinishBusy()) {
+                throw FileTransferExceptionBuilder.from("Transfer is busy", acceptor).setCode(ErrorCode.BUSY).build();
+            }
+            // check if called in valid state
             TransferState ts = status.getState();
-            if (ts == TransferState.STARTED && isProcessingFrame()) {
-                throw FileTransferExceptionBuilder.from("Transfer is busy", this).setCode(ErrorCode.BUSY).build();
-            }
             if (ts != TransferState.TRANSFERED) {
-                throw FileTransferExceptionBuilder.from("Unable to finish transfer", this)
-                        .addParam("currentState", TransferState.convert(ts)).setCause(status.getFailureCause()).build();
+                throw FileTransferExceptionBuilder.from("Unable to finish transfer", acceptor)
+                        .addParam("currentState", ts.toExternal()).setCause(status.getFailureCause()).build();
             }
-            // update current state
-            status.changeState(TransferState.FINISHED);
+            // change state to finishing
+            status.changeState(TransferState.FINISHING);
         }
-        Thread handlerThread = new Thread(acceptor::onTransferSuccess, "FileTransfer_SuccessHandler");
-        handlerThread.start();
+        GenericData response;
+        try {
+            response = acceptor.onTransferSuccess();
+        } catch (Throwable t) {
+            synchronized (this) {
+                status.changeStateToFailed(t);
+            }
+            throw FileTransferExceptionBuilder.from("Acceptor callback cause error during finish", acceptor).setCause(t).build();
+        }
+        synchronized (this) {
+            status.changeStateToFinished(response);
+        }
+        return response;
     }
 
     @Override
@@ -66,7 +89,7 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
         synchronized (this) {
             TransferState ts = status.getState();
             if (ts == TransferState.FINISHED) {
-                throw FileTransferExceptionBuilder.from("Finished transfer cannot be aborted", this).build();
+                throw FileTransferExceptionBuilder.from("Finished transfer cannot be aborted", acceptor).build();
             }
             if (ts == TransferState.CANCELED || ts == TransferState.FAILED) {
                 return; // failed will be handled as canceled
@@ -81,10 +104,10 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
         synchronized (this) {
             TransferState ts = status.getState();
             if (ts == TransferState.FINISHED) {
-                throw TransferExceptionBuilder.from("Finished transfer cannot be canceled", this).build();
+                throw TransferExceptionBuilder.from("Finished transfer cannot be canceled", acceptor).build();
             }
             if (ts == TransferState.FAILED) {
-                throw TransferExceptionBuilder.from("Failed transfer cannot be canceled", this).build();
+                throw TransferExceptionBuilder.from("Failed transfer cannot be canceled", acceptor).build();
             }
             if (ts == TransferState.CANCELED) {
                 return;
@@ -98,7 +121,7 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
     public void terminate() {
         TransferException failureCause = null;
         synchronized (this) {
-            if (!TransferState.isTerminal(status.getState())) {
+            if (!status.getState().isTerminal()) {
                 failureCause = new TransferException("Transfer terminated");
                 status.changeStateToFailed(failureCause);
             }
@@ -108,7 +131,7 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
                 acceptor.onTransferFailed(failureCause);
             } catch (Throwable t) {
                 // exception is only logged
-                TransferExceptionBuilder.from("Acceptor callback cause error during terminate", this).setCause(t).log(logger);
+                TransferExceptionBuilder.from("Acceptor callback cause error during terminate", acceptor).setCause(t).log(logger);
             }
         }
         clearResources();
@@ -117,7 +140,7 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
     public boolean terminateIfInactive() {
         TransferException failureCause = null;
         synchronized (this) {
-            if (!TransferState.isTerminal(status.getState())) {
+            if (!status.getState().isTerminal()) {
                 // test for inactive transfer
                 LocalDateTime timeoutLimit = LocalDateTime.now().minus(inactiveTimeout, ChronoUnit.SECONDS);
                 LocalDateTime lastActivity = status.getLastActivity();
@@ -134,7 +157,7 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
                 acceptor.onTransferFailed(failureCause);
             } catch (Throwable t) {
                 // exception is only logged
-                TransferExceptionBuilder.from("Acceptor callback cause error during terminate", this).setCause(t).log(logger);
+                TransferExceptionBuilder.from("Acceptor callback cause error during terminate", acceptor).setCause(t).log(logger);
             }
         }
         clearResources();

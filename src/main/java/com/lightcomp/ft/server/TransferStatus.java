@@ -2,6 +2,8 @@ package com.lightcomp.ft.server;
 
 import java.time.LocalDateTime;
 
+import com.lightcomp.ft.xsd.v1.GenericData;
+
 /**
  * File transfer status.
  */
@@ -31,6 +33,11 @@ public interface TransferStatus {
      * Sequential number of last processed frame.
      */
     int getLastFrameSeqNum();
+    
+    /**
+     * Server response to finished transfer.
+     */
+    GenericData getResponse();
 
     /**
      * Cause of transfer failure.

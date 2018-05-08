@@ -1,18 +1,16 @@
 package com.lightcomp.ft.server;
 
+import com.lightcomp.ft.core.TransferInfo;
+import com.lightcomp.ft.xsd.v1.GenericData;
+
 /**
  * File transfer acceptor initialized by {@link TransferReceiver}.
  */
-public interface TransferAcceptor {
+public interface TransferAcceptor extends TransferInfo {
 
     public enum Mode {
         UPLOAD, DOWNLOAD
     }
-
-    /**
-     * Unique transfer id, not-null.
-     */
-    String getTransferId();
 
     /**
      * Transfer mode, not-null. Extending interface is expected to be implemented,
@@ -29,7 +27,7 @@ public interface TransferAcceptor {
     /**
      * Transfer success callback.
      */
-    void onTransferSuccess();
+    GenericData onTransferSuccess();
 
     /**
      * Transfer canceled callback.

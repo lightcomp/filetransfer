@@ -7,6 +7,8 @@ import java.nio.file.Path;
 
 import com.lightcomp.ft.server.TransferAcceptor;
 import com.lightcomp.ft.server.TransferReceiver;
+import com.lightcomp.ft.server.UploadAcceptor;
+import com.lightcomp.ft.xsd.v1.GenericData;
 
 public abstract class UploadReceiver implements TransferReceiver {
 
@@ -19,7 +21,7 @@ public abstract class UploadReceiver implements TransferReceiver {
     }
 
     @Override
-    public synchronized TransferAcceptor onTransferBegin(String requestId) {
+    public synchronized TransferAcceptor onTransferBegin(GenericData request) {
         String transferId = Integer.toString(++lastTransferId);
         Path uploadDir = transferDir.resolve(transferId);
         // prepare transfer directory
@@ -28,15 +30,12 @@ public abstract class UploadReceiver implements TransferReceiver {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-        // add acceptor
-        AcceptorInterceptor interceptor = createInterceptor(transferId);
-        UploadAcceptorImpl acceptor = new UploadAcceptorImpl(transferId, uploadDir, interceptor);
-        return acceptor;
+        return createUploadAcceptor(transferId, uploadDir, request);
     }
 
     public synchronized String getLastTransferId() {
         return Integer.toString(lastTransferId);
     }
 
-    public abstract AcceptorInterceptor createInterceptor(String transferId);
+    protected abstract UploadAcceptor createUploadAcceptor(String transferId, Path uploadDir, GenericData request);
 }

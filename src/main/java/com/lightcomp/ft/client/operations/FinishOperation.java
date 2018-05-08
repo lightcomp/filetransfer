@@ -42,6 +42,7 @@ public class FinishOperation extends RecoverableOperation {
             return false; // next try
         }
         if (fts == FileTransferState.FINISHED) {
+            response = status.getResp();
             return true; // success
         }
         throw new IllegalStateException("Invalid server state, name=" + fts);

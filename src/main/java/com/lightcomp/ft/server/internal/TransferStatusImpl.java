@@ -6,6 +6,7 @@ import org.apache.commons.lang3.Validate;
 
 import com.lightcomp.ft.server.TransferState;
 import com.lightcomp.ft.server.TransferStatus;
+import com.lightcomp.ft.xsd.v1.GenericData;
 
 public class TransferStatusImpl implements TransferStatus {
 
@@ -19,7 +20,11 @@ public class TransferStatusImpl implements TransferStatus {
 
     private int lastFrameSeqNum;
 
+    private GenericData response;
+
     private Throwable failureCause;
+
+    private boolean busy;
 
     public TransferStatusImpl() {
         state = TransferState.INITIALIZED;
@@ -29,13 +34,15 @@ public class TransferStatusImpl implements TransferStatus {
     /**
      * Copy constructor.
      */
-    private TransferStatusImpl(TransferStatusImpl source) {
-        state = source.state;
-        lastActivity = source.lastActivity;
-        startTime = source.startTime;
-        transferedSize = source.transferedSize;
-        lastFrameSeqNum = source.lastFrameSeqNum;
-        failureCause = source.failureCause;
+    private TransferStatusImpl(TransferStatusImpl src) {
+        state = src.state;
+        lastActivity = src.lastActivity;
+        startTime = src.startTime;
+        transferedSize = src.transferedSize;
+        lastFrameSeqNum = src.lastFrameSeqNum;
+        response = src.response;
+        failureCause = src.failureCause;
+        busy = src.busy;
     }
 
     @Override
@@ -64,8 +71,17 @@ public class TransferStatusImpl implements TransferStatus {
     }
 
     @Override
+    public GenericData getResponse() {
+        return response;
+    }
+
+    @Override
     public Throwable getFailureCause() {
         return failureCause;
+    }
+    
+    public boolean isBusy() {
+        return busy;
     }
 
     /* modify methods */
@@ -82,9 +98,14 @@ public class TransferStatusImpl implements TransferStatus {
         updateActivity();
     }
 
-    public void changeStateToFailed(Throwable cause) {
+    public void changeStateToFinished(GenericData response) {
+        changeState(TransferState.FINISHED);
+        this.response = response;
+    }
+
+    public void changeStateToFailed(Throwable failureCause) {
         changeState(TransferState.FAILED);
-        failureCause = cause;
+        this.failureCause = failureCause;
     }
 
     public void changeState(TransferState nextState) {
@@ -94,6 +115,10 @@ public class TransferStatusImpl implements TransferStatus {
         updateActivity();
     }
 
+    public void setBusy(boolean busy) {
+        this.busy = busy;
+    }
+    
     public TransferStatusImpl copy() {
         return new TransferStatusImpl(this);
     }

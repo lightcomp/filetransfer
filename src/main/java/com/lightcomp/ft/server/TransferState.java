@@ -10,48 +10,43 @@ public enum TransferState {
     /**
      * Implicit state after creation.
      */
-    INITIALIZED,
+    INITIALIZED(null),
     /**
      * Data is transferring.
      */
-    STARTED,
+    STARTED(FileTransferState.ACTIVE),
     /**
      * Data is transfered.
      */
-    TRANSFERED,
+    TRANSFERED(FileTransferState.ACTIVE),
+    /**
+     * Data is transfered, transfer waiting for response from acceptor.
+     */
+    FINISHING(null),
     /**
      * Transfer is finished.
      */
-    FINISHED,
+    FINISHED(FileTransferState.FINISHED),
     /**
      * File transfer is failed.
      */
-    FAILED,
+    FAILED(FileTransferState.FAILED),
     /**
      * File transfer is canceled.
      */
-    CANCELED;
+    CANCELED(FileTransferState.FAILED);
 
-    public static boolean isTerminal(TransferState state) {
-        return state.ordinal() >= FINISHED.ordinal();
+    private final FileTransferState external;
+
+    private TransferState(FileTransferState external) {
+        this.external = external;
     }
 
-    /**
-     * Returns converted state or null when state cannot be converted e.g.
-     * INITIALIZED.
-     */
-    public static FileTransferState convert(TransferState state) {
-        switch (state) {
-            case STARTED:
-            case TRANSFERED:
-                return FileTransferState.ACTIVE;
-            case FINISHED:
-                return FileTransferState.FINISHED;
-            case FAILED:
-            case CANCELED:
-                return FileTransferState.FAILED;
-            default:
-                return null;
-        }
+    public boolean isTerminal() {
+        return ordinal() >= FINISHED.ordinal();
+    }
+
+    public FileTransferState toExternal() {
+        return external;
     }
 }

@@ -10,6 +10,8 @@ import java.util.Comparator;
 import java.util.Iterator;
 
 import org.apache.commons.lang3.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.lightcomp.ft.common.TaskExecutor;
 import com.lightcomp.ft.core.recv.RecvContextImpl;
@@ -26,37 +28,36 @@ import com.lightcomp.ft.xsd.v1.Frame;
 
 public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo {
 
+    private static final Logger logger = LoggerFactory.getLogger(UploadTransfer.class);
+
     private final TaskExecutor frameExecutor = new TaskExecutor(1);
 
-    private final String requestId;
-
-    private final Path rootDir;
+    private final Path uploadDir;
 
     private final RecvContextImpl recvCtx;
 
     private Path tempDir;
 
-    private int lastFrameSeqNum;
+    private int lastSeqNum;
+
+    private boolean transferring;
 
     private boolean lastFrameReceived;
 
-    private boolean transferingFrame;
-
-    public UploadTransfer(UploadAcceptor acceptor, int inactiveTimeout, String requestId) {
+    public UploadTransfer(UploadAcceptor acceptor, int inactiveTimeout) {
         super(acceptor, inactiveTimeout);
-        this.requestId = requestId;
-        this.rootDir = acceptor.getUploadDir();
-        this.recvCtx = new RecvContextImpl(this, rootDir);
+        this.uploadDir = acceptor.getUploadDir();
+        this.recvCtx = new RecvContextImpl(this, uploadDir);
     }
 
     @Override
-    public String getRequestId() {
-        return requestId;
+    public synchronized boolean isBusy() {
+        return super.isBusy() || transferring;
     }
 
     @Override
-    public synchronized boolean isProcessingFrame() {
-        return transferingFrame || !frameExecutor.isIddle();
+    public synchronized boolean isFinishBusy() {
+        return super.isFinishBusy() || lastFrameReceived && status.getState() != TransferState.TRANSFERED;
     }
 
     public void init() {
@@ -67,7 +68,7 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
             frameExecutor.start();
             // create temporary folder
             try {
-                tempDir = Files.createTempDirectory(rootDir, "temp");
+                tempDir = Files.createTempDirectory(uploadDir, "temp");
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
@@ -93,46 +94,47 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
 
     @Override
     public Frame sendFrame(long seqNum) throws FileTransferException {
-        throw FileTransferExceptionBuilder.from("Transfer cannot send data in upload mode", this).build();
+        throw FileTransferExceptionBuilder.from("Transfer cannot send data in upload mode", acceptor).build();
     }
 
     @Override
     public void recvFrame(Frame frame) throws FileTransferException {
         synchronized (this) {
+            // check if frames are being transferred
+            if (transferring) {
+                throw FileTransferExceptionBuilder.from("Transfer is busy", acceptor).setCode(ErrorCode.BUSY).build();
+            }
             // check current transfer state
             TransferState ts = status.getState();
             if (ts != TransferState.STARTED) {
-                throw FileTransferExceptionBuilder.from("Unable to receive frame", this)
-                        .addParam("currentState", TransferState.convert(ts)).setCause(status.getFailureCause()).build();
+                throw FileTransferExceptionBuilder.from("Unable to receive frame", acceptor)
+                        .addParam("currentState", ts.toExternal()).setCause(status.getFailureCause()).build();
             }
             // check if last frame received
             if (lastFrameReceived) {
-                throw FileTransferExceptionBuilder.from("Server already received last frame", this).build();
+                throw FileTransferExceptionBuilder.from("Server already received last frame", acceptor).build();
             }
-            // we can process only one frame at same time
-            if (transferingFrame) {
-                throw FileTransferExceptionBuilder.from("Server already transferring a frame", this).setCode(ErrorCode.BUSY)
-                        .build();
-            }
-            // check last sequence number
-            if (lastFrameSeqNum + 1 != frame.getSeqNum()) {
-                throw FileTransferExceptionBuilder.from("Invalid frame seqNum", this).addParam("expected", lastFrameSeqNum + 1)
+            // check last frame number
+            if (lastSeqNum + 1 != frame.getSeqNum()) {
+                throw FileTransferExceptionBuilder.from("Invalid frame number", acceptor).addParam("expected", lastSeqNum + 1)
                         .addParam("given", frame.getSeqNum()).build();
             }
             lastFrameReceived = Boolean.TRUE.equals(frame.isLast());
-            transferingFrame = true;
-            lastFrameSeqNum++;
+            transferring = true;
+            lastSeqNum++;
         }
         try {
-            transferFrame(frame);
+            Path frameData = transferFrameData(frame);
+            processFrame(frame, frameData);
         } catch (Throwable t) {
-            // we must change internal state and notify acceptor
-            frameProcessingFailed(t);
-            // publish exception to caller (client)
-            throw FileTransferExceptionBuilder.from(t.getMessage()).setCause(t.getCause()).build();
+            // change internal state and notify acceptor
+            transferFailed(t);
+            // publish exception to client
+            throw FileTransferExceptionBuilder.from("Failed to transfer frame", acceptor).addParam("seqNum", lastSeqNum)
+                    .setCause(t).build();
         } finally {
             synchronized (this) {
-                transferingFrame = false;
+                transferring = false;
             }
         }
     }
@@ -144,7 +146,7 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
     private boolean addProcessedFrame(int seqNum, boolean last) {
         TransferStatus ts;
         synchronized (this) {
-            if (TransferState.isTerminal(status.getState())) {
+            if (status.getState().isTerminal()) {
                 return false; // terminated transfer
             }
             // check transfer state and last frame number
@@ -163,32 +165,31 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
         return true;
     }
 
-    private void frameProcessingFailed(Throwable cause) {
-        TransferExceptionBuilder teb;
+    private void transferFailed(Throwable cause) {
+        TransferExceptionBuilder builder;
         boolean failed = false;
 
         synchronized (this) {
             TransferState ts = status.getState();
             if (ts == TransferState.CANCELED) {
-                teb = TransferExceptionBuilder.from("Canceled transfer thrown exception");
+                builder = TransferExceptionBuilder.from("Canceled transfer thrown exception");
             } else if (ts == TransferState.FINISHED) {
-                teb = TransferExceptionBuilder.from("Finished transfer thrown exception");
+                builder = TransferExceptionBuilder.from("Finished transfer thrown exception");
             } else if (ts == TransferState.FAILED) {
-                teb = TransferExceptionBuilder.from("Failed transfer thrown exception");
+                builder = TransferExceptionBuilder.from("Failed transfer thrown exception");
             } else {
-                teb = TransferExceptionBuilder.from("Transfer failed");
+                builder = TransferExceptionBuilder.from("Transfer failed");
                 status.changeStateToFailed(cause);
                 failed = true;
             }
         }
-        teb.setTransfer(this).setCause(cause).log(logger);
+        builder.setTransfer(acceptor).setCause(cause).log(logger);
         if (failed) {
             acceptor.onTransferFailed(cause);
         }
     }
 
-    private void transferFrame(Frame frame) {
-        Path frameData = prepareFrameData(frame);
+    private void processFrame(Frame frame, Path frameData) {
         RecvFrameProcessor rfp = RecvFrameProcessor.create(frame, recvCtx, frameData);
         frameExecutor.addTask(() -> {
             try {
@@ -198,31 +199,25 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
                     return;
                 }
             } catch (Throwable t) {
-                frameProcessingFailed(t);
+                transferFailed(t);
             }
             // process failed or transfer terminated
             frameExecutor.stop();
         });
     }
 
-    private Path prepareFrameData(Frame frame) {
+    private Path transferFrameData(Frame frame) throws IOException {
         String seqNum = Integer.toString(frame.getSeqNum());
-        try {
-            Path dataFile = Files.createTempFile(tempDir, seqNum, null);
+        Path file = Files.createTempFile(tempDir, seqNum, null);
+        try (InputStream is = frame.getData().getInputStream()) {
             // copy whole data stream to temp file
-            try (InputStream is = frame.getData().getInputStream()) {
-                long length = Files.copy(is, dataFile, StandardCopyOption.REPLACE_EXISTING);
-                // copied length must match with specified data size
-                if (length != frame.getDataSize()) {
-                    throw TransferExceptionBuilder.from("Data length does not match with frame size", this)
-                            .addParam("frameSeqNum", frame.getSeqNum()).addParam("dataLength", length).build();
-                }
+            long n = Files.copy(is, file, StandardCopyOption.REPLACE_EXISTING);
+            // copied length must match with specified data size
+            if (n != frame.getDataSize()) {
+                throw new IOException("Frame size does not match data length");
             }
-            return dataFile;
-        } catch (IOException e) {
-            throw TransferExceptionBuilder.from("Failed to transfer frame data", this).addParam("frameSeqNum", frame.getSeqNum())
-                    .setCause(e).build();
         }
+        return file;
     }
 
     @Override
@@ -238,7 +233,7 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
                     Files.delete(itemIt.next());
                 }
             } catch (Throwable t) {
-                TransferExceptionBuilder.from("Failed to delete upload temporary files", this).setCause(t).log(logger);
+                TransferExceptionBuilder.from("Failed to delete upload temporary files", acceptor).setCause(t).log(logger);
             }
         }
     }

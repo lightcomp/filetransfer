@@ -11,6 +11,7 @@ import com.lightcomp.ft.client.TransferState;
 import com.lightcomp.ft.client.TransferStatus;
 import com.lightcomp.ft.client.UploadRequest;
 import com.lightcomp.ft.core.send.items.SourceItem;
+import com.lightcomp.ft.xsd.v1.GenericData;
 
 import net.jodah.concurrentunit.Waiter;
 
@@ -18,7 +19,7 @@ public class UploadRequestImpl implements UploadRequest {
 
     private final Logger logger = LoggerFactory.getLogger(UploadRequestImpl.class);
 
-    private final String requestId;
+    private final GenericData data;
 
     private final Collection<SourceItem> items;
 
@@ -30,16 +31,21 @@ public class UploadRequestImpl implements UploadRequest {
 
     private TransferState progressState;
 
-    public UploadRequestImpl(String requestId, Collection<SourceItem> items, Waiter waiter, TransferState terminalState) {
-        this.requestId = requestId;
+    public UploadRequestImpl(GenericData data, Collection<SourceItem> items, Waiter waiter, TransferState terminalState) {
+        this.data = data;
         this.items = items;
         this.waiter = waiter;
         this.terminalState = terminalState;
     }
 
     @Override
-    public String getRequestId() {
-        return requestId;
+    public GenericData getData() {
+        return data;
+    }
+
+    @Override
+    public String getLogId() {
+        return data.getId();
     }
 
     @Override
@@ -56,7 +62,7 @@ public class UploadRequestImpl implements UploadRequest {
 
     @Override
     public void onTransferProgress(TransferStatus status) {
-        logger.info("Client transfer progressed, transferId={}, detail: {}", transfer.getTransferId(), status);
+        logger.info("Client transfer progressed, detail: {}", status);
 
         TransferState state = status.getState();
         if (progressState == null) {
@@ -73,7 +79,7 @@ public class UploadRequestImpl implements UploadRequest {
     }
 
     @Override
-    public void onTransferSuccess() {
+    public void onTransferSuccess(GenericData response) {
         TransferStatus ts = transfer.getStatus();
         waiter.assertEquals(TransferState.FINISHED, ts.getState());
 

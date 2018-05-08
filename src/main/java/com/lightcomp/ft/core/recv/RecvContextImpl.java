@@ -14,22 +14,22 @@ import com.lightcomp.ft.exception.TransferExceptionBuilder;
 
 public class RecvContextImpl implements RecvContext {
 
-    private static final Path ROOT_DIR = Paths.get("");
+    private static final Path EMPTY_PATH = Paths.get("");
 
     private final RecvProgressInfo progressInfo;
 
     private final Path rootDir;
 
-    private Path currDir;
+    private Path relativeDir;
 
-    private FileWriter currFileWritter;
+    private FileWriter openWritter;
 
     private ReadableByteChannel rbch;
 
     public RecvContextImpl(RecvProgressInfo progressInfo, Path rootDir) {
         this.progressInfo = progressInfo;
         this.rootDir = rootDir;
-        this.currDir = ROOT_DIR;
+        this.relativeDir = EMPTY_PATH;
     }
 
     @Override
@@ -39,22 +39,22 @@ public class RecvContextImpl implements RecvContext {
 
     @Override
     public Path getCurrentDir() {
-        return ROOT_DIR.equals(currDir) ? null : currDir;
+        return EMPTY_PATH.equals(relativeDir) ? null : relativeDir;
     }
 
     @Override
     public Path getCurrentFile() {
-        return currFileWritter != null ? currFileWritter.getFile() : null;
+        return openWritter == null ? null : openWritter.getFile();
     }
 
     @Override
     public void openDir(String name) {
         Path dir;
         try {
-            dir = currDir.resolve(name);
+            dir = relativeDir.resolve(name);
         } catch (InvalidPathException e) {
-            throw TransferExceptionBuilder.from("Invalid directory name").addParam("parentPath", currDir).addParam("name", name)
-                    .setCause(e).build();
+            throw TransferExceptionBuilder.from("Invalid directory name").addParam("parentPath", relativeDir)
+                    .addParam("name", name).setCause(e).build();
         }
         try {
             Path dstDir = rootDir.resolve(dir);
@@ -62,29 +62,29 @@ public class RecvContextImpl implements RecvContext {
         } catch (Throwable e) {
             throw TransferExceptionBuilder.from("Failed to create directory").addParam("path", dir).setCause(e).build();
         }
-        currDir = dir;
+        relativeDir = dir;
     }
 
     @Override
     public void closeDir() {
-        if (ROOT_DIR.equals(currDir)) {
+        if (EMPTY_PATH.equals(relativeDir)) {
             throw new TransferException("Failed to close directory, transfer at root level");
         }
-        Path dir = currDir.getParent();
-        currDir = dir != null ? dir : ROOT_DIR;
+        Path dir = relativeDir.getParent();
+        relativeDir = dir != null ? dir : EMPTY_PATH;
     }
 
     @Override
     public void openFile(String name, long size) {
-        if (currFileWritter != null) {
+        if (openWritter != null) {
             throw TransferExceptionBuilder.from("Failed to open file, previous file must be closed first")
-                    .addParam("previousFilePath", currFileWritter.getFile()).build();
+                    .addParam("previousFilePath", openWritter.getFile()).build();
         }
         Path file;
         try {
-            file = currDir.resolve(name);
+            file = relativeDir.resolve(name);
         } catch (InvalidPathException e) {
-            throw TransferExceptionBuilder.from("Invalid file name").addParam("dirPath", currDir).addParam("name", name)
+            throw TransferExceptionBuilder.from("Invalid file name").addParam("dirPath", relativeDir).addParam("name", name)
                     .setCause(e).build();
         }
         Path dstFile = rootDir.resolve(file);
@@ -93,30 +93,30 @@ public class RecvContextImpl implements RecvContext {
         } catch (IOException e) {
             throw TransferExceptionBuilder.from("Failed to create file").addParam("path", file).setCause(e).build();
         }
-        currFileWritter = new FileWriter(dstFile, size);
+        openWritter = new FileWriter(dstFile, size);
     }
 
     @Override
     public void writeFileData(long offset, long length) {
-        currFileWritter.write(rbch, offset, length);
+        openWritter.write(rbch, offset, length);
         progressInfo.onDataReceived(length);
     }
 
     @Override
     public void closeFile(long lastModified) {
-        if (currFileWritter == null) {
-            throw TransferExceptionBuilder.from("Failed to close file, no current file found").addParam("dirPath", currDir)
+        if (openWritter == null) {
+            throw TransferExceptionBuilder.from("Failed to close file, no current file found").addParam("dirPath", relativeDir)
                     .build();
         }
         byte[] checksum;
         try {
             checksum = readFileChecksum();
         } catch (IOException e) {
-            throw TransferExceptionBuilder.from("Failed to read file checksum").addParam("path", currFileWritter.getFile())
+            throw TransferExceptionBuilder.from("Failed to read file checksum").addParam("path", openWritter.getFile())
                     .setCause(e).build();
         }
-        currFileWritter.finish(lastModified, checksum);
-        currFileWritter = null;
+        openWritter.finish(lastModified, checksum);
+        openWritter = null;
     }
 
     private byte[] readFileChecksum() throws IOException {

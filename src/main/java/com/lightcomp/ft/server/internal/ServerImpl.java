@@ -18,11 +18,12 @@ import com.lightcomp.ft.server.ServerConfig;
 import com.lightcomp.ft.server.TransferAcceptor;
 import com.lightcomp.ft.server.TransferAcceptor.Mode;
 import com.lightcomp.ft.server.TransferReceiver;
-import com.lightcomp.ft.server.TransferState;
 import com.lightcomp.ft.server.TransferStatus;
 import com.lightcomp.ft.server.TransferStatusStorage;
 import com.lightcomp.ft.server.UploadAcceptor;
 import com.lightcomp.ft.wsdl.v1.FileTransferException;
+import com.lightcomp.ft.xsd.v1.ErrorCode;
+import com.lightcomp.ft.xsd.v1.FileTransferState;
 import com.lightcomp.ft.xsd.v1.FileTransferStatus;
 import com.lightcomp.ft.xsd.v1.GenericData;
 
@@ -111,14 +112,22 @@ public class ServerImpl implements Server, TransferManager {
 
     @Override
     public FileTransferStatus getFileTransferStatus(String transferId) throws FileTransferException {
-        TransferStatus ts = getTransferStatus(transferId);
+        synchronized (this) {
+            AbstractTransfer transfer = transferIdMap.get(transferId);
+            if (transfer != null) {
+                TransferStatusImpl ts = transfer.getStatus();
+                if (ts.isBusy()) {
+                    throw FileTransferExceptionBuilder.from("Transfer is busy", transfer.getAcceptor()).setCode(ErrorCode.BUSY)
+                            .build();
+                }
+                return createFileTransferStatus(ts);
+            }
+        }
+        TransferStatus ts = statusStorage.getTransferStatus(transferId);
         if (ts == null) {
             throw FileTransferExceptionBuilder.from("Transfer status not found").addParam("transferId", transferId).build();
         }
-        FileTransferStatus fts = new FileTransferStatus();
-        fts.setLastFrameSeqNum(ts.getLastFrameSeqNum());
-        fts.setState(TransferState.convert(ts.getState()));
-        return fts;
+        return createFileTransferStatus(ts);
     }
 
     @Override
@@ -142,46 +151,42 @@ public class ServerImpl implements Server, TransferManager {
         TransferAcceptor acceptor = receiver.onTransferBegin(request);
         // check if rejected
         if (acceptor == null) {
-            throw FileTransferExceptionBuilder.from("Transfer was rejected by server").addParam("requestId", requestId).build();
+            throw new FileTransferException("Transfer was rejected by server");
         }
         // initialize transfer
-        try {
-            synchronized (this) {
-                if (state != State.RUNNING) {
-                    throw new IllegalStateException("Server is not running");
-                }
-                AbstractTransfer transfer = createTransfer(requestId, acceptor);
+        synchronized (this) {
+            if (state != State.RUNNING) {
+                throw new FileTransferException("Server is not running");
+            }
+            try {
+                AbstractTransfer transfer = createTransfer(acceptor);
                 if (transferIdMap.putIfAbsent(transfer.getTransferId(), transfer) != null) {
                     throw new IllegalStateException("Transfer id supplied by acceptor already exists");
                 }
                 return transfer;
+            } catch (Throwable t) {
+                String msg = TransferExceptionBuilder.from("Failed to create transfer", acceptor).buildMsg();
+                logger.error(msg, t);
+                acceptor.onTransferFailed(t);
+                throw FileTransferExceptionBuilder.from(msg, acceptor).setCause(t).build();
             }
-        } catch (Throwable t) {
-            String msg = TransferExceptionBuilder.from(t.getMessage()).addParam("transferId", acceptor.getTransferId())
-                    .addParam("requestId", requestId).setCause(t).buildMsg();
-            logger.error(msg, t);
-            acceptor.onTransferFailed(t);
-            throw FileTransferExceptionBuilder.from(msg).setCause(t).build();
         }
     }
 
-    private AbstractTransfer createTransfer(String requestId, TransferAcceptor acceptor) {
+    private AbstractTransfer createTransfer(TransferAcceptor acceptor) {
         String transferId = acceptor.getTransferId();
         // check empty transfer id
         if (StringUtils.isEmpty(transferId)) {
             throw new IllegalArgumentException("Acceptor with empty transfer id");
         }
-        // create transfer
+        // create upload transfer
         if (acceptor.getMode().equals(Mode.UPLOAD)) {
-            if (!(acceptor instanceof UploadAcceptor)) {
-                throw TransferExceptionBuilder.from("Acceptor for upload must implement UploadAcceptor")
-                        .addParam("givenImpl", acceptor.getClass()).build();
-            }
-            UploadTransfer transfer = new UploadTransfer((UploadAcceptor) acceptor, config.getInactiveTimeout(), requestId);
+            UploadAcceptor uploadAcceptor = (UploadAcceptor) acceptor;
+            UploadTransfer transfer = new UploadTransfer(uploadAcceptor, config.getInactiveTimeout());
             transfer.init();
             return transfer;
         }
-        // TODO: server download impl
+        // TODO: create download transfer
         throw new UnsupportedOperationException();
     }
 
@@ -248,5 +253,16 @@ public class ServerImpl implements Server, TransferManager {
                 logger.error("FATAL: failed to store terminated transfer", t);
             }
         }
+    }
+
+    public static FileTransferStatus createFileTransferStatus(TransferStatus ts) {
+        FileTransferState state = ts.getState().toExternal();
+        if (state == null) {
+            throw new IllegalStateException("Failed to convert internal state");
+        }
+        FileTransferStatus fts = new FileTransferStatus();
+        fts.setLastFrameSeqNum(ts.getLastFrameSeqNum());
+        fts.setState(state);
+        return fts;
     }
 }

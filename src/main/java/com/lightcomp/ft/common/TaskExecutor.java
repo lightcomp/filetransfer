@@ -35,10 +35,6 @@ public class TaskExecutor {
         this.threadPoolSize = threadPoolSize;
     }
 
-    public synchronized boolean isIddle() {
-        return taskQueue.isEmpty() && processingTasks.isEmpty();
-    }
-
     /**
      * Start async queue processing.
      */

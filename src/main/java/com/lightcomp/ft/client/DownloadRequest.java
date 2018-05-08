@@ -8,9 +8,4 @@ public interface DownloadRequest extends TransferRequest {
      * Target directory for downloaded items, not-null.
      */
     Path getDownloadDir();
-    
-    /**
-     * Transfer success callback.
-     */
-    void onTransferSuccess();
 }

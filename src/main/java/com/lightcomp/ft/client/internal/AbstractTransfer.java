@@ -11,11 +11,11 @@ import com.lightcomp.ft.client.TransferState;
 import com.lightcomp.ft.client.TransferStatus;
 import com.lightcomp.ft.client.operations.FinishOperation;
 import com.lightcomp.ft.client.operations.RecoveryHandler;
+import com.lightcomp.ft.core.TransferInfo;
 import com.lightcomp.ft.exception.TransferExceptionBuilder;
 import com.lightcomp.ft.wsdl.v1.FileTransferService;
-import com.lightcomp.ft.xsd.v1.GenericData;
 
-public abstract class AbstractTransfer implements Runnable, Transfer, RecoveryHandler {
+public abstract class AbstractTransfer implements Runnable, Transfer, TransferInfo, RecoveryHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractTransfer.class);
 
@@ -44,6 +44,10 @@ public abstract class AbstractTransfer implements Runnable, Transfer, RecoveryHa
 
     @Override
     public String getRequestId() {
+        String id = request.getLogId();
+        if (id != null) {
+            return id;
+        }
         return request.getData().getId();
     }
 
@@ -144,8 +148,6 @@ public abstract class AbstractTransfer implements Runnable, Transfer, RecoveryHa
 
     protected abstract boolean transferFrames();
 
-    protected abstract void handleSuccess(GenericData response);
-
     private boolean begin() {
         if (cancelRequested) {
             return false;
@@ -203,7 +205,7 @@ public abstract class AbstractTransfer implements Runnable, Transfer, RecoveryHa
             // notify canceling threads
             notifyAll();
         }
-        handleSuccess(op.getResponse());
+        request.onTransferSuccess(op.getResponse());
         return true;
     }
 

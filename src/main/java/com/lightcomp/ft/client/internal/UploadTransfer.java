@@ -7,7 +7,6 @@ import com.lightcomp.ft.client.operations.SendOperation;
 import com.lightcomp.ft.core.send.FrameBlockBuilder;
 import com.lightcomp.ft.core.send.SendProgressInfo;
 import com.lightcomp.ft.wsdl.v1.FileTransferService;
-import com.lightcomp.ft.xsd.v1.GenericData;
 
 public class UploadTransfer extends AbstractTransfer implements SendProgressInfo {
 
@@ -51,10 +50,5 @@ public class UploadTransfer extends AbstractTransfer implements SendProgressInfo
                 return true;
             }
         }
-    }
-
-    @Override
-    protected void handleSuccess(GenericData response) {
-        request.onTransferSuccess(response);
     }
 }
