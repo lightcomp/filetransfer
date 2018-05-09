@@ -8,14 +8,12 @@ import java.nio.file.Path;
 import org.apache.commons.lang3.Validate;
 
 import com.lightcomp.ft.common.ChecksumGenerator;
-import com.lightcomp.ft.core.send.items.SourceFile;
+import com.lightcomp.ft.core.send.items.ChannelProvider;
 import com.lightcomp.ft.exception.TransferExceptionBuilder;
 
-class FileDataStream implements FileBlockStream {
+class FileDataStream implements FrameBlockStream {
 
-    private final SourceFile srcFile;
-
-    private final Path path;
+    private final ChannelProvider channelProvider;
 
     private final long offset;
 
@@ -25,18 +23,20 @@ class FileDataStream implements FileBlockStream {
 
     private final SendProgressInfo progressInfo;
 
-    private ReadableByteChannel rbch;
+    private final Path logPath;
+
+    private ReadableByteChannel channel;
 
     private long remaining;
 
-    public FileDataStream(SourceFile srcFile, Path path, long offset, long size, ChecksumGenerator chksmGenerator,
-            SendProgressInfo progressInfo) {
-        this.srcFile = srcFile;
-        this.path = path;
+    public FileDataStream(ChannelProvider channelProvider, long offset, long size, ChecksumGenerator chksmGenerator,
+            SendProgressInfo progressInfo, Path logPath) {
+        this.channelProvider = channelProvider;
         this.offset = offset;
         this.size = size;
         this.chksmGenerator = chksmGenerator;
         this.progressInfo = progressInfo;
+        this.logPath = logPath;
     }
 
     @Override
@@ -46,8 +46,8 @@ class FileDataStream implements FileBlockStream {
 
     @Override
     public void open() throws IOException {
-        Validate.isTrue(rbch == null);
-        rbch = srcFile.openChannel(offset);
+        Validate.isTrue(channel == null);
+        channel = channelProvider.openChannel(offset);
         remaining = size;
     }
 
@@ -66,8 +66,8 @@ class FileDataStream implements FileBlockStream {
         len = (int) Math.min(remaining, len);
         // read data from source file
         ByteBuffer bb = ByteBuffer.wrap(b, off, len);
-        if (rbch.read(bb) < len) {
-            throw TransferExceptionBuilder.from("Source file data stream ended prematurely").addParam("path", path).build();
+        if (channel.read(bb) < len) {
+            throw TransferExceptionBuilder.from("Source file data stream ended prematurely").addParam("path", logPath).build();
         }
         // update checksum generator if present
         if (chksmGenerator != null) {
@@ -81,8 +81,10 @@ class FileDataStream implements FileBlockStream {
 
     @Override
     public void close() throws IOException {
-        rbch.close();
-        rbch = null;
+        if (channel != null) {
+            channel.close();
+            channel = null;
+        }
         remaining = 0;
     }
 }

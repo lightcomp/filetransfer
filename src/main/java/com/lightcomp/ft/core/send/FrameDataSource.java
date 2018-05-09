@@ -10,9 +10,9 @@ import javax.activation.DataSource;
 
 public class FrameDataSource implements DataSource {
 
-    private final Collection<FileBlockStream> blockStreams;
+    private final Collection<FrameBlockStream> blockStreams;
 
-    public FrameDataSource(List<FileBlockStream> blockStreams) {
+    public FrameDataSource(List<FrameBlockStream> blockStreams) {
         this.blockStreams = blockStreams;
     }
 

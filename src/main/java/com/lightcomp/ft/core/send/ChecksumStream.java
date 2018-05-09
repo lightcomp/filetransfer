@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import com.lightcomp.ft.common.ChecksumGenerator;
 
-class FileChecksumStream implements FileBlockStream {
+class ChecksumStream implements FrameBlockStream {
 
     private final ChecksumGenerator chksmGenerator;
 
@@ -12,7 +12,7 @@ class FileChecksumStream implements FileBlockStream {
 
     private int remaining;
 
-    public FileChecksumStream(ChecksumGenerator chksmGenerator, byte[] arrChksm) {
+    public ChecksumStream(ChecksumGenerator chksmGenerator, byte[] arrChksm) {
         this.chksmGenerator = chksmGenerator;
         this.arrChksm = arrChksm;
     }

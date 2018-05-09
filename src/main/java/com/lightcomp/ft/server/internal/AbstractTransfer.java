@@ -40,15 +40,17 @@ public abstract class AbstractTransfer implements Transfer {
     }
 
     public synchronized boolean isBusy() {
-        return isFinishBusy();
+        return isFinishing();
     }
 
-    public synchronized boolean isFinishBusy() {
+    public synchronized boolean isFinishing() {
         return status.getState() == TransferState.FINISHING;
     }
 
     public synchronized TransferStatusImpl getStatus() {
         TransferStatusImpl ts = status.copy();
+        // only this method reveals status impl
+        // internal logic can read busy status directly
         ts.setBusy(isBusy());
         return ts;
     }
@@ -57,7 +59,7 @@ public abstract class AbstractTransfer implements Transfer {
     public GenericData finish() throws FileTransferException {
         synchronized (this) {
             // check if transfer is busy
-            if (isFinishBusy()) {
+            if (isFinishing()) {
                 throw FileTransferExceptionBuilder.from("Transfer is busy", acceptor).setCode(ErrorCode.BUSY).build();
             }
             // check if called in valid state

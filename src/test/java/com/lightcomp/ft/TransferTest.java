@@ -47,6 +47,8 @@ import com.lightcomp.ft.core.send.items.SourceItem;
 import com.lightcomp.ft.server.Server;
 import com.lightcomp.ft.server.ServerConfig;
 import com.lightcomp.ft.server.UploadAcceptor;
+import com.lightcomp.ft.simple.SimpleDir;
+import com.lightcomp.ft.simple.SimpleStatusStorage;
 import com.lightcomp.ft.xsd.v1.DirBegin;
 import com.lightcomp.ft.xsd.v1.GenericData;
 
@@ -438,12 +440,12 @@ public class TransferTest {
         DocumentBuilder db = dbf.newDocumentBuilder();
         Document doc = db.newDocument();
         Element el = doc.createElement("el");
-        
+
         GenericData req = new GenericData();
         req.setId("id");
         req.setBinData(new byte[] { 3 });
         req.setAny(el);
-        
+
         UploadRequestImpl request = new UploadRequestImpl(req, Collections.emptyList(), waiter, TransferState.FINISHED) {
             @Override
             public void onTransferSuccess(GenericData response) {

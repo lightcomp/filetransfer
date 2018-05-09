@@ -12,5 +12,5 @@ public interface SendFrameContext {
     
     void addBlock(FrameBlock block);
 
-    void addBlock(FrameBlock block, FileBlockStream blockStream);
+    void addBlock(FrameBlock block, FrameBlockStream blockStream);
 }

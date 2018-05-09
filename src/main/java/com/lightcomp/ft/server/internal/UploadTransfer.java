@@ -1,11 +1,9 @@
 package com.lightcomp.ft.server.internal;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.Comparator;
 import java.util.Iterator;
 
@@ -36,7 +34,7 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
 
     private final RecvContextImpl recvCtx;
 
-    private Path tempDir;
+    private Path workDir;
 
     private int lastSeqNum;
 
@@ -56,8 +54,8 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
     }
 
     @Override
-    public synchronized boolean isFinishBusy() {
-        return super.isFinishBusy() || lastFrameReceived && status.getState() != TransferState.TRANSFERED;
+    public synchronized boolean isFinishing() {
+        return super.isFinishing() || lastFrameReceived && status.getState() != TransferState.TRANSFERED;
     }
 
     public void init() {
@@ -68,7 +66,7 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
             frameExecutor.start();
             // create temporary folder
             try {
-                tempDir = Files.createTempDirectory(uploadDir, "temp");
+                workDir = Files.createTempDirectory(uploadDir, "work");
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
@@ -124,8 +122,7 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
             lastSeqNum++;
         }
         try {
-            Path frameData = transferFrameData(frame);
-            processFrame(frame, frameData);
+            processFrame(frame);
         } catch (Throwable t) {
             // change internal state and notify acceptor
             transferFailed(t);
@@ -189,8 +186,9 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
         }
     }
 
-    private void processFrame(Frame frame, Path frameData) {
-        RecvFrameProcessor rfp = RecvFrameProcessor.create(frame, recvCtx, frameData);
+    private void processFrame(Frame frame) {
+        RecvFrameProcessor rfp = new RecvFrameProcessor(frame, recvCtx);
+        rfp.transfer(workDir);
         frameExecutor.addTask(() -> {
             try {
                 rfp.process();
@@ -206,28 +204,14 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
         });
     }
 
-    private Path transferFrameData(Frame frame) throws IOException {
-        String seqNum = Integer.toString(frame.getSeqNum());
-        Path file = Files.createTempFile(tempDir, seqNum, null);
-        try (InputStream is = frame.getData().getInputStream()) {
-            // copy whole data stream to temp file
-            long n = Files.copy(is, file, StandardCopyOption.REPLACE_EXISTING);
-            // copied length must match with specified data size
-            if (n != frame.getDataSize()) {
-                throw new IOException("Frame size does not match data length");
-            }
-        }
-        return file;
-    }
-
     @Override
     protected void clearResources() {
         frameExecutor.stop();
         // delete temporary files
-        if (tempDir != null) {
+        if (workDir != null) {
             try {
                 // create iterator with directory at last position
-                Iterator<Path> itemIt = Files.walk(tempDir).sorted(Comparator.reverseOrder()).iterator();
+                Iterator<Path> itemIt = Files.walk(workDir).sorted(Comparator.reverseOrder()).iterator();
                 // delete all (directory included)
                 while (itemIt.hasNext()) {
                     Files.delete(itemIt.next());

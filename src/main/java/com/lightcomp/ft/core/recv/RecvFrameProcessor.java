@@ -1,12 +1,13 @@
 package com.lightcomp.ft.core.recv;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
-import java.util.Collection;
 
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
@@ -20,124 +21,134 @@ public class RecvFrameProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(RecvFrameProcessor.class);
 
-    private final int seqNum;
-
-    private final boolean last;
-
-    private final long dataSize;
-
-    private final Collection<FrameBlock> blocks;
+    private final Frame frame;
 
     private final RecvContext recvCtx;
 
-    private final Path frameData;
-
-    private ReadableByteChannel channel;
+    private Path dataFile;
 
     private long dataPos;
 
-    private RecvFrameProcessor(int seqNum, boolean last, long dataSize, Collection<FrameBlock> blocks, RecvContext recvCtx,
-            Path frameData) {
-        this.seqNum = seqNum;
-        this.last = last;
-        this.dataSize = dataSize;
-        this.blocks = blocks;
+    private ReadableByteChannel dataChannel;
+
+    public RecvFrameProcessor(Frame frame, RecvContext recvCtx) {
+        this.frame = frame;
         this.recvCtx = recvCtx;
-        this.frameData = frameData;
     }
 
     public int getSeqNum() {
-        return seqNum;
+        return frame.getSeqNum();
     }
 
     public boolean isLast() {
-        return last;
+        return Boolean.TRUE.equals(frame.isLast());
+    }
+
+    public void transfer(Path workDir) {
+        Validate.isTrue(dataFile == null);
+        try {
+            dataFile = Files.createTempFile(workDir, Integer.toString(frame.getSeqNum()), null);
+        } catch (IOException e) {
+            throw TransferExceptionBuilder.from("Failed to create temporary file for frame data")
+                    .addParam("frameSeqNum", frame.getSeqNum()).setCause(e).build();
+        }
+        try (InputStream is = frame.getData().getInputStream()) {
+            // copy whole data stream to data file
+            long length = Files.copy(is, dataFile, StandardCopyOption.REPLACE_EXISTING);
+            // copied length must match with specified data size
+            if (length != frame.getDataSize()) {
+                cleanUp(); // delete temp file
+                throw TransferExceptionBuilder.from("Frame size does not match data length")
+                        .addParam("frameSeqNum", frame.getSeqNum()).addParam("frameSize", frame.getDataSize())
+                        .addParam("dataLength", length).build();
+            }
+        } catch (IOException e) {
+            cleanUp(); // delete temp file
+            throw TransferExceptionBuilder.from("Failed to transfer frame data").addParam("frameSeqNum", frame.getSeqNum())
+                    .setCause(e).build();
+        }
     }
 
     public void process() {
-        int blockNum = 0;
-        try {
-            prepareChannel();
-            for (FrameBlock b : blocks) {
+        int blockNum = 1;
+        try (ReadableByteChannel rbch = openDataChannel()) {
+            // set input channel for receive context
+            recvCtx.setInputChannel(rbch);
+            // process all blocks
+            for (FrameBlock b : frame.getBlocks().getDesAndFdsAndFes()) {
                 b.receive(recvCtx);
                 blockNum++;
             }
         } catch (Throwable t) {
-            throw TransferExceptionBuilder.from("Failed to process frame block").addParam("frameSeqNum", seqNum)
+            throw TransferExceptionBuilder.from("Failed to process frame block").addParam("frameSeqNum", frame.getSeqNum())
                     .addParam("blockNum", blockNum).setCause(t).build();
         } finally {
-            clearResources();
+            // release input channel
+            recvCtx.setInputChannel(null);
+            // close and delete data
+            cleanUp();
         }
         validate();
     }
 
-    private void prepareChannel() {
-        Validate.isTrue(channel == null);
+    private ReadableByteChannel openDataChannel() {
+        Validate.isTrue(dataChannel == null);
         try {
-            channel = Files.newByteChannel(frameData, StandardOpenOption.READ);
-            recvCtx.setInputChannel(new FrameByteChannelWrapper());
+            dataChannel = Files.newByteChannel(dataFile, StandardOpenOption.READ);
         } catch (IOException e) {
-            throw TransferExceptionBuilder.from("Failed to open frame data").addParam("frameSeqNum", seqNum)
-                    .addParam("dataPath", frameData).setCause(e).build();
+            throw TransferExceptionBuilder.from("Failed to open temporary frame data").addParam("frameSeqNum", frame.getSeqNum())
+                    .addParam("dataFile", dataFile).setCause(e).build();
+        }
+        return new ReadableByteChannel() {
+            @Override
+            public boolean isOpen() {
+                return dataChannel.isOpen();
+            }
+
+            @Override
+            public void close() throws IOException {
+                dataChannel.close();
+            }
+
+            @Override
+            public int read(ByteBuffer dst) throws IOException {
+                int n = dataChannel.read(dst);
+                dataPos += n;
+                return n;
+            }
+        };
+    }
+
+    private void cleanUp() {
+        try {
+            if (dataChannel != null) {
+                dataChannel.close();
+                dataChannel = null;
+            }
+            Files.delete(dataFile);
+        } catch (Throwable t) {
+            TransferExceptionBuilder.from("Failed to clear frame temporary data").addParam("frameSeqNum", frame.getSeqNum())
+                    .setCause(t).log(logger);
         }
     }
 
     private void validate() {
+        long dataSize = frame.getDataSize();
         if (dataSize != dataPos) {
-            throw TransferExceptionBuilder.from("Not all data from stream processed").addParam("frameSeqNum", seqNum)
+            throw TransferExceptionBuilder.from("Not all data from stream processed").addParam("frameSeqNum", frame.getSeqNum())
                     .addParam("dataSize", dataSize).addParam("dataPosition", dataPos).build();
         }
-        if (last) {
-            Path dirPath = recvCtx.getCurrentDir();
-            if (dirPath != null) {
+        if (Boolean.TRUE.equals(frame.isLast())) {
+            Path currDir = recvCtx.getCurrentDir();
+            if (currDir != null) {
                 throw TransferExceptionBuilder.from("Directory inconsistency, after last frame the directory still remains open")
-                        .addParam("frameSeqNum", seqNum).addParam("dirPath", dirPath).build();
+                        .addParam("frameSeqNum", frame.getSeqNum()).addParam("remainingDir", currDir).build();
             }
-            Path filePath = recvCtx.getCurrentFile();
-            if (filePath != null) {
+            Path currFile = recvCtx.getCurrentFile();
+            if (currFile != null) {
                 throw TransferExceptionBuilder.from("File inconsistency, after last frame the file still remains open")
-                        .addParam("frameSeqNum", seqNum).addParam("filePath", filePath).build();
+                        .addParam("frameSeqNum", frame.getSeqNum()).addParam("remainingFile", currFile).build();
             }
-        }
-    }
-
-    private void clearResources() {
-        recvCtx.setInputChannel(null);
-        try {
-            if (channel != null) {
-                channel.close();
-                channel = null;
-            }
-            Files.delete(frameData);
-        } catch (Throwable t) {
-            TransferExceptionBuilder.from("Failed to clear frame temporary data").addParam("frameSeqNum", seqNum).setCause(t)
-                    .log(logger);
-        }
-    }
-
-    public static RecvFrameProcessor create(Frame frame, RecvContext receiveCtx, Path frameData) {
-        boolean lastFrame = Boolean.TRUE.equals(frame.isLast());
-        Collection<FrameBlock> frameBlocks = frame.getBlocks().getDesAndFdsAndFes();
-        return new RecvFrameProcessor(frame.getSeqNum(), lastFrame, frame.getDataSize(), frameBlocks, receiveCtx, frameData);
-    }
-
-    private class FrameByteChannelWrapper implements ReadableByteChannel {
-
-        @Override
-        public boolean isOpen() {
-            return channel.isOpen();
-        }
-
-        @Override
-        public void close() throws IOException {
-            channel.close();
-        }
-
-        @Override
-        public int read(ByteBuffer dst) throws IOException {
-            int n = channel.read(dst);
-            dataPos += n;
-            return n;
         }
     }
 }

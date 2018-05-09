@@ -12,8 +12,6 @@ public class UploadTransfer extends AbstractTransfer implements SendProgressInfo
 
     private final UploadRequest request;
 
-    private int lastFrameSeqNum;
-
     public UploadTransfer(UploadRequest request, ClientConfig config, FileTransferService service) {
         super(request, config, service);
         this.request = request;
@@ -33,13 +31,12 @@ public class UploadTransfer extends AbstractTransfer implements SendProgressInfo
 
     @Override
     protected boolean transferFrames() {
-        FrameBlockBuilder fbBuilder = new FrameBlockBuilder(request.getItemIterator(), this);
+        FrameBlockBuilder builder = new FrameBlockBuilder(request.getItemIterator(), this);
+        int lastSeqNum = 1;
         while (true) {
-            // increment last frame seq. number
-            lastFrameSeqNum++;
             // prepare frame
-            UploadFrameContext frameCtx = new UploadFrameContext(lastFrameSeqNum, config);
-            fbBuilder.build(frameCtx);
+            UploadFrameContext frameCtx = new UploadFrameContext(lastSeqNum, config);
+            builder.build(frameCtx);
             // send frame
             SendOperation op = new SendOperation(this, this, frameCtx);
             if (!op.execute(service)) {
@@ -49,6 +46,8 @@ public class UploadTransfer extends AbstractTransfer implements SendProgressInfo
             if (frameCtx.isLast()) {
                 return true;
             }
+            // increment last frame number
+            lastSeqNum++;
         }
     }
 }

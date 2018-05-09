@@ -1,4 +1,4 @@
-package com.lightcomp.ft;
+package com.lightcomp.ft.simple;
 
 import java.util.HashMap;
 import java.util.Map;

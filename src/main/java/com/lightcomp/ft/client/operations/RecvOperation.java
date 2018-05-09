@@ -1,6 +1,7 @@
 package com.lightcomp.ft.client.operations;
 
-import com.lightcomp.ft.client.internal.UploadFrameContext;
+import java.math.BigInteger;
+
 import com.lightcomp.ft.core.TransferInfo;
 import com.lightcomp.ft.exception.TransferExceptionBuilder;
 import com.lightcomp.ft.wsdl.v1.FileTransferException;
@@ -9,13 +10,19 @@ import com.lightcomp.ft.xsd.v1.FileTransferState;
 import com.lightcomp.ft.xsd.v1.FileTransferStatus;
 import com.lightcomp.ft.xsd.v1.Frame;
 
-public class SendOperation extends RecoverableOperation {
+public class RecvOperation extends RecoverableOperation {
 
-    private final UploadFrameContext frameCtx;
+    private final int seqNum;
 
-    public SendOperation(TransferInfo transfer, RecoveryHandler handler, UploadFrameContext frameCtx) {
+    private Frame response;
+
+    public RecvOperation(TransferInfo transfer, RecoveryHandler handler, int seqNum) {
         super(transfer, handler);
-        this.frameCtx = frameCtx;
+        this.seqNum = seqNum;
+    }
+
+    public Frame getResponse() {
+        return response;
     }
 
     @Override
@@ -25,14 +32,12 @@ public class SendOperation extends RecoverableOperation {
 
     @Override
     protected TransferExceptionBuilder prepareException(Throwable cause) {
-        return TransferExceptionBuilder.from("Failed to send frame", transfer).setCause(cause).addParam("seqNum",
-                frameCtx.getSeqNum());
+        return TransferExceptionBuilder.from("Failed to receive frame", transfer).setCause(cause).addParam("seqNum", seqNum);
     }
 
     @Override
     protected void send(FileTransferService service) throws FileTransferException {
-        Frame frame = frameCtx.createFrame();
-        service.send(frame, transfer.getTransferId());
+        response = service.receive(BigInteger.valueOf(seqNum), transfer.getTransferId());
     }
 
     @Override
@@ -44,7 +49,6 @@ public class SendOperation extends RecoverableOperation {
         }
         // check frame seq number
         int lastSeqNum = status.getLastFrameSeqNum();
-        int seqNum = frameCtx.getSeqNum();
         // test if succeeded
         if (seqNum == lastSeqNum) {
             return true;

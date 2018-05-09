@@ -45,6 +45,6 @@ public class FinishOperation extends RecoverableOperation {
             response = status.getResp();
             return true; // success
         }
-        throw new IllegalStateException("Invalid server state, name=" + fts);
+        throw TransferExceptionBuilder.from("Invalid server state").addParam("name", fts).build();
     }
 }

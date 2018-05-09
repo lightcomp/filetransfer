@@ -11,11 +11,10 @@ import com.lightcomp.ft.client.TransferState;
 import com.lightcomp.ft.client.TransferStatus;
 import com.lightcomp.ft.client.operations.FinishOperation;
 import com.lightcomp.ft.client.operations.RecoveryHandler;
-import com.lightcomp.ft.core.TransferInfo;
 import com.lightcomp.ft.exception.TransferExceptionBuilder;
 import com.lightcomp.ft.wsdl.v1.FileTransferService;
 
-public abstract class AbstractTransfer implements Runnable, Transfer, TransferInfo, RecoveryHandler {
+public abstract class AbstractTransfer implements Runnable, Transfer, RecoveryHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractTransfer.class);
 

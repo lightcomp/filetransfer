@@ -92,6 +92,6 @@ public class FrameBlockBuilder {
 
     private void setFile(Path parentPath, SourceFile srcFile) {
         Path path = parentPath.resolve(srcFile.getName());
-        currFileSpltr = FileSplitter.create(srcFile, path, progressInfo);
+        currFileSpltr = FileSplitter.create(srcFile, progressInfo, path);
     }
 }

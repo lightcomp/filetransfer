@@ -2,7 +2,7 @@ package com.lightcomp.ft.core.send;
 
 import java.io.IOException;
 
-public interface FileBlockStream {
+public interface FrameBlockStream {
 
     long getSize();
 

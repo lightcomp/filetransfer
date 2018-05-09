@@ -1,11 +1,12 @@
 package com.lightcomp.ft.client;
 
+import com.lightcomp.ft.core.TransferInfo;
 import com.lightcomp.ft.exception.TransferException;
 
 /**
  * Representation of one transfer.
  */
-public interface Transfer {
+public interface Transfer extends TransferInfo {
 
     /**
      * Returns current transfer status.

@@ -10,7 +10,7 @@ public interface TransferRequest {
     GenericData getData();
 
     /**
-     * Request id which is used only for logging. Data id is used when value is null.
+     * Request id which is used only for logging, when null data id is used instead.
      */
     String getLogId();
 
@@ -33,7 +33,7 @@ public interface TransferRequest {
      * Transfer failed callback.
      */
     void onTransferFailed(Throwable cause);
-    
+
     /**
      * Transfer success callback.
      */

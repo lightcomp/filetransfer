@@ -7,17 +7,17 @@ import java.util.Iterator;
 
 public class FrameInputStream extends InputStream {
 
-    private final Iterator<FileBlockStream> blockStreamIt;
+    private final Iterator<FrameBlockStream> blockStreamIt;
 
-    private FileBlockStream currStream;
+    private FrameBlockStream currStream;
 
     private long available;
 
     private boolean closed;
 
-    public FrameInputStream(Collection<FileBlockStream> blockStreams) {
+    public FrameInputStream(Collection<FrameBlockStream> blockStreams) {
         this.blockStreamIt = blockStreams.iterator();
-        this.available = blockStreams.stream().mapToLong(FileBlockStream::getSize).sum();
+        this.available = blockStreams.stream().mapToLong(FrameBlockStream::getSize).sum();
     }
 
     @Override

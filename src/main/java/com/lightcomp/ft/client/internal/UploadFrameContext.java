@@ -8,7 +8,7 @@ import javax.activation.DataHandler;
 import org.apache.commons.lang3.Validate;
 
 import com.lightcomp.ft.client.ClientConfig;
-import com.lightcomp.ft.core.send.FileBlockStream;
+import com.lightcomp.ft.core.send.FrameBlockStream;
 import com.lightcomp.ft.core.send.FrameDataSource;
 import com.lightcomp.ft.core.send.SendFrameContext;
 import com.lightcomp.ft.xsd.v1.Frame;
@@ -19,7 +19,7 @@ public class UploadFrameContext implements SendFrameContext {
 
     private final List<FrameBlock> blocks = new ArrayList<>();
 
-    private final List<FileBlockStream> blockStreams = new ArrayList<>();
+    private final List<FrameBlockStream> blockStreams = new ArrayList<>();
 
     private final int seqNum;
 
@@ -64,7 +64,7 @@ public class UploadFrameContext implements SendFrameContext {
     }
 
     @Override
-    public void addBlock(FrameBlock block, FileBlockStream blockStream) {
+    public void addBlock(FrameBlock block, FrameBlockStream blockStream) {
         long newSize = dataSize + blockStream.getSize();
         Validate.isTrue(newSize <= config.getMaxFrameSize());
         addBlock(block);
