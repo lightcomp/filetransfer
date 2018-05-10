@@ -16,8 +16,8 @@ import com.lightcomp.ft.exception.TransferException;
 import com.lightcomp.ft.exception.TransferExceptionBuilder;
 
 public class RecvContextImpl implements RecvContext {
-	
-	private static final Logger LOGGER = LoggerFactory.getLogger(RecvContextImpl.class);
+
+    private static final Logger logger = LoggerFactory.getLogger(RecvContextImpl.class);
 
     private final RecvProgressInfo progressInfo;
 
@@ -52,11 +52,9 @@ public class RecvContextImpl implements RecvContext {
 
     @Override
     public void openDir(String name) {
-    	
-    	if(LOGGER.isDebugEnabled()) {
-    		LOGGER.debug("Open directory '{}' in '{}'", name, relativeDir);
-    	}
-    	
+        if (logger.isDebugEnabled()) {
+            logger.debug("Open directory '{}' in '{}'", name, relativeDir);
+        }
         Path dir;
         try {
             dir = relativeDir.resolve(name);

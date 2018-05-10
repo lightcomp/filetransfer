@@ -43,9 +43,9 @@ public class UploadRequestImpl implements UploadRequest {
     @Override
     public Iterator<SourceItem> getItemIterator() {
         try {
-            return Files.walk(dataDir).filter(p -> !p.equals(dataDir)).<SourceItem>map(p -> {
+            return Files.walk(dataDir,1).filter(p -> !p.equals(dataDir)).<SourceItem>map(p -> {
                 if (Files.isDirectory(p)) {
-                    return new SimpleDir(p.getFileName().toString());
+                    return new SimpleDir(p);
                 } else {
                     return new SimpleSourceFile(p);
                 }

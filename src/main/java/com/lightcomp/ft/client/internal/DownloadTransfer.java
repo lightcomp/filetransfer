@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import com.lightcomp.ft.client.ClientConfig;
 import com.lightcomp.ft.client.DownloadRequest;
+import com.lightcomp.ft.client.TransferStatus;
 import com.lightcomp.ft.client.operations.RecvOperation;
 import com.lightcomp.ft.common.PathUtils;
 import com.lightcomp.ft.core.recv.RecvContext;
@@ -32,8 +33,14 @@ public class DownloadTransfer extends AbstractTransfer implements RecvProgressIn
 
     @Override
     public void onDataReceived(long size) {
-        // TODO Auto-generated method stub
-
+        TransferStatus ts;
+        synchronized (this) {
+            // update current state
+            status.addTransferedData(size);
+            // copy status in synch block
+            ts = status.copy();
+        }
+        request.onTransferProgress(ts);
     }
 
     @Override

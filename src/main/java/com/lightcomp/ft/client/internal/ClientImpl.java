@@ -41,8 +41,9 @@ public class ClientImpl implements Client {
     public Transfer download(DownloadRequest request) {
         Validate.isTrue(service != null);
 
-        // TODO: client download impl
-        throw new UnsupportedOperationException();
+        AbstractTransfer transfer = new DownloadTransfer(request, config, service);
+        transferExecutor.addTask(transfer);
+        return transfer;
     }
 
     @Override

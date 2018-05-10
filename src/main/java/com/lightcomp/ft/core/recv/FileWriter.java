@@ -11,6 +11,8 @@ import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.FileTime;
 import java.util.Arrays;
 
+import javax.xml.bind.DatatypeConverter;
+
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,8 +22,8 @@ import com.lightcomp.ft.common.ChecksumGenerator;
 import com.lightcomp.ft.exception.TransferExceptionBuilder;
 
 class FileWriter {
-	
-	private static final Logger LOGGER = LoggerFactory.getLogger(FileWriter.class);
+
+    private static final Logger logger = LoggerFactory.getLogger(FileWriter.class);
 
     private static final int BUFFER_SIZE = 65536;
 
@@ -68,19 +70,21 @@ class FileWriter {
     }
 
     public void finish(long lastModified, byte[] checksum) {
+        // check written size
         long writtenSize = chksmGenerator.getNumProcessed();
         if (size != writtenSize) {
             throw TransferExceptionBuilder.from("Incomplete file cannot be finished").addParam("path", file)
                     .addParam("fileSize", size).addParam("writtenSize", writtenSize).build();
         }
+        // validate checksum
         byte[] chksm = chksmGenerator.generate();
-        if(LOGGER.isDebugEnabled()) {
-        	LOGGER.debug("SHA512="+  javax.xml.bind.DatatypeConverter.printHexBinary(chksm));
+        if (logger.isDebugEnabled()) {
+            logger.debug("SHA512={}", DatatypeConverter.printHexBinary(chksm));
         }
-        
         if (!Arrays.equals(chksm, checksum)) {
             throw TransferExceptionBuilder.from("File checksums does not match").addParam("path", file).build();
         }
+        // update last modification
         FileTime lm = FileTime.fromMillis(lastModified);
         try {
             Files.setLastModifiedTime(file, lm);

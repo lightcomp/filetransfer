@@ -21,6 +21,7 @@ public class FrameBlockBuilder {
     private FileSplitter currSplitter;
 
     public FrameBlockBuilder(Iterator<SourceItem> rootItemIt, SendProgressInfo progressInfo) {
+        // add root folder
         dirStack.add(new DirContext(null, PathUtils.ROOT, rootItemIt));
         this.progressInfo = progressInfo;
     }
@@ -59,7 +60,15 @@ public class FrameBlockBuilder {
         frameCtx.setLast(true);
     }
 
+    /**
+     * 
+     * @param dirCtx
+     * @param frameCtx
+     * @return Return true if dirBegin was prepared.
+     *   Return false if dirBegin cannot be add to the current frame (frame is full)
+     */
     private boolean prepareDirBegin(DirContext dirCtx, SendFrameContext frameCtx) {
+    	// Do not send dirBegin for root folder
         if (dirStack.size() == 1) {
             return true;
         }

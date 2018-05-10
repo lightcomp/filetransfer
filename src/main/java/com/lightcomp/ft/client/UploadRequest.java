@@ -7,7 +7,7 @@ import com.lightcomp.ft.core.send.items.SourceItem;
 public interface UploadRequest extends TransferRequest {
 
     /**
-     * Returns new source item iterator, not-null.
+     * Returns new root item iterator, not-null.
      */
     Iterator<SourceItem> getItemIterator();
 }

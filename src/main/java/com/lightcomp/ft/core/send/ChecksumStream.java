@@ -2,14 +2,16 @@ package com.lightcomp.ft.core.send;
 
 import java.io.IOException;
 
+import javax.xml.bind.DatatypeConverter;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.lightcomp.ft.common.ChecksumGenerator;
 
 class ChecksumStream implements FrameBlockStream {
-	
-	private static final Logger LOGGER = LoggerFactory.getLogger(ChecksumStream.class);
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ChecksumStream.class);
 
     private final ChecksumGenerator chksmGenerator;
 
@@ -31,9 +33,8 @@ class ChecksumStream implements FrameBlockStream {
     public void open() throws IOException {
         if (arrChksm == null) {
             arrChksm = chksmGenerator.generate();
-            
-            if(LOGGER.isDebugEnabled()) {
-            	LOGGER.debug("SHA512="+  javax.xml.bind.DatatypeConverter.printHexBinary(arrChksm));
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("SHA512={}", DatatypeConverter.printHexBinary(arrChksm));
             }
         }
         remaining = arrChksm.length;
