@@ -47,6 +47,7 @@ import com.lightcomp.ft.core.send.items.SourceItem;
 import com.lightcomp.ft.server.Server;
 import com.lightcomp.ft.server.ServerConfig;
 import com.lightcomp.ft.server.UploadAcceptor;
+import com.lightcomp.ft.simple.MemoryDir;
 import com.lightcomp.ft.simple.SimpleDir;
 import com.lightcomp.ft.simple.SimpleStatusStorage;
 import com.lightcomp.ft.xsd.v1.DirBegin;
@@ -139,7 +140,7 @@ public class TransferTest {
 
         client.start();
 
-        List<SourceItem> items = Collections.singletonList(new SimpleDir("test"));
+        List<SourceItem> items = Collections.singletonList(new MemoryDir("test"));
         UploadRequestImpl request = new UploadRequestImpl(createReqData("req"), items, waiter, TransferState.FINISHED);
 
         Transfer transfer = client.upload(request);
@@ -184,7 +185,7 @@ public class TransferTest {
 
         client.start();
 
-        List<SourceItem> items = Collections.singletonList(new SimpleDir("test"));
+        List<SourceItem> items = Collections.singletonList(new MemoryDir("test"));
         UploadRequestImpl request = new UploadRequestImpl(createReqData("req"), items, waiter, TransferState.FAILED) {
             @Override
             public void onTransferProgress(TransferStatus status) {
@@ -225,7 +226,7 @@ public class TransferTest {
 
         client.start();
 
-        SimpleDir dir = new SimpleDir("test");
+        MemoryDir dir = new MemoryDir("test");
         dir.addChild(new InMemoryFile("1.txt", new byte[0], 0)); // empty
         dir.addChild(new InMemoryFile("2.txt", new byte[] { 0x41, 0x42, 0x43, 0x44, 0x45 }, 0)); // 5 bytes
         dir.addChild(new GeneratedFile("3.txt", 100 * 1024, 0)); // 100kB which overlaps first frame by 5 bytes
@@ -268,7 +269,7 @@ public class TransferTest {
 
         client.start();
 
-        List<SourceItem> items = Arrays.asList(new SimpleDir("1"), new SimpleDir("2"), new SimpleDir("3"));
+        List<SourceItem> items = Arrays.asList(new MemoryDir("1"), new MemoryDir("2"), new MemoryDir("3"));
         UploadRequestImpl request = new UploadRequestImpl(createReqData("req"), items, waiter, TransferState.FINISHED);
 
         client.upload(request);
@@ -482,7 +483,7 @@ public class TransferTest {
         for (int i = 1; i <= size; i++) {
             String cnt = Integer.toString(i);
             if (i % 2 == 0) {
-                SimpleDir dir = new SimpleDir(cnt);
+            	MemoryDir dir = new MemoryDir(cnt);
                 items.add(dir);
                 if (depth > 0) {
                     Pair<Collection<SourceItem>, Integer> pair = createMixedContent(depth - 1, size);

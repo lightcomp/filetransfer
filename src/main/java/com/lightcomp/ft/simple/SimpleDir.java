@@ -1,9 +1,10 @@
 package com.lightcomp.ft.simple;
 
-import java.util.ArrayList;
-import java.util.Collection;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Iterator;
-import java.util.List;
 
 import com.lightcomp.ft.core.send.items.SourceDir;
 import com.lightcomp.ft.core.send.items.SourceFile;
@@ -11,17 +12,15 @@ import com.lightcomp.ft.core.send.items.SourceItem;
 
 public class SimpleDir implements SourceDir {
 
-    private final List<SourceItem> children = new ArrayList<>();
+    private final Path dirPath;
 
-    private final String name;
-
-    public SimpleDir(String name) {
-        this.name = name;
+    public SimpleDir(Path dirPath) {
+        this.dirPath = dirPath;
     }
 
     @Override
     public String getName() {
-        return name;
+        return dirPath.getName(dirPath.getNameCount()-1).toString();
     }
 
     @Override
@@ -39,16 +38,18 @@ public class SimpleDir implements SourceDir {
         throw new UnsupportedOperationException();
     }
 
-    public void addChild(SourceItem item) {
-        children.add(item);
-    }
-
-    public void addChildren(Collection<SourceItem> items) {
-        children.addAll(items);
-    }
-
     @Override
     public Iterator<SourceItem> getItemIterator() {
-        return children.iterator();
+        try {
+            return Files.walk(dirPath,1).filter(p -> !p.equals(dirPath)).<SourceItem>map(p -> {
+                if (Files.isDirectory(p)) {
+                    return new SimpleDir(p);
+                } else {
+                    return new SimpleSourceFile(p);
+                }
+            }).iterator();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 }

@@ -18,8 +18,8 @@ public class FileTransferClient {
     	
     	LOG.debug("Starting client");
 
-        ClientConfig cfg = new ClientConfig(args[0]);
-        cfg.setRecoveryDelay(5);
+        ClientConfig cfg = new ClientConfig(args[0]);        
+        cfg.setRecoveryDelay(5);        
 
         Client client = FileTransfer.createClient(cfg);
         client.start();
