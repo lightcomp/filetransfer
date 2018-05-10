@@ -3,6 +3,7 @@ package com.lightcomp.ft.simple;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -62,7 +63,9 @@ public class SimpleSourceFile implements SourceFile {
 
     @Override
     public ReadableByteChannel openChannel(long position) throws IOException {
-        return Files.newByteChannel(path);
+    	SeekableByteChannel channel = Files.newByteChannel(path);
+    	channel.position(position);
+    	return channel;
     }
 
 }
