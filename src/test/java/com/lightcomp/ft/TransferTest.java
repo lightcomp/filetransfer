@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
@@ -58,8 +57,6 @@ public class TransferTest {
 
     private static final String SERVER_ADDR = "http://localhost:7979/";
 
-    private static final Path SYS_TEMP;
-
     private static int testCount;
 
     private Path tempDir;
@@ -68,15 +65,10 @@ public class TransferTest {
 
     private Waiter waiter;
 
-    static {
-        String path = System.getProperty("java.io.tmpdir");
-        SYS_TEMP = Paths.get(path);
-    }
-
     @Before
     public void before() throws IOException {
+        tempDir = Files.createTempDirectory("file-transfer-tests");
         waiter = new Waiter();
-        tempDir = Files.createTempDirectory(SYS_TEMP, "file-transfer-tests");
     }
 
     @After

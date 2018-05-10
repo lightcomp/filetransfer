@@ -7,23 +7,26 @@ import com.lightcomp.ft.core.send.items.SourceItem;
 
 class DirContext {
 
+    private final String name;
+
     private final Path path;
 
     private final Iterator<SourceItem> itemIt;
 
     private boolean started;
 
-    public DirContext(Path path, Iterator<SourceItem> itemIt) {
+    public DirContext(String name, Path path, Iterator<SourceItem> itemIt) {
+        this.name = name;
         this.itemIt = itemIt;
         this.path = path;
     }
 
+    public String getName() {
+        return name;
+    }
+    
     public Path getPath() {
         return path;
-    }
-
-    public String getName() {
-        return path.getFileName().toString();
     }
 
     public boolean hasNextItem() {

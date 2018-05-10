@@ -49,8 +49,8 @@ public abstract class AbstractTransfer implements Transfer {
 
     public synchronized TransferStatusImpl getStatus() {
         TransferStatusImpl ts = status.copy();
-        // only this method reveals status impl
-        // internal logic can read busy status directly
+        // busy is set only to this copy because only this method reveals status impl
+        // internal logic must read busy through isBusy getter
         ts.setBusy(isBusy());
         return ts;
     }

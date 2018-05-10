@@ -1,37 +1,38 @@
 package com.lightcomp.ft.core.send;
 
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Iterator;
 import java.util.LinkedList;
 
+import com.lightcomp.ft.common.PathUtils;
 import com.lightcomp.ft.core.blocks.DirBeginBlockImpl;
 import com.lightcomp.ft.core.blocks.DirEndBlockImpl;
 import com.lightcomp.ft.core.send.items.SourceDir;
-import com.lightcomp.ft.core.send.items.SourceFile;
 import com.lightcomp.ft.core.send.items.SourceItem;
+import com.lightcomp.ft.exception.TransferExceptionBuilder;
 
 public class FrameBlockBuilder {
 
     private final LinkedList<DirContext> dirStack = new LinkedList<>();
 
     private final SendProgressInfo progressInfo;
-    
-    private FileSplitter currFileSpltr;
 
-    public FrameBlockBuilder(Iterator<SourceItem> sourceItemIt, SendProgressInfo progressInfo) {
-        dirStack.add(new DirContext(Paths.get(""), sourceItemIt));
+    private FileSplitter currSplitter;
+
+    public FrameBlockBuilder(Iterator<SourceItem> rootItemIt, SendProgressInfo progressInfo) {
+        dirStack.add(new DirContext(null, PathUtils.ROOT, rootItemIt));
         this.progressInfo = progressInfo;
     }
 
     public void build(SendFrameContext frameCtx) {
         while (dirStack.size() > 0) {
             // add all blocks from current file first
-            if (currFileSpltr != null) {
-                if (!currFileSpltr.prepareBlocks(frameCtx)) {
+            if (currSplitter != null) {
+                if (!currSplitter.prepareBlocks(frameCtx)) {
                     return; // frame filled
                 }
-                currFileSpltr = null;
+                currSplitter = null;
             }
             // get last directory and create begin/end if needed
             DirContext dirCtx = dirStack.getLast();
@@ -50,9 +51,9 @@ public class FrameBlockBuilder {
             // last directory didn't end -> process next child
             SourceItem child = dirCtx.getNextItem();
             if (child.isDir()) {
-                addDir(dirCtx.getPath(), child.asDir());
+                addDir(child.asDir(), dirCtx.getPath());
             } else {
-                setFile(dirCtx.getPath(), child.asFile());
+                currSplitter = FileSplitter.create(child.asFile(), progressInfo, dirCtx.getPath());
             }
         }
         frameCtx.setLast(true);
@@ -84,14 +85,16 @@ public class FrameBlockBuilder {
         return true;
     }
 
-    private void addDir(Path parentPath, SourceDir srcDir) {
-        Path path = parentPath.resolve(srcDir.getName());
-        DirContext dirCtx = new DirContext(path, srcDir.getItemIterator());
+    private void addDir(SourceDir srcDir, Path parentPath) {
+        String name = srcDir.getName();
+        Path path;
+        try {
+            path = parentPath.resolve(name);
+        } catch (InvalidPathException e) {
+            throw TransferExceptionBuilder.from("Invalid source directory name").addParam("parentPath", parentPath)
+                    .addParam("name", name).setCause(e).build();
+        }
+        DirContext dirCtx = new DirContext(name, path, srcDir.getItemIterator());
         dirStack.addLast(dirCtx);
-    }
-
-    private void setFile(Path parentPath, SourceFile srcFile) {
-        Path path = parentPath.resolve(srcFile.getName());
-        currFileSpltr = FileSplitter.create(srcFile, progressInfo, path);
     }
 }

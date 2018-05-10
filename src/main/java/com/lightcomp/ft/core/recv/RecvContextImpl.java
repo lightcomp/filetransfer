@@ -6,15 +6,13 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 import com.lightcomp.ft.common.ChecksumGenerator;
+import com.lightcomp.ft.common.PathUtils;
 import com.lightcomp.ft.exception.TransferException;
 import com.lightcomp.ft.exception.TransferExceptionBuilder;
 
 public class RecvContextImpl implements RecvContext {
-
-    private static final Path EMPTY_PATH = Paths.get("");
 
     private final RecvProgressInfo progressInfo;
 
@@ -24,22 +22,22 @@ public class RecvContextImpl implements RecvContext {
 
     private FileWriter openWritter;
 
-    private ReadableByteChannel rbch;
+    private ReadableByteChannel inputChannel;
 
     public RecvContextImpl(RecvProgressInfo progressInfo, Path rootDir) {
         this.progressInfo = progressInfo;
         this.rootDir = rootDir;
-        this.relativeDir = EMPTY_PATH;
+        this.relativeDir = PathUtils.ROOT;
     }
 
     @Override
-    public void setInputChannel(ReadableByteChannel rbch) {
-        this.rbch = rbch;
+    public void setInputChannel(ReadableByteChannel inputChannel) {
+        this.inputChannel = inputChannel;
     }
 
     @Override
     public Path getCurrentDir() {
-        return EMPTY_PATH.equals(relativeDir) ? null : relativeDir;
+        return PathUtils.ROOT.equals(relativeDir) ? null : relativeDir;
     }
 
     @Override
@@ -67,11 +65,11 @@ public class RecvContextImpl implements RecvContext {
 
     @Override
     public void closeDir() {
-        if (EMPTY_PATH.equals(relativeDir)) {
+        if (PathUtils.ROOT.equals(relativeDir)) {
             throw new TransferException("Failed to close directory, transfer at root level");
         }
         Path dir = relativeDir.getParent();
-        relativeDir = dir != null ? dir : EMPTY_PATH;
+        relativeDir = dir != null ? dir : PathUtils.ROOT;
     }
 
     @Override
@@ -84,7 +82,7 @@ public class RecvContextImpl implements RecvContext {
         try {
             file = relativeDir.resolve(name);
         } catch (InvalidPathException e) {
-            throw TransferExceptionBuilder.from("Invalid file name").addParam("dirPath", relativeDir).addParam("name", name)
+            throw TransferExceptionBuilder.from("Invalid file name").addParam("parentPath", relativeDir).addParam("name", name)
                     .setCause(e).build();
         }
         Path dstFile = rootDir.resolve(file);
@@ -98,7 +96,7 @@ public class RecvContextImpl implements RecvContext {
 
     @Override
     public void writeFileData(long offset, long length) {
-        openWritter.write(rbch, offset, length);
+        openWritter.write(inputChannel, offset, length);
         progressInfo.onDataReceived(length);
     }
 
@@ -121,7 +119,7 @@ public class RecvContextImpl implements RecvContext {
 
     private byte[] readFileChecksum() throws IOException {
         ByteBuffer bb = ByteBuffer.allocate(ChecksumGenerator.LENGTH);
-        while (rbch.read(bb) > 0) {
+        while (inputChannel.read(bb) > 0) {
         }
         if (bb.hasRemaining()) {
             throw new IOException("Frame stream ended prematurely");

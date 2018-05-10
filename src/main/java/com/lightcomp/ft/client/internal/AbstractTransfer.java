@@ -26,7 +26,7 @@ public abstract class AbstractTransfer implements Runnable, Transfer, RecoveryHa
 
     protected final FileTransferService service;
 
-    private String transferId;
+    protected String transferId;
 
     private boolean cancelRequested;
 

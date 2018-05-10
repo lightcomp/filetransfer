@@ -1,9 +1,9 @@
 package com.lightcomp.ft.client.internal;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Comparator;
-import java.util.Iterator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import com.lightcomp.ft.client.ClientConfig;
 import com.lightcomp.ft.client.DownloadRequest;
 import com.lightcomp.ft.client.operations.RecvOperation;
+import com.lightcomp.ft.common.PathUtils;
 import com.lightcomp.ft.core.recv.RecvContext;
 import com.lightcomp.ft.core.recv.RecvContextImpl;
 import com.lightcomp.ft.core.recv.RecvFrameProcessor;
@@ -37,16 +38,16 @@ public class DownloadTransfer extends AbstractTransfer implements RecvProgressIn
 
     @Override
     protected boolean transferFrames() {
-        Path workDir = createWorkDir();
+        Path tempDir = createTempDir();
         try {
             RecvContext recvCtx = new RecvContextImpl(this, downloadDir);
-            return download(recvCtx, workDir);
+            return downloadFrames(recvCtx, tempDir);
         } finally {
-            clearResources(workDir);
+            clearResources(tempDir);
         }
     }
 
-    private boolean download(RecvContext recvCtx, Path workDir) {
+    private boolean downloadFrames(RecvContext recvCtx, Path tempDir) {
         int lastSeqNum = 1;
         while (true) {
             // receive frame
@@ -55,8 +56,8 @@ public class DownloadTransfer extends AbstractTransfer implements RecvProgressIn
                 return false;
             }
             // process response
-            RecvFrameProcessor rfp = new RecvFrameProcessor(op.getResponse(), recvCtx);
-            rfp.transfer(workDir);
+            RecvFrameProcessor rfp = RecvFrameProcessor.create(op.getResponse(), recvCtx);
+            rfp.transfer(tempDir);
             rfp.process();
             // exit if last
             if (rfp.isLast()) {
@@ -67,23 +68,21 @@ public class DownloadTransfer extends AbstractTransfer implements RecvProgressIn
         }
     }
 
-    private Path createWorkDir() {
-        // TODO Auto-generated method stub
-        return null;
+    private Path createTempDir() {
+        try {
+            return Files.createTempDirectory(transferId);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
-    private void clearResources(Path workDir) {
+    private void clearResources(Path tempDir) {
         // delete temporary files
-        if (workDir != null) {
+        if (tempDir != null) {
             try {
-                // create iterator with directory at last position
-                Iterator<Path> itemIt = Files.walk(workDir).sorted(Comparator.reverseOrder()).iterator();
-                // delete all (directory included)
-                while (itemIt.hasNext()) {
-                    Files.delete(itemIt.next());
-                }
-            } catch (Throwable t) {
-                TransferExceptionBuilder.from("Failed to delete download temporary files", this).setCause(t).log(logger);
+                PathUtils.deleteWithChildren(tempDir);
+            } catch (IOException e) {
+                TransferExceptionBuilder.from("Failed to delete temporary download files", this).setCause(e).log(logger);
             }
         }
     }

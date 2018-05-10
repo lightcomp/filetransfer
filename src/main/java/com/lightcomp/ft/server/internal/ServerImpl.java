@@ -256,13 +256,10 @@ public class ServerImpl implements Server, TransferManager {
     }
 
     public static FileTransferStatus createFileTransferStatus(TransferStatus ts) {
-        FileTransferState state = ts.getState().toExternal();
-        if (state == null) {
-            throw new IllegalStateException("Failed to convert internal state");
-        }
         FileTransferStatus fts = new FileTransferStatus();
         fts.setLastFrameSeqNum(ts.getLastFrameSeqNum());
-        fts.setState(state);
+        FileTransferState state = ts.getState().toExternal();
+        fts.setState(Validate.notNull(state));
         return fts;
     }
 }

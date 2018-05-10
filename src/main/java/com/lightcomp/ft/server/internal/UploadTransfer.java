@@ -4,13 +4,12 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Comparator;
-import java.util.Iterator;
 
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.lightcomp.ft.common.PathUtils;
 import com.lightcomp.ft.common.TaskExecutor;
 import com.lightcomp.ft.core.recv.RecvContextImpl;
 import com.lightcomp.ft.core.recv.RecvFrameProcessor;
@@ -34,7 +33,7 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
 
     private final RecvContextImpl recvCtx;
 
-    private Path workDir;
+    private Path tempDir;
 
     private int lastSeqNum;
 
@@ -61,15 +60,14 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
     public void init() {
         TransferStatus ts;
         synchronized (this) {
-            Validate.isTrue(status.getState() == TransferState.INITIALIZED);
-            // start frame executor
-            frameExecutor.start();
             // create temporary folder
             try {
-                workDir = Files.createTempDirectory(uploadDir, "work");
+                tempDir = Files.createTempDirectory(acceptor.getTransferId());
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
+            // start frame executor
+            frameExecutor.start();
             // update current state
             status.changeState(TransferState.STARTED);
             // copy status in synch block
@@ -187,8 +185,8 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
     }
 
     private void processFrame(Frame frame) {
-        RecvFrameProcessor rfp = new RecvFrameProcessor(frame, recvCtx);
-        rfp.transfer(workDir);
+        RecvFrameProcessor rfp = RecvFrameProcessor.create(frame, recvCtx);
+        rfp.transfer(tempDir);
         frameExecutor.addTask(() -> {
             try {
                 rfp.process();
@@ -208,16 +206,11 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
     protected void clearResources() {
         frameExecutor.stop();
         // delete temporary files
-        if (workDir != null) {
+        if (tempDir != null) {
             try {
-                // create iterator with directory at last position
-                Iterator<Path> itemIt = Files.walk(workDir).sorted(Comparator.reverseOrder()).iterator();
-                // delete all (directory included)
-                while (itemIt.hasNext()) {
-                    Files.delete(itemIt.next());
-                }
-            } catch (Throwable t) {
-                TransferExceptionBuilder.from("Failed to delete upload temporary files", acceptor).setCause(t).log(logger);
+                PathUtils.deleteWithChildren(tempDir);
+            } catch (IOException t) {
+                TransferExceptionBuilder.from("Failed to delete temporary upload files", acceptor).setCause(t).log(logger);
             }
         }
     }
