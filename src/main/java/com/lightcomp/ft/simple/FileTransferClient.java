@@ -3,13 +3,20 @@ package com.lightcomp.ft.simple;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.lightcomp.ft.FileTransfer;
 import com.lightcomp.ft.client.Client;
 import com.lightcomp.ft.client.ClientConfig;
 
 public class FileTransferClient {
+	
+	private static final Logger LOG = LoggerFactory.getLogger(FileTransferClient.class);
 
     public static void main(String[] args) {
+    	
+    	LOG.debug("Starting client");
 
         ClientConfig cfg = new ClientConfig(args[0]);
         cfg.setRecoveryDelay(5);
