@@ -9,6 +9,12 @@ import com.lightcomp.ft.core.send.items.SourceDir;
 import com.lightcomp.ft.core.send.items.SourceFile;
 import com.lightcomp.ft.core.send.items.SourceItem;
 
+/**
+ * Directory in memory.
+ * 
+ * Used mainly for tests.
+ * Items have to be added manually. 
+ */
 public class MemoryDir implements SourceDir {
 	
 	String name;

@@ -10,6 +10,10 @@ import com.lightcomp.ft.core.send.items.SourceDir;
 import com.lightcomp.ft.core.send.items.SourceFile;
 import com.lightcomp.ft.core.send.items.SourceItem;
 
+/**
+ * File system directory
+ *
+ */
 public class SimpleDir implements SourceDir {
 
     private final Path dirPath;
