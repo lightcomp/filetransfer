@@ -12,12 +12,16 @@ import java.nio.file.attribute.FileTime;
 import java.util.Arrays;
 
 import org.apache.commons.lang3.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.lightcomp.ft.common.ChecksumByteChannel;
 import com.lightcomp.ft.common.ChecksumGenerator;
 import com.lightcomp.ft.exception.TransferExceptionBuilder;
 
 class FileWriter {
+	
+	private static final Logger LOGGER = LoggerFactory.getLogger(FileWriter.class);
 
     private static final int BUFFER_SIZE = 65536;
 
@@ -70,6 +74,10 @@ class FileWriter {
                     .addParam("fileSize", size).addParam("writtenSize", writtenSize).build();
         }
         byte[] chksm = chksmGenerator.generate();
+        if(LOGGER.isDebugEnabled()) {
+        	LOGGER.debug("SHA512="+  javax.xml.bind.DatatypeConverter.printHexBinary(chksm));
+        }
+        
         if (!Arrays.equals(chksm, checksum)) {
             throw TransferExceptionBuilder.from("File checksums does not match").addParam("path", file).build();
         }

@@ -6,6 +6,8 @@ import java.util.List;
 import javax.activation.DataHandler;
 
 import org.apache.commons.lang3.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.lightcomp.ft.client.ClientConfig;
 import com.lightcomp.ft.core.send.FrameBlockStream;
@@ -16,6 +18,8 @@ import com.lightcomp.ft.xsd.v1.FrameBlock;
 import com.lightcomp.ft.xsd.v1.FrameBlocks;
 
 public class UploadFrameContext implements SendFrameContext {
+	
+	private static final Logger LOGGER = LoggerFactory.getLogger(UploadFrameContext.class);
 
     private final List<FrameBlock> blocks = new ArrayList<>();
 
@@ -60,6 +64,9 @@ public class UploadFrameContext implements SendFrameContext {
     @Override
     public void addBlock(FrameBlock block) {
         Validate.isTrue(blocks.size() < config.getMaxFrameBlocks());
+        
+        LOGGER.debug("Adding block: {}", block);
+        
         blocks.add(block);
     }
 
@@ -68,6 +75,8 @@ public class UploadFrameContext implements SendFrameContext {
         long newSize = dataSize + blockStream.getSize();
         Validate.isTrue(newSize <= config.getMaxFrameSize());
         addBlock(block);
+        
+        LOGGER.debug("Adding data for block: {}", blockStream);
         blockStreams.add(blockStream);
         dataSize = newSize;
     }

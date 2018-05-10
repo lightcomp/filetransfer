@@ -7,12 +7,17 @@ import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.lightcomp.ft.common.ChecksumGenerator;
 import com.lightcomp.ft.common.PathUtils;
 import com.lightcomp.ft.exception.TransferException;
 import com.lightcomp.ft.exception.TransferExceptionBuilder;
 
 public class RecvContextImpl implements RecvContext {
+	
+	private static final Logger LOGGER = LoggerFactory.getLogger(RecvContextImpl.class);
 
     private final RecvProgressInfo progressInfo;
 
@@ -47,6 +52,11 @@ public class RecvContextImpl implements RecvContext {
 
     @Override
     public void openDir(String name) {
+    	
+    	if(LOGGER.isDebugEnabled()) {
+    		LOGGER.debug("Open directory '{}' in '{}'", name, relativeDir);
+    	}
+    	
         Path dir;
         try {
             dir = relativeDir.resolve(name);
