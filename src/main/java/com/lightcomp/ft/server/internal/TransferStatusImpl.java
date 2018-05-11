@@ -79,7 +79,7 @@ public class TransferStatusImpl implements TransferStatus {
     public Throwable getFailureCause() {
         return failureCause;
     }
-    
+
     public boolean isBusy() {
         return busy;
     }
@@ -118,7 +118,7 @@ public class TransferStatusImpl implements TransferStatus {
     public void setBusy(boolean busy) {
         this.busy = busy;
     }
-    
+
     public TransferStatusImpl copy() {
         return new TransferStatusImpl(this);
     }

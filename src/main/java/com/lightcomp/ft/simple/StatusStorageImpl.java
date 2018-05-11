@@ -6,7 +6,7 @@ import java.util.Map;
 import com.lightcomp.ft.server.TransferStatus;
 import com.lightcomp.ft.server.TransferStatusStorage;
 
-public class SimpleStatusStorage implements TransferStatusStorage {
+public class StatusStorageImpl implements TransferStatusStorage {
 
     private final Map<String, TransferStatus> transferIdMap = new HashMap<>();
 

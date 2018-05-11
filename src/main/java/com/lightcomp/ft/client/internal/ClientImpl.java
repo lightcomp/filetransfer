@@ -29,7 +29,7 @@ public class ClientImpl implements Client {
     }
 
     @Override
-    public Transfer upload(UploadRequest request) {
+    public synchronized Transfer upload(UploadRequest request) {
         Validate.isTrue(service != null);
 
         AbstractTransfer transfer = new UploadTransfer(request, config, service);
@@ -38,7 +38,7 @@ public class ClientImpl implements Client {
     }
 
     @Override
-    public Transfer download(DownloadRequest request) {
+    public synchronized Transfer download(DownloadRequest request) {
         Validate.isTrue(service != null);
 
         AbstractTransfer transfer = new DownloadTransfer(request, config, service);
@@ -47,13 +47,13 @@ public class ClientImpl implements Client {
     }
 
     @Override
-    public void start() {
+    public synchronized void start() {
         transferExecutor.start();
         service = createService(config);
     }
 
     @Override
-    public void stop() {
+    public synchronized void stop() {
         service = null;
         transferExecutor.stop();
     }

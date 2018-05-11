@@ -1,11 +1,8 @@
 package com.lightcomp.ft;
 
 import java.io.IOException;
-import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -22,9 +19,13 @@ import javax.xml.ws.Endpoint;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.cxf.Bus;
 import org.apache.cxf.BusFactory;
+import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -40,15 +41,14 @@ import com.lightcomp.ft.client.internal.ClientImpl;
 import com.lightcomp.ft.client.internal.UploadFrameContext;
 import com.lightcomp.ft.client.internal.UploadTransfer;
 import com.lightcomp.ft.client.operations.SendOperation;
+import com.lightcomp.ft.common.PathUtils;
 import com.lightcomp.ft.core.blocks.DirBeginBlockImpl;
 import com.lightcomp.ft.core.blocks.DirEndBlockImpl;
 import com.lightcomp.ft.core.send.items.SourceItem;
 import com.lightcomp.ft.server.Server;
 import com.lightcomp.ft.server.ServerConfig;
 import com.lightcomp.ft.server.UploadAcceptor;
-import com.lightcomp.ft.simple.MemoryDir;
-import com.lightcomp.ft.simple.SimpleDir;
-import com.lightcomp.ft.simple.SimpleStatusStorage;
+import com.lightcomp.ft.simple.StatusStorageImpl;
 import com.lightcomp.ft.xsd.v1.DirBegin;
 import com.lightcomp.ft.xsd.v1.GenericData;
 
@@ -66,6 +66,12 @@ public class TransferTest {
 
     private Waiter waiter;
 
+    @BeforeClass
+    public static void beforeClass() {
+        BasicConfigurator.configure();
+        Logger.getRootLogger().setLevel(Level.INFO);
+    }
+
     @Before
     public void before() throws IOException {
         tempDir = Files.createTempDirectory("file-transfer-tests");
@@ -80,19 +86,7 @@ public class TransferTest {
         if (tempDir == null) {
             return;
         }
-        Files.walkFileTree(tempDir, new SimpleFileVisitor<Path>() {
-            @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                Files.delete(file);
-                return FileVisitResult.CONTINUE;
-            }
-
-            @Override
-            public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
-                Files.delete(dir);
-                return FileVisitResult.CONTINUE;
-            }
-        });
+        PathUtils.deleteWithChildren(tempDir);
     }
 
     public String publishEndpoint(ServerConfig cfg) {
@@ -119,7 +113,7 @@ public class TransferTest {
                         com.lightcomp.ft.server.TransferState.FINISHING);
             }
         };
-        SimpleStatusStorage ss = new SimpleStatusStorage();
+        StatusStorageImpl ss = new StatusStorageImpl();
         ServerConfig scfg = new ServerConfig(ur, ss);
         scfg.setInactiveTimeout(60);
 
@@ -164,7 +158,7 @@ public class TransferTest {
                         com.lightcomp.ft.server.TransferState.FAILED);
             }
         };
-        SimpleStatusStorage ss = new SimpleStatusStorage();
+        StatusStorageImpl ss = new StatusStorageImpl();
         ServerConfig scfg = new ServerConfig(ur, ss);
         scfg.setInactiveTimeout(2); // short enough to get terminated
 
@@ -204,7 +198,7 @@ public class TransferTest {
                         com.lightcomp.ft.server.TransferState.FINISHING);
             }
         };
-        SimpleStatusStorage ss = new SimpleStatusStorage();
+        StatusStorageImpl ss = new StatusStorageImpl();
         ServerConfig scfg = new ServerConfig(ur, ss);
         scfg.setInactiveTimeout(60);
 
@@ -219,8 +213,8 @@ public class TransferTest {
         client.start();
 
         MemoryDir dir = new MemoryDir("test");
-        dir.addChild(new InMemoryFile("1.txt", new byte[0], 0)); // empty
-        dir.addChild(new InMemoryFile("2.txt", new byte[] { 0x41, 0x42, 0x43, 0x44, 0x45 }, 0)); // 5 bytes
+        dir.addChild(new MemoryFile("1.txt", new byte[0], 0)); // empty
+        dir.addChild(new MemoryFile("2.txt", new byte[] { 0x41, 0x42, 0x43, 0x44, 0x45 }, 0)); // 5 bytes
         dir.addChild(new GeneratedFile("3.txt", 100 * 1024, 0)); // 100kB which overlaps first frame by 5 bytes
         List<SourceItem> items = Collections.singletonList(dir);
         UploadRequestImpl request = new UploadRequestImpl(createReqData("req"), items, waiter, TransferState.FINISHED);
@@ -247,7 +241,7 @@ public class TransferTest {
                         com.lightcomp.ft.server.TransferState.FINISHING);
             }
         };
-        SimpleStatusStorage ss = new SimpleStatusStorage();
+        StatusStorageImpl ss = new StatusStorageImpl();
         ServerConfig scfg = new ServerConfig(ur, ss);
         scfg.setInactiveTimeout(60);
 
@@ -286,7 +280,7 @@ public class TransferTest {
                         com.lightcomp.ft.server.TransferState.FAILED);
             }
         };
-        SimpleStatusStorage ss = new SimpleStatusStorage();
+        StatusStorageImpl ss = new StatusStorageImpl();
         ServerConfig scfg = new ServerConfig(ur, ss);
         scfg.setInactiveTimeout(60);
 
@@ -300,7 +294,7 @@ public class TransferTest {
 
         client.start();
 
-        InMemoryFile file = new InMemoryFile("1.txt", new byte[] { 0x41, 0x42, 0x43, 0x44, 0x45 }, 0); // ABCDE
+        MemoryFile file = new MemoryFile("1.txt", new byte[] { 0x41, 0x42, 0x43, 0x44, 0x45 }, 0); // ABCDE
         // valid checksum
         byte[] chksm = DatatypeConverter.parseHexBinary(
                 "9989A8FCBC29044B5883A0A36C146FE7415B1439E995B4D806EA0AF7DA9CA4390EB92A604B3ECFA3D75F9911C768FBE2AECC59EFF1E48DCAECA1957BDDE01DFB");
@@ -326,7 +320,7 @@ public class TransferTest {
                         com.lightcomp.ft.server.TransferState.FINISHING);
             }
         };
-        SimpleStatusStorage ss = new SimpleStatusStorage();
+        StatusStorageImpl ss = new StatusStorageImpl();
         ServerConfig scfg = new ServerConfig(ur, ss);
         scfg.setInactiveTimeout(60);
 
@@ -365,7 +359,7 @@ public class TransferTest {
                         com.lightcomp.ft.server.TransferState.FAILED);
             }
         };
-        SimpleStatusStorage ss = new SimpleStatusStorage();
+        StatusStorageImpl ss = new StatusStorageImpl();
         ServerConfig scfg = new ServerConfig(ur, ss);
         scfg.setInactiveTimeout(60);
 
@@ -416,7 +410,7 @@ public class TransferTest {
                         com.lightcomp.ft.server.TransferState.FINISHING);
             }
         };
-        SimpleStatusStorage ss = new SimpleStatusStorage();
+        StatusStorageImpl ss = new StatusStorageImpl();
         ServerConfig scfg = new ServerConfig(ur, ss);
         scfg.setInactiveTimeout(60);
 
@@ -475,7 +469,7 @@ public class TransferTest {
         for (int i = 1; i <= size; i++) {
             String cnt = Integer.toString(i);
             if (i % 2 == 0) {
-            	MemoryDir dir = new MemoryDir(cnt);
+                MemoryDir dir = new MemoryDir(cnt);
                 items.add(dir);
                 if (depth > 0) {
                     Pair<Collection<SourceItem>, Integer> pair = createMixedContent(depth - 1, size);
@@ -483,7 +477,7 @@ public class TransferTest {
                     count += pair.getRight();
                 }
             } else {
-                InMemoryFile file = new InMemoryFile(cnt, new byte[0], 0);
+                MemoryFile file = new MemoryFile(cnt, new byte[0], 0);
                 items.add(file);
             }
         }

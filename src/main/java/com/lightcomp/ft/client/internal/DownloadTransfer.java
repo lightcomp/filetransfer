@@ -5,6 +5,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,6 +27,8 @@ public class DownloadTransfer extends AbstractTransfer implements RecvProgressIn
 
     private final Path downloadDir;
 
+    private Path tempDir;
+
     protected DownloadTransfer(DownloadRequest request, ClientConfig config, FileTransferService service) {
         super(request, config, service);
         this.downloadDir = request.getDownloadDir();
@@ -45,16 +48,16 @@ public class DownloadTransfer extends AbstractTransfer implements RecvProgressIn
 
     @Override
     protected boolean transferFrames() {
-        Path tempDir = createTempDir();
+        createTempDir();
         try {
             RecvContext recvCtx = new RecvContextImpl(this, downloadDir);
-            return downloadFrames(recvCtx, tempDir);
+            return downloadFrames(recvCtx);
         } finally {
-            clearResources(tempDir);
+            clearResources();
         }
     }
 
-    private boolean downloadFrames(RecvContext recvCtx, Path tempDir) {
+    private boolean downloadFrames(RecvContext recvCtx) {
         int lastSeqNum = 1;
         while (true) {
             // receive frame
@@ -75,15 +78,16 @@ public class DownloadTransfer extends AbstractTransfer implements RecvProgressIn
         }
     }
 
-    private Path createTempDir() {
+    private void createTempDir() {
+        Validate.isTrue(tempDir == null);
         try {
-            return Files.createTempDirectory(transferId);
+            tempDir = Files.createTempDirectory(transferId);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
     }
 
-    private void clearResources(Path tempDir) {
+    private void clearResources() {
         // delete temporary files
         if (tempDir != null) {
             try {

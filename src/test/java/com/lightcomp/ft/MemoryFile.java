@@ -9,7 +9,7 @@ import java.nio.charset.StandardCharsets;
 import com.lightcomp.ft.core.send.items.SourceDir;
 import com.lightcomp.ft.core.send.items.SourceFile;
 
-public class InMemoryFile implements SourceFile {
+public class MemoryFile implements SourceFile {
 
     private final String name;
 
@@ -19,7 +19,7 @@ public class InMemoryFile implements SourceFile {
 
     private byte[] checksum;
 
-    public InMemoryFile(String name, byte[] data, long lastModified) {
+    public MemoryFile(String name, byte[] data, long lastModified) {
         this.name = name;
         this.data = data;
         this.lastModified = lastModified;
@@ -97,8 +97,8 @@ public class InMemoryFile implements SourceFile {
         };
     }
 
-    public static InMemoryFile fromString(String name, long lastModified, String value) {
+    public static MemoryFile fromString(String name, long lastModified, String value) {
         byte[] data = value != null ? value.getBytes(StandardCharsets.UTF_8) : null;
-        return new InMemoryFile(name, data, lastModified);
+        return new MemoryFile(name, data, lastModified);
     }
 }

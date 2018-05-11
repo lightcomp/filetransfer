@@ -8,11 +8,12 @@ import java.nio.file.Path;
 import org.apache.commons.lang3.Validate;
 
 import com.lightcomp.ft.common.ChecksumGenerator;
+import com.lightcomp.ft.core.send.items.SourceFile;
 import com.lightcomp.ft.exception.TransferExceptionBuilder;
 
 class FileDataStream implements FrameBlockStream {
 
-    private final FileDataHandler handler;
+    private final SourceFile srcFile;
 
     private final long offset;
 
@@ -28,9 +29,9 @@ class FileDataStream implements FrameBlockStream {
 
     private long remaining;
 
-    public FileDataStream(FileDataHandler handler, long offset, long size, ChecksumGenerator chksmGenerator,
+    public FileDataStream(SourceFile srcFile, long offset, long size, ChecksumGenerator chksmGenerator,
             SendProgressInfo progressInfo, Path logPath) {
-        this.handler = handler;
+        this.srcFile = srcFile;
         this.offset = offset;
         this.size = size;
         this.chksmGenerator = chksmGenerator;
@@ -46,7 +47,7 @@ class FileDataStream implements FrameBlockStream {
     @Override
     public void open() throws IOException {
         Validate.isTrue(channel == null);
-        channel = handler.openChannel(offset);
+        channel = srcFile.openChannel(offset);
         remaining = size;
     }
 

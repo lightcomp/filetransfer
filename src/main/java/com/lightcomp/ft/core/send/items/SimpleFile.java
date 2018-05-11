@@ -1,4 +1,4 @@
-package com.lightcomp.ft.simple;
+package com.lightcomp.ft.core.send.items;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -7,14 +7,11 @@ import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import com.lightcomp.ft.core.send.items.SourceDir;
-import com.lightcomp.ft.core.send.items.SourceFile;
-
-public class SimpleSourceFile implements SourceFile {
+public class SimpleFile implements SourceFile {
 
     private final Path path;
 
-    public SimpleSourceFile(Path path) {
+    public SimpleFile(Path path) {
         this.path = path;
     }
 
@@ -67,5 +64,4 @@ public class SimpleSourceFile implements SourceFile {
     	channel.position(position);
     	return channel;
     }
-
 }

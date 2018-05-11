@@ -134,6 +134,24 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
         }
     }
 
+    private void processFrame(Frame frame) {
+        RecvFrameProcessor rfp = RecvFrameProcessor.create(frame, recvCtx);
+        rfp.transfer(tempDir);
+        frameExecutor.addTask(() -> {
+            try {
+                rfp.process();
+                // test if transfer is not terminated
+                if (addProcessedFrame(rfp.getSeqNum(), rfp.isLast())) {
+                    return;
+                }
+            } catch (Throwable t) {
+                transferFailed(t);
+            }
+            // process failed or transfer terminated
+            frameExecutor.stop();
+        });
+    }
+
     /**
      * @return True when frame was added otherwise transfer is terminated and cannot
      *         accept more frames.
@@ -182,24 +200,6 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
         if (failed) {
             acceptor.onTransferFailed(cause);
         }
-    }
-
-    private void processFrame(Frame frame) {
-        RecvFrameProcessor rfp = RecvFrameProcessor.create(frame, recvCtx);
-        rfp.transfer(tempDir);
-        frameExecutor.addTask(() -> {
-            try {
-                rfp.process();
-                // test if transfer is not terminated
-                if (addProcessedFrame(rfp.getSeqNum(), rfp.isLast())) {
-                    return;
-                }
-            } catch (Throwable t) {
-                transferFailed(t);
-            }
-            // process failed or transfer terminated
-            frameExecutor.stop();
-        });
     }
 
     @Override

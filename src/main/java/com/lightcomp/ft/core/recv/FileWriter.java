@@ -79,7 +79,7 @@ class FileWriter {
         // validate checksum
         byte[] chksm = chksmGenerator.generate();
         if (logger.isDebugEnabled()) {
-            logger.debug("SHA512={}", DatatypeConverter.printHexBinary(chksm));
+            logger.debug("File={}, SHA512={}", file, DatatypeConverter.printHexBinary(chksm));
         }
         if (!Arrays.equals(chksm, checksum)) {
             throw TransferExceptionBuilder.from("File checksums does not match").addParam("path", file).build();

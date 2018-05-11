@@ -1,4 +1,4 @@
-package com.lightcomp.ft.simple;
+package com.lightcomp.ft.core.send.items;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -6,25 +6,20 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Iterator;
 
-import com.lightcomp.ft.core.send.items.SourceDir;
-import com.lightcomp.ft.core.send.items.SourceFile;
-import com.lightcomp.ft.core.send.items.SourceItem;
-
 /**
  * File system directory
- *
  */
 public class SimpleDir implements SourceDir {
 
-    private final Path dirPath;
+    private final Path path;
 
-    public SimpleDir(Path dirPath) {
-        this.dirPath = dirPath;
+    public SimpleDir(Path path) {
+        this.path = path;
     }
 
     @Override
     public String getName() {
-        return dirPath.getName(dirPath.getNameCount()-1).toString();
+        return path.getFileName().toString();
     }
 
     @Override
@@ -45,11 +40,11 @@ public class SimpleDir implements SourceDir {
     @Override
     public Iterator<SourceItem> getItemIterator() {
         try {
-            return Files.walk(dirPath,1).filter(p -> !p.equals(dirPath)).<SourceItem>map(p -> {
+            return Files.list(path).<SourceItem>map(p -> {
                 if (Files.isDirectory(p)) {
                     return new SimpleDir(p);
                 } else {
-                    return new SimpleSourceFile(p);
+                    return new SimpleFile(p);
                 }
             }).iterator();
         } catch (IOException e) {

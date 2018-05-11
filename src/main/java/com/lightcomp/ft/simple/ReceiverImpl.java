@@ -9,13 +9,13 @@ import com.lightcomp.ft.server.TransferAcceptor;
 import com.lightcomp.ft.server.TransferReceiver;
 import com.lightcomp.ft.xsd.v1.GenericData;
 
-public class SimpleReceiver implements TransferReceiver {
+class ReceiverImpl implements TransferReceiver {
 
     private final Path transferDir;
 
     private int lastTransferId;
 
-    public SimpleReceiver(Path transferDir) {
+    public ReceiverImpl(Path transferDir) {
         this.transferDir = transferDir;
     }
 

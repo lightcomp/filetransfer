@@ -1,6 +1,6 @@
 package com.lightcomp.ft.client.internal;
 
-import org.apache.commons.lang3.Validate;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,6 +13,7 @@ import com.lightcomp.ft.client.operations.FinishOperation;
 import com.lightcomp.ft.client.operations.RecoveryHandler;
 import com.lightcomp.ft.exception.TransferExceptionBuilder;
 import com.lightcomp.ft.wsdl.v1.FileTransferService;
+import com.lightcomp.ft.xsd.v1.GenericData;
 
 public abstract class AbstractTransfer implements Runnable, Transfer, RecoveryHandler {
 
@@ -47,7 +48,11 @@ public abstract class AbstractTransfer implements Runnable, Transfer, RecoveryHa
         if (id != null) {
             return id;
         }
-        return request.getData().getId();
+        GenericData data = request.getData();
+        if (data != null) {
+            return data.getId();
+        }
+        return null;
     }
 
     @Override
@@ -152,8 +157,10 @@ public abstract class AbstractTransfer implements Runnable, Transfer, RecoveryHa
             return false;
         }
         try {
-            String transferId = service.begin(request.getData());
-            this.transferId = Validate.notBlank(transferId, "Invalid transfer id");
+            transferId = service.begin(request.getData());
+            if (StringUtils.isEmpty(transferId)) {
+                throw TransferExceptionBuilder.from("Server returned empty transfer id", this).build();
+            }
         } catch (Throwable t) {
             throw TransferExceptionBuilder.from("Failed to begin transfer", this).setCause(t).build();
         }

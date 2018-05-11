@@ -12,6 +12,8 @@ import org.slf4j.LoggerFactory;
 import com.lightcomp.ft.client.Transfer;
 import com.lightcomp.ft.client.TransferStatus;
 import com.lightcomp.ft.client.UploadRequest;
+import com.lightcomp.ft.core.send.items.SimpleDir;
+import com.lightcomp.ft.core.send.items.SimpleFile;
 import com.lightcomp.ft.core.send.items.SourceItem;
 import com.lightcomp.ft.xsd.v1.GenericData;
 
@@ -43,11 +45,11 @@ public class UploadRequestImpl implements UploadRequest {
     @Override
     public Iterator<SourceItem> getItemIterator() {
         try {
-            return Files.walk(dataDir,1).filter(p -> !p.equals(dataDir)).<SourceItem>map(p -> {
+            return Files.list(dataDir).<SourceItem>map(p -> {
                 if (Files.isDirectory(p)) {
                     return new SimpleDir(p);
                 } else {
-                    return new SimpleSourceFile(p);
+                    return new SimpleFile(p);
                 }
             }).iterator();
         } catch (IOException e) {

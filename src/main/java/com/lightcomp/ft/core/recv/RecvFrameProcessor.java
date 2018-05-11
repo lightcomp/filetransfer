@@ -75,12 +75,12 @@ public class RecvFrameProcessor {
             long length = Files.copy(is, dataFile, StandardCopyOption.REPLACE_EXISTING);
             // copied length must match with specified data size
             if (length != dataSize) {
-                clearData();
+                clearResources();
                 throw TransferExceptionBuilder.from("Frame size does not match data length").addParam("frameSeqNum", seqNum)
                         .addParam("frameSize", dataSize).addParam("dataLength", length).build();
             }
         } catch (IOException e) {
-            clearData();
+            clearResources();
             throw TransferExceptionBuilder.from("Failed to transfer frame data").addParam("frameSeqNum", seqNum).setCause(e)
                     .build();
         }
@@ -103,7 +103,7 @@ public class RecvFrameProcessor {
             // release input channel
             recvCtx.setInputChannel(null);
             // close and delete temp data
-            clearData();
+            clearResources();
         }
         validate();
     }
@@ -155,7 +155,7 @@ public class RecvFrameProcessor {
         }
     }
 
-    private void clearData() {
+    private void clearResources() {
         try {
             if (dataChannel != null) {
                 dataChannel.close();

@@ -1,16 +1,11 @@
 package com.lightcomp.ft.core.send;
 
-import java.nio.file.InvalidPathException;
-import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.LinkedList;
 
-import com.lightcomp.ft.common.PathUtils;
 import com.lightcomp.ft.core.blocks.DirBeginBlockImpl;
 import com.lightcomp.ft.core.blocks.DirEndBlockImpl;
-import com.lightcomp.ft.core.send.items.SourceDir;
 import com.lightcomp.ft.core.send.items.SourceItem;
-import com.lightcomp.ft.exception.TransferExceptionBuilder;
 
 public class FrameBlockBuilder {
 
@@ -20,9 +15,8 @@ public class FrameBlockBuilder {
 
     private FileSplitter currSplitter;
 
-    public FrameBlockBuilder(Iterator<SourceItem> rootItemIt, SendProgressInfo progressInfo) {
-        // add root folder
-        dirStack.add(new DirContext(null, PathUtils.ROOT, rootItemIt));
+    public FrameBlockBuilder(Iterator<SourceItem> itemIt, SendProgressInfo progressInfo) {
+        dirStack.add(DirContext.createRoot(itemIt));
         this.progressInfo = progressInfo;
     }
 
@@ -50,11 +44,12 @@ public class FrameBlockBuilder {
                 continue;
             }
             // last directory didn't end -> process next child
-            SourceItem child = dirCtx.getNextItem();
-            if (child.isDir()) {
-                addDir(child.asDir(), dirCtx.getPath());
+            SourceItem item = dirCtx.getNextItem();
+            if (item.isDir()) {
+                dirCtx = DirContext.create(item.asDir(), dirCtx.getPath());
+                dirStack.addLast(dirCtx);
             } else {
-                currSplitter = FileSplitter.create(child.asFile(), progressInfo, dirCtx.getPath());
+                currSplitter = FileSplitter.create(item.asFile(), dirCtx.getPath(), progressInfo);
             }
         }
         frameCtx.setLast(true);
@@ -64,11 +59,11 @@ public class FrameBlockBuilder {
      * 
      * @param dirCtx
      * @param frameCtx
-     * @return Return true if dirBegin was prepared.
-     *   Return false if dirBegin cannot be add to the current frame (frame is full)
+     * @return Return true if dirBegin was prepared. Return false if dirBegin cannot
+     *         be add to the current frame (frame is full)
      */
     private boolean prepareDirBegin(DirContext dirCtx, SendFrameContext frameCtx) {
-    	// Do not send dirBegin for root folder
+        // Do not send dirBegin for root folder
         if (dirStack.size() == 1) {
             return true;
         }
@@ -92,18 +87,5 @@ public class FrameBlockBuilder {
         DirEndBlockImpl b = new DirEndBlockImpl();
         frameCtx.addBlock(b);
         return true;
-    }
-
-    private void addDir(SourceDir srcDir, Path parentPath) {
-        String name = srcDir.getName();
-        Path path;
-        try {
-            path = parentPath.resolve(name);
-        } catch (InvalidPathException e) {
-            throw TransferExceptionBuilder.from("Invalid source directory name").addParam("parentPath", parentPath)
-                    .addParam("name", name).setCause(e).build();
-        }
-        DirContext dirCtx = new DirContext(name, path, srcDir.getItemIterator());
-        dirStack.addLast(dirCtx);
     }
 }

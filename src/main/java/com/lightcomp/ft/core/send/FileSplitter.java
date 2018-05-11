@@ -12,13 +12,11 @@ import com.lightcomp.ft.exception.TransferExceptionBuilder;
 
 class FileSplitter {
 
-    private final FileDataHandler dataHandler;
+    private final SourceFile srcFile;
 
     private final String name;
 
     private final long size;
-
-    private final long lastModified;
 
     private final ChecksumGenerator chksmGenerator;
 
@@ -30,12 +28,11 @@ class FileSplitter {
 
     private long offset = -1;
 
-    private FileSplitter(FileDataHandler dataHandler, String name, long size, long lastModified, ChecksumGenerator chksmGenerator,
-            byte[] chksm, SendProgressInfo progressInfo, Path logPath) {
-        this.dataHandler = dataHandler;
+    private FileSplitter(SourceFile srcFile, String name, long size, ChecksumGenerator chksmGenerator, byte[] chksm,
+            SendProgressInfo progressInfo, Path logPath) {
+        this.srcFile = srcFile;
         this.name = name;
         this.size = size;
-        this.lastModified = lastModified;
         this.chksmGenerator = chksmGenerator;
         this.chksm = chksm;
         this.progressInfo = progressInfo;
@@ -70,8 +67,8 @@ class FileSplitter {
             return false;
         }
         FileBeginBlockImpl b = new FileBeginBlockImpl();
-        b.setFs(size);
         b.setN(name);
+        b.setFs(size);
 
         frameCtx.addBlock(b);
         offset = 0;
@@ -86,8 +83,8 @@ class FileSplitter {
             return false;
         }
         FileEndBlockImpl b = new FileEndBlockImpl();
-        b.setLm(lastModified);
-        FrameBlockStream bs = new ChecksumStream(chksmGenerator, chksm);
+        b.setLm(srcFile.getLastModified());
+        FrameBlockStream bs = new FileChksmStream(chksmGenerator, chksm, logPath);
 
         frameCtx.addBlock(b, bs);
         offset += size;
@@ -105,7 +102,7 @@ class FileSplitter {
         FileDataBlockImpl b = new FileDataBlockImpl();
         b.setDs(blockSize);
         b.setOff(offset);
-        FrameBlockStream bs = new FileDataStream(dataHandler, offset, blockSize, chksmGenerator, progressInfo, logPath);
+        FrameBlockStream bs = new FileDataStream(srcFile, offset, blockSize, chksmGenerator, progressInfo, logPath);
 
         frameCtx.addBlock(b, bs);
         offset += blockSize;
@@ -113,7 +110,7 @@ class FileSplitter {
         return true;
     }
 
-    public static FileSplitter create(SourceFile srcFile, SendProgressInfo progressInfo, Path parentPath) {
+    public static FileSplitter create(SourceFile srcFile, Path parentPath, SendProgressInfo progressInfo) {
         // validate base attributes
         String name = srcFile.getName();
         Path path;
@@ -127,11 +124,6 @@ class FileSplitter {
         if (size < 0) {
             throw TransferExceptionBuilder.from("Invalid source file size").addParam("path", path).addParam("size", size).build();
         }
-        long lastModified = srcFile.getLastModified();
-        if (lastModified < 0 || lastModified > System.currentTimeMillis()) {
-            throw TransferExceptionBuilder.from("Invalid last modification of source file").addParam("path", path)
-                    .addParam("lastModified", lastModified).build();
-        }
         // validate checksum or initialize generator
         ChecksumGenerator chksmGenerator = null;
         byte[] chksm = srcFile.getChecksum();
@@ -143,6 +135,6 @@ class FileSplitter {
         } else {
             chksmGenerator = ChecksumGenerator.create();
         }
-        return new FileSplitter(srcFile, name, size, lastModified, chksmGenerator, chksm, progressInfo, path);
+        return new FileSplitter(srcFile, name, size, chksmGenerator, chksm, progressInfo, path);
     }
 }

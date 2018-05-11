@@ -1,6 +1,7 @@
 package com.lightcomp.ft.core.send;
 
 import java.io.IOException;
+import java.nio.file.Path;
 
 import javax.xml.bind.DatatypeConverter;
 
@@ -9,19 +10,22 @@ import org.slf4j.LoggerFactory;
 
 import com.lightcomp.ft.common.ChecksumGenerator;
 
-class ChecksumStream implements FrameBlockStream {
+class FileChksmStream implements FrameBlockStream {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ChecksumStream.class);
+    private static final Logger logger = LoggerFactory.getLogger(FileChksmStream.class);
 
     private final ChecksumGenerator chksmGenerator;
+
+    private final Path logPath;
 
     private byte[] arrChksm;
 
     private int remaining;
 
-    public ChecksumStream(ChecksumGenerator chksmGenerator, byte[] arrChksm) {
+    public FileChksmStream(ChecksumGenerator chksmGenerator, byte[] arrChksm, Path logPath) {
         this.chksmGenerator = chksmGenerator;
         this.arrChksm = arrChksm;
+        this.logPath = logPath;
     }
 
     @Override
@@ -33,8 +37,8 @@ class ChecksumStream implements FrameBlockStream {
     public void open() throws IOException {
         if (arrChksm == null) {
             arrChksm = chksmGenerator.generate();
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("SHA512={}", DatatypeConverter.printHexBinary(arrChksm));
+            if (logger.isDebugEnabled()) {
+                logger.debug("File={}, SHA512={}", logPath, DatatypeConverter.printHexBinary(arrChksm));
             }
         }
         remaining = arrChksm.length;
