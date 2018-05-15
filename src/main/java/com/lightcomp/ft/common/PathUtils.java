@@ -12,6 +12,13 @@ public class PathUtils {
 
     public static final Path ROOT = Paths.get("");
 
+    public static final Path SYS_TEMP;
+
+    static {
+        String sysTemp = System.getProperty("java.io.tmpdir");
+        SYS_TEMP = Paths.get(sysTemp);
+    }
+
     public static void deleteWithChildren(Path dir) throws IOException {
         Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
             @Override

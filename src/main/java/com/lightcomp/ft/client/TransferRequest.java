@@ -2,6 +2,9 @@ package com.lightcomp.ft.client;
 
 import com.lightcomp.ft.xsd.v1.GenericData;
 
+/**
+ * File transfer request.
+ */
 public interface TransferRequest {
 
     /**

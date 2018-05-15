@@ -1,13 +1,13 @@
 package com.lightcomp.ft.client;
 
 /**
- * Internal sender transfer state.
+ * Internal transfer state.
  */
 public enum TransferState {
     /**
      * Implicit state after creation.
      */
-    INITIALIZED,
+    CREATED,
     /**
      * Transfer was successfully started and data being transferred.
      */
@@ -21,11 +21,11 @@ public enum TransferState {
      */
     FINISHED,
     /**
-     * File transfer is failed.
+     * Transfer is failed.
      */
     FAILED,
     /**
-     * File transfer is canceled by sender.
+     * Transfer is canceled by sender.
      */
     CANCELED;
 }

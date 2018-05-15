@@ -2,7 +2,6 @@ package com.lightcomp.ft.client.operations;
 
 import java.math.BigInteger;
 
-import com.lightcomp.ft.core.TransferInfo;
 import com.lightcomp.ft.exception.TransferExceptionBuilder;
 import com.lightcomp.ft.wsdl.v1.FileTransferException;
 import com.lightcomp.ft.wsdl.v1.FileTransferService;
@@ -16,8 +15,8 @@ public class RecvOperation extends RecoverableOperation {
 
     private Frame response;
 
-    public RecvOperation(TransferInfo transfer, RecoveryHandler handler, int seqNum) {
-        super(transfer, handler);
+    public RecvOperation(String transferId, OperationHandler handler, int seqNum) {
+        super(transferId, handler);
         this.seqNum = seqNum;
     }
 
@@ -26,18 +25,8 @@ public class RecvOperation extends RecoverableOperation {
     }
 
     @Override
-    public boolean isInterruptible() {
-        return true;
-    }
-
-    @Override
-    protected TransferExceptionBuilder prepareException(Throwable cause) {
-        return TransferExceptionBuilder.from("Failed to receive frame", transfer).setCause(cause).addParam("seqNum", seqNum);
-    }
-
-    @Override
-    protected void send(FileTransferService service) throws FileTransferException {
-        response = service.receive(BigInteger.valueOf(seqNum), transfer.getTransferId());
+    public TransferExceptionBuilder prepareException(Throwable t) {
+        return TransferExceptionBuilder.from("Failed to receive frame").addParam("seqNum", seqNum).setCause(t);
     }
 
     @Override
@@ -57,7 +46,12 @@ public class RecvOperation extends RecoverableOperation {
         if (seqNum == lastSeqNum + 1) {
             return false;
         }
-        throw TransferExceptionBuilder.from("Cannot recover last frame").addParam("seqNum", seqNum)
+        throw TransferExceptionBuilder.from("Cannot recover last received frame").addParam("seqNum", seqNum)
                 .addParam("serverSeqNum", lastSeqNum).build();
+    }
+
+    @Override
+    protected void send(FileTransferService service) throws FileTransferException {
+        response = service.receive(BigInteger.valueOf(seqNum), transferId);
     }
 }

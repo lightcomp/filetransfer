@@ -1,4 +1,4 @@
-package com.lightcomp.ft.client.operations;
+package com.lightcomp.ft.client.internal;
 
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
@@ -14,21 +14,6 @@ public enum ExceptionType {
     UKNOWN, FATAL, CONNECTION, BUSY;
 
     public static ExceptionType resolve(Throwable t) {
-        // inspect error code
-        if (t instanceof FileTransferException) {
-            ErrorDescription desc = ((FileTransferException) t).getFaultInfo();
-            if (desc != null) {
-                ErrorCode code = desc.getErrorCode();
-                if (code == ErrorCode.FATAL) {
-                    return ExceptionType.FATAL;
-                }
-                if (code == ErrorCode.BUSY) {
-                    return ExceptionType.BUSY;
-                }
-            }
-            return ExceptionType.UKNOWN;
-        }
-        // inspect stack trace
         while (t != null) {
             if (t instanceof SocketTimeoutException) {
                 return ExceptionType.CONNECTION; // timed out
@@ -42,6 +27,19 @@ public enum ExceptionType {
             if (t instanceof UnknownHostException) {
                 return ExceptionType.CONNECTION; // host not found
             }
+            if (t instanceof FileTransferException) {
+                ErrorDescription desc = ((FileTransferException) t).getFaultInfo();
+                if (desc != null) {
+                    ErrorCode code = desc.getErrorCode();
+                    if (code == ErrorCode.FATAL) {
+                        return ExceptionType.FATAL; // server fatal
+                    }
+                    if (code == ErrorCode.BUSY) {
+                        return ExceptionType.BUSY; // server busy
+                    }
+                }
+            }
+            // inspect next cause
             t = t.getCause();
         }
         return ExceptionType.UKNOWN;

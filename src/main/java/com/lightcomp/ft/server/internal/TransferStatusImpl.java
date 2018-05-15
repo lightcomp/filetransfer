@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 import org.apache.commons.lang3.Validate;
 
+import com.lightcomp.ft.server.ErrorDesc;
 import com.lightcomp.ft.server.TransferState;
 import com.lightcomp.ft.server.TransferStatus;
 import com.lightcomp.ft.xsd.v1.GenericData;
@@ -22,12 +23,12 @@ public class TransferStatusImpl implements TransferStatus {
 
     private GenericData response;
 
-    private Throwable failureCause;
+    private ErrorDesc errorDesc;
 
     private boolean busy;
 
     public TransferStatusImpl() {
-        state = TransferState.INITIALIZED;
+        state = TransferState.CREATED;
         lastActivity = LocalDateTime.now();
     }
 
@@ -41,7 +42,7 @@ public class TransferStatusImpl implements TransferStatus {
         transferedSize = src.transferedSize;
         lastFrameSeqNum = src.lastFrameSeqNum;
         response = src.response;
-        failureCause = src.failureCause;
+        errorDesc = src.errorDesc;
         busy = src.busy;
     }
 
@@ -76,8 +77,8 @@ public class TransferStatusImpl implements TransferStatus {
     }
 
     @Override
-    public Throwable getFailureCause() {
-        return failureCause;
+    public ErrorDesc getErrorDesc() {
+        return errorDesc;
     }
 
     public boolean isBusy() {
@@ -103,9 +104,9 @@ public class TransferStatusImpl implements TransferStatus {
         this.response = response;
     }
 
-    public void changeStateToFailed(Throwable failureCause) {
+    public void changeStateToFailed(ErrorDesc errorDesc) {
         changeState(TransferState.FAILED);
-        this.failureCause = failureCause;
+        this.errorDesc = errorDesc;
     }
 
     public void changeState(TransferState nextState) {
@@ -133,7 +134,7 @@ public class TransferStatusImpl implements TransferStatus {
     @Override
     public String toString() {
         return "TransferStatusImpl [state=" + state + ", lastActivity=" + lastActivity + ", startTime=" + startTime
-                + ", transferedSize=" + transferedSize + ", lastFrameSeqNum=" + lastFrameSeqNum + ", failureCause=" + failureCause
-                + "]";
+                + ", transferedSize=" + transferedSize + ", lastFrameSeqNum=" + lastFrameSeqNum + ", response=" + response
+                + ", errorDesc=" + errorDesc + ", busy=" + busy + "]";
     }
 }

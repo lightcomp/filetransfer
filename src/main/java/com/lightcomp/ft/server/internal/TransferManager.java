@@ -6,9 +6,30 @@ import com.lightcomp.ft.xsd.v1.GenericData;
 
 public interface TransferManager {
 
-    FileTransferStatus getFileTransferStatus(String transferId) throws FileTransferException;
+    /**
+     * Creates transfer.
+     * 
+     * Transfer is created asynchronously.
+     * 
+     * @return transfer id
+     */
+    String createTransferAsync(GenericData request) throws FileTransferException;
 
-    Transfer createTransfer(GenericData request) throws FileTransferException;
-
+    /**
+     * @throws FileTransferException
+     *             <ul>
+     *             <li>busy code when transfer not yet created</li>
+     *             <li>fatal code when transfer not found or server is not running</li>
+     *             </ul>
+     */
     Transfer getTransfer(String transferId) throws FileTransferException;
+
+    /**
+     * @throws FileTransferException
+     *             <ul>
+     *             <li>busy code when transfer is busy or not yet created</li>
+     *             <li>fatal code when transfer status not found</li>
+     *             </ul>
+     */
+    FileTransferStatus getFileTransferStatus(String transferId) throws FileTransferException;
 }

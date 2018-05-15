@@ -1,7 +1,6 @@
 package com.lightcomp.ft.client.operations;
 
 import com.lightcomp.ft.client.internal.UploadFrameContext;
-import com.lightcomp.ft.core.TransferInfo;
 import com.lightcomp.ft.exception.TransferExceptionBuilder;
 import com.lightcomp.ft.wsdl.v1.FileTransferException;
 import com.lightcomp.ft.wsdl.v1.FileTransferService;
@@ -13,26 +12,14 @@ public class SendOperation extends RecoverableOperation {
 
     private final UploadFrameContext frameCtx;
 
-    public SendOperation(TransferInfo transfer, RecoveryHandler handler, UploadFrameContext frameCtx) {
-        super(transfer, handler);
+    public SendOperation(String transferId, OperationHandler handler, UploadFrameContext frameCtx) {
+        super(transferId, handler);
         this.frameCtx = frameCtx;
     }
 
     @Override
-    public boolean isInterruptible() {
-        return true;
-    }
-
-    @Override
-    protected TransferExceptionBuilder prepareException(Throwable cause) {
-        return TransferExceptionBuilder.from("Failed to send frame", transfer).setCause(cause).addParam("seqNum",
-                frameCtx.getSeqNum());
-    }
-
-    @Override
-    protected void send(FileTransferService service) throws FileTransferException {
-        Frame frame = frameCtx.createFrame();
-        service.send(frame, transfer.getTransferId());
+    public TransferExceptionBuilder prepareException(Throwable t) {
+        return TransferExceptionBuilder.from("Failed to send frame").addParam("seqNum", frameCtx.getSeqNum()).setCause(t);
     }
 
     @Override
@@ -53,7 +40,13 @@ public class SendOperation extends RecoverableOperation {
         if (seqNum == lastSeqNum + 1) {
             return false;
         }
-        throw TransferExceptionBuilder.from("Cannot recover last frame").addParam("seqNum", seqNum)
+        throw TransferExceptionBuilder.from("Cannot recover last send frame").addParam("seqNum", seqNum)
                 .addParam("serverSeqNum", lastSeqNum).build();
+    }
+
+    @Override
+    protected void send(FileTransferService service) throws FileTransferException {
+        Frame frame = frameCtx.createFrame();
+        service.send(frame, transferId);
     }
 }

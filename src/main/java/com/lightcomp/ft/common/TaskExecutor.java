@@ -89,7 +89,7 @@ public class TaskExecutor {
         while (state == State.RUNNING) {
             if (processingTasks.size() >= threadPoolSize || taskQueue.isEmpty()) {
                 try {
-                    wait(100);
+                    wait();  // TODO: test if timeout needed
                 } catch (InterruptedException e) {
                     break;
                 }

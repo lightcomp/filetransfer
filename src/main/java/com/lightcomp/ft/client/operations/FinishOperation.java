@@ -1,6 +1,5 @@
 package com.lightcomp.ft.client.operations;
 
-import com.lightcomp.ft.core.TransferInfo;
 import com.lightcomp.ft.exception.TransferExceptionBuilder;
 import com.lightcomp.ft.wsdl.v1.FileTransferException;
 import com.lightcomp.ft.wsdl.v1.FileTransferService;
@@ -12,8 +11,8 @@ public class FinishOperation extends RecoverableOperation {
 
     private GenericData response;
 
-    public FinishOperation(TransferInfo transfer, RecoveryHandler handler) {
-        super(transfer, handler);
+    public FinishOperation(String transferId, OperationHandler handler) {
+        super(transferId, handler);
     }
 
     public GenericData getResponse() {
@@ -22,17 +21,12 @@ public class FinishOperation extends RecoverableOperation {
 
     @Override
     public boolean isInterruptible() {
-        return recoveryCount == 0;
+        return false;
     }
 
     @Override
-    protected TransferExceptionBuilder prepareException(Throwable cause) {
-        return TransferExceptionBuilder.from("Failed to finish transfer", transfer).setCause(cause);
-    }
-
-    @Override
-    protected void send(FileTransferService service) throws FileTransferException {
-        response = service.finish(transfer.getTransferId());
+    public TransferExceptionBuilder prepareException(Throwable t) {
+        return TransferExceptionBuilder.from("Failed to finish transfer").setCause(t);
     }
 
     @Override
@@ -46,5 +40,10 @@ public class FinishOperation extends RecoverableOperation {
             return true; // success
         }
         throw TransferExceptionBuilder.from("Invalid server state").addParam("name", fts).build();
+    }
+
+    @Override
+    protected void send(FileTransferService service) throws FileTransferException {
+        response = service.finish(transferId);
     }
 }

@@ -10,7 +10,7 @@ public class ChecksumByteChannel implements WritableByteChannel {
 
     private final ChecksumGenerator chksmGenerator;
 
-    private byte[] dataBuffer = new byte[1024];
+    private byte[] buffer = new byte[1024];
 
     public ChecksumByteChannel(WritableByteChannel wbch, ChecksumGenerator chksmGenerator) {
         this.wbch = wbch;
@@ -24,7 +24,7 @@ public class ChecksumByteChannel implements WritableByteChannel {
 
     @Override
     public void close() throws IOException {
-        dataBuffer = null;
+        buffer = null;
         wbch.close();
     }
 
@@ -36,17 +36,13 @@ public class ChecksumByteChannel implements WritableByteChannel {
         return n;
     }
 
-    /**
-     * @param n
-     *            number of bytes read
-     */
-    private void updateChecksum(ByteBuffer bb, int n) {
+    private void updateChecksum(ByteBuffer bb, int len) {
         // reallocate buffer if needed
-        if (dataBuffer.length < n) {
-            dataBuffer = new byte[n];
+        if (buffer.length < len) {
+            buffer = new byte[len];
         }
         // copy buffer
-        bb.get(dataBuffer, 0, n);
-        chksmGenerator.update(dataBuffer, 0, n);
+        bb.get(buffer, 0, len);
+        chksmGenerator.update(buffer, 0, len);
     }
 }

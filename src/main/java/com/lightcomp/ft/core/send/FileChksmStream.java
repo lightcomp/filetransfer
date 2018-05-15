@@ -55,7 +55,9 @@ class FileChksmStream implements FrameBlockStream {
         if (remaining == 0) {
             return -1;
         }
+        // adjust length by remaining bytes
         len = Math.min(remaining, len);
+        // copy checksum to buffer
         int pos = arrChksm.length - remaining;
         System.arraycopy(arrChksm, pos, b, off, len);
         remaining -= len;

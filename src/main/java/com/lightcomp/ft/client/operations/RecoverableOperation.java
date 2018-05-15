@@ -1,6 +1,6 @@
 package com.lightcomp.ft.client.operations;
 
-import com.lightcomp.ft.core.TransferInfo;
+import com.lightcomp.ft.client.internal.ExceptionType;
 import com.lightcomp.ft.exception.TransferExceptionBuilder;
 import com.lightcomp.ft.wsdl.v1.FileTransferException;
 import com.lightcomp.ft.wsdl.v1.FileTransferService;
@@ -8,52 +8,48 @@ import com.lightcomp.ft.xsd.v1.FileTransferStatus;
 
 public abstract class RecoverableOperation {
 
-    protected final TransferInfo transfer;
+    protected final String transferId;
 
-    protected final RecoveryHandler handler;
+    protected final OperationHandler handler;
 
-    protected int recoveryCount;
+    private boolean recovery;
 
-    protected RecoverableOperation(TransferInfo transfer, RecoveryHandler handler) {
-        this.transfer = transfer;
+    protected RecoverableOperation(String transferId, OperationHandler handler) {
+        this.transferId = transferId;
         this.handler = handler;
     }
 
-    public abstract boolean isInterruptible();
+    public boolean isInterruptible() {
+        return true;
+    }
 
     public boolean execute(FileTransferService service) {
         while (true) {
             try {
-                executeInternal(service);
-                // report success to recovery handler
-                if (recoveryCount > 0) {
-                    handler.onRecoverySuccess();
+                sendInternal(service);
+                if (recovery) {
+                    handler.recoverySucceeded();
                 }
                 return true;
             } catch (Throwable t) {
-                recoveryCount++;
-                // check if exception is recoverable
-                if (!isRecoverableException(t)) {
-                    throw prepareException(t).addParam("recoveryCount", recoveryCount).build();
-                }
-                // prepare recovery
-                if (!handler.prepareRecovery(isInterruptible())) {
+                if (!handleException(t)) {
                     return false;
                 }
+                recovery = true;
             }
         }
     }
 
-    protected abstract void send(FileTransferService service) throws FileTransferException;
+    protected abstract TransferExceptionBuilder prepareException(Throwable t);
 
     protected abstract boolean isFinished(FileTransferStatus status);
 
-    protected abstract TransferExceptionBuilder prepareException(Throwable cause);
+    protected abstract void send(FileTransferService service) throws FileTransferException;
 
-    private void executeInternal(FileTransferService service) throws FileTransferException {
-        if (recoveryCount > 0) {
+    private void sendInternal(FileTransferService service) throws FileTransferException {
+        if (recovery) {
             // try to get current server status
-            FileTransferStatus status = service.status(transfer.getTransferId());
+            FileTransferStatus status = service.status(transferId);
             // if succeeded test server status
             if (isFinished(status)) {
                 return;
@@ -62,8 +58,15 @@ public abstract class RecoverableOperation {
         send(service);
     }
 
-    private static boolean isRecoverableException(Throwable t) {
+    private boolean handleException(Throwable t) {
         ExceptionType type = ExceptionType.resolve(t);
-        return type == ExceptionType.CONNECTION || type == ExceptionType.BUSY;
+        // fail transfer if not busy or connection type
+        if (type != ExceptionType.BUSY && type != ExceptionType.CONNECTION) {
+            throw prepareException(t).build();
+        }
+        if (!handler.prepareRecovery(isInterruptible())) {
+            return false;
+        }
+        return true;
     }
 }

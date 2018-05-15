@@ -34,11 +34,15 @@ public class UploadTransfer extends AbstractTransfer implements SendProgressInfo
         FrameBlockBuilder builder = new FrameBlockBuilder(request.getItemIterator(), this);
         int lastSeqNum = 1;
         while (true) {
+            // check if cancel requested
+            if (isCancelRequested()) {
+                return false;
+            }
             // prepare frame
             UploadFrameContext frameCtx = new UploadFrameContext(lastSeqNum, config);
             builder.build(frameCtx);
             // send frame
-            SendOperation op = new SendOperation(this, this, frameCtx);
+            SendOperation op = new SendOperation(transferId, this, frameCtx);
             if (!op.execute(service)) {
                 return false;
             }

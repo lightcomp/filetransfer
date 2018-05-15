@@ -47,7 +47,7 @@ import com.lightcomp.ft.core.blocks.DirEndBlockImpl;
 import com.lightcomp.ft.core.send.items.SourceItem;
 import com.lightcomp.ft.server.Server;
 import com.lightcomp.ft.server.ServerConfig;
-import com.lightcomp.ft.server.UploadAcceptor;
+import com.lightcomp.ft.server.UploadHandler;
 import com.lightcomp.ft.simple.StatusStorageImpl;
 import com.lightcomp.ft.xsd.v1.DirBegin;
 import com.lightcomp.ft.xsd.v1.GenericData;
@@ -108,7 +108,7 @@ public class TransferTest {
     public void testFolderUpload() throws TimeoutException {
         UploadReceiver ur = new UploadReceiver(tempDir) {
             @Override
-            protected UploadAcceptor createUploadAcceptor(String transferId, Path uploadDir, GenericData request) {
+            protected UploadHandler createUploadAcceptor(String transferId, Path uploadDir, GenericData request) {
                 return new UploadAcceptorImpl(transferId, null, request.getId(), uploadDir, server, waiter,
                         com.lightcomp.ft.server.TransferState.FINISHING);
             }
@@ -153,7 +153,7 @@ public class TransferTest {
     public void testInactiveTransfer() throws TimeoutException {
         UploadReceiver ur = new UploadReceiver(tempDir) {
             @Override
-            protected UploadAcceptor createUploadAcceptor(String transferId, Path uploadDir, GenericData request) {
+            protected UploadHandler createUploadAcceptor(String transferId, Path uploadDir, GenericData request) {
                 return new UploadAcceptorImpl(transferId, null, request.getId(), uploadDir, server, waiter,
                         com.lightcomp.ft.server.TransferState.FAILED);
             }
@@ -193,7 +193,7 @@ public class TransferTest {
     public void testMaxFrameSizeUpload() throws TimeoutException {
         UploadReceiver ur = new UploadReceiver(tempDir) {
             @Override
-            protected UploadAcceptor createUploadAcceptor(String transferId, Path uploadDir, GenericData request) {
+            protected UploadHandler createUploadAcceptor(String transferId, Path uploadDir, GenericData request) {
                 return new UploadAcceptorImpl(transferId, null, request.getId(), uploadDir, server, waiter,
                         com.lightcomp.ft.server.TransferState.FINISHING);
             }
@@ -236,7 +236,7 @@ public class TransferTest {
     public void testMaxFrameBlocksUpload() throws TimeoutException {
         UploadReceiver ur = new UploadReceiver(tempDir) {
             @Override
-            protected UploadAcceptor createUploadAcceptor(String transferId, Path uploadDir, GenericData request) {
+            protected UploadHandler createUploadAcceptor(String transferId, Path uploadDir, GenericData request) {
                 return new UploadAcceptorImpl(transferId, null, request.getId(), uploadDir, server, waiter,
                         com.lightcomp.ft.server.TransferState.FINISHING);
             }
@@ -275,7 +275,7 @@ public class TransferTest {
     public void testInvalidChecksum() throws TimeoutException {
         UploadReceiver ur = new UploadReceiver(tempDir) {
             @Override
-            protected UploadAcceptor createUploadAcceptor(String transferId, Path uploadDir, GenericData request) {
+            protected UploadHandler createUploadAcceptor(String transferId, Path uploadDir, GenericData request) {
                 return new UploadAcceptorImpl(transferId, null, request.getId(), uploadDir, server, waiter,
                         com.lightcomp.ft.server.TransferState.FAILED);
             }
@@ -315,7 +315,7 @@ public class TransferTest {
 
         UploadReceiver ur = new UploadReceiver(tempDir) {
             @Override
-            protected UploadAcceptor createUploadAcceptor(String transferId, Path uploadDir, GenericData request) {
+            protected UploadHandler createUploadAcceptor(String transferId, Path uploadDir, GenericData request) {
                 return new UploadAcceptorImpl(transferId, null, request.getId(), uploadDir, server, waiter,
                         com.lightcomp.ft.server.TransferState.FINISHING);
             }
@@ -354,7 +354,7 @@ public class TransferTest {
     public void testInvalidFrameUpload() throws TimeoutException {
         UploadReceiver ur = new UploadReceiver(tempDir) {
             @Override
-            protected UploadAcceptor createUploadAcceptor(String transferId, Path uploadDir, GenericData request) {
+            protected UploadHandler createUploadAcceptor(String transferId, Path uploadDir, GenericData request) {
                 return new UploadAcceptorImpl(transferId, null, request.getId(), uploadDir, server, waiter,
                         com.lightcomp.ft.server.TransferState.FAILED);
             }
@@ -405,7 +405,7 @@ public class TransferTest {
     public void testUploadRequestResponse() throws TimeoutException, ParserConfigurationException {
         UploadReceiver ur = new UploadReceiver(tempDir) {
             @Override
-            protected UploadAcceptor createUploadAcceptor(String transferId, Path uploadDir, GenericData request) {
+            protected UploadHandler createUploadAcceptor(String transferId, Path uploadDir, GenericData request) {
                 return new UploadAcceptorImpl(transferId, request, request.getId(), uploadDir, server, waiter,
                         com.lightcomp.ft.server.TransferState.FINISHING);
             }

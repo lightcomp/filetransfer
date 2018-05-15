@@ -1,8 +1,6 @@
 package com.lightcomp.ft.exception;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.LinkedHashMap;
 
 import org.slf4j.Logger;
 
@@ -10,19 +8,19 @@ import com.lightcomp.ft.core.TransferInfo;
 
 public class TransferExceptionBuilder {
 
-    private final List<MessageParam> params = new ArrayList<>();
+    private final LinkedHashMap<String, Object> params = new LinkedHashMap<>();
 
     private final String message;
 
     private Throwable cause;
 
-    private TransferExceptionBuilder(String message) {
+    public TransferExceptionBuilder(String message) {
         this.message = message;
     }
 
     public TransferExceptionBuilder setTransfer(TransferInfo transfer) {
-        params.add(new MessageParam("transferId", transfer.getTransferId(), 1));
-        params.add(new MessageParam("requestId", transfer.getRequestId(), 2));
+        params.put("transferId", transfer.getTransferId());
+        params.put("requestId", transfer.getRequestId());
         return this;
     }
 
@@ -32,31 +30,29 @@ public class TransferExceptionBuilder {
     }
 
     public TransferExceptionBuilder addParam(String name, Object value) {
-        params.add(new MessageParam(name, value, null));
+        params.put(name, value);
         return this;
     }
 
     public TransferException build() {
-        return new TransferException(buildMsg(), cause);
+        return new TransferException(message, cause, params);
     }
 
     public void log(Logger logger) {
-        logger.error(buildMsg(), cause);
+        logger.error(createLogMessage(), cause);
     }
 
-    public String buildMsg() {
+    private String createLogMessage() {
         if (params.isEmpty()) {
             return message;
         }
-        Collections.sort(params);
-
         StringBuilder sb = new StringBuilder(message);
-        for (MessageParam param : params) {
-            param.write(sb);
-        }
+        params.forEach((k, v) -> {
+            sb.append(',').append(k).append('=').append(v);
+        });
         return sb.toString();
     }
-    
+
     public static TransferExceptionBuilder from(String message) {
         return new TransferExceptionBuilder(message);
     }

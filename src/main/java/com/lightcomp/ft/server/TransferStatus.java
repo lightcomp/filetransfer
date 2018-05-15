@@ -33,14 +33,14 @@ public interface TransferStatus {
      * Sequential number of last processed frame.
      */
     int getLastFrameSeqNum();
-    
+
     /**
-     * Server response to finished transfer.
+     * Server response after transfer is finished.
      */
     GenericData getResponse();
 
     /**
-     * Cause of transfer failure.
+     * Error description of transfer failure.
      */
-    Throwable getFailureCause();
+    ErrorDesc getErrorDesc();
 }

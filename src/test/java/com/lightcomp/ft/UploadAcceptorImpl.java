@@ -8,12 +8,12 @@ import org.slf4j.LoggerFactory;
 import com.lightcomp.ft.server.Server;
 import com.lightcomp.ft.server.TransferState;
 import com.lightcomp.ft.server.TransferStatus;
-import com.lightcomp.ft.server.UploadAcceptor;
+import com.lightcomp.ft.server.UploadHandler;
 import com.lightcomp.ft.xsd.v1.GenericData;
 
 import net.jodah.concurrentunit.Waiter;
 
-public class UploadAcceptorImpl implements UploadAcceptor {
+public class UploadAcceptorImpl implements UploadHandler {
 
     private final Logger logger = LoggerFactory.getLogger(UploadAcceptorImpl.class);
 

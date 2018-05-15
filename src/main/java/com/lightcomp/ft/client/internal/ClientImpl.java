@@ -15,6 +15,9 @@ import com.lightcomp.ft.client.UploadRequest;
 import com.lightcomp.ft.common.TaskExecutor;
 import com.lightcomp.ft.wsdl.v1.FileTransferService;
 
+/**
+ * Transfer client impl.
+ */
 public class ClientImpl implements Client {
 
     protected final TaskExecutor transferExecutor;
@@ -48,8 +51,8 @@ public class ClientImpl implements Client {
 
     @Override
     public synchronized void start() {
-        transferExecutor.start();
         service = createService(config);
+        transferExecutor.start();
     }
 
     @Override

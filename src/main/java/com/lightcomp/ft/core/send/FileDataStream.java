@@ -6,13 +6,16 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Path;
 
 import org.apache.commons.lang3.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.lightcomp.ft.common.ChecksumGenerator;
 import com.lightcomp.ft.core.send.items.SourceFile;
-import com.lightcomp.ft.exception.TransferExceptionBuilder;
 
 class FileDataStream implements FrameBlockStream {
 
+    private static final Logger logger = LoggerFactory.getLogger(FileDataStream.class);
+    
     private final SourceFile srcFile;
 
     private final long offset;
@@ -67,7 +70,9 @@ class FileDataStream implements FrameBlockStream {
         // read data from source file
         ByteBuffer bb = ByteBuffer.wrap(b, off, len);
         if (channel.read(bb) < len) {
-            throw TransferExceptionBuilder.from("Source file data stream ended prematurely").addParam("path", logPath).build();
+            String msg = "Source file data stream ended prematurely, path=" + logPath;
+            logger.error(msg);
+            throw new IOException(msg);
         }
         // update checksum generator if present
         if (chksmGenerator != null) {

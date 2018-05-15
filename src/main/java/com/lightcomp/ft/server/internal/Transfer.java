@@ -6,8 +6,6 @@ import com.lightcomp.ft.xsd.v1.GenericData;
 
 public interface Transfer {
 
-    String getTransferId();
-
     void recvFrame(Frame frame) throws FileTransferException;
 
     Frame sendFrame(long seqNum) throws FileTransferException;

@@ -35,8 +35,7 @@ public class FileTransferServiceImpl implements FileTransferService {
 
     @Override
     public String begin(GenericData request) throws FileTransferException {
-        Transfer transfer = manager.createTransfer(request);
-        return transfer.getTransferId();
+        return manager.createTransferAsync(request);
     }
 
     @Override

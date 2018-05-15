@@ -4,21 +4,21 @@ import com.lightcomp.ft.core.TransferInfo;
 import com.lightcomp.ft.exception.TransferException;
 
 /**
- * Representation of one transfer.
+ * Client transfer.
  */
 public interface Transfer extends TransferInfo {
 
     /**
-     * Returns current transfer status.
+     * Current transfer status.
      */
     TransferStatus getStatus();
 
     /**
-     * Cancel transfer. Caller will wait for termination if the transfer is active.
-     * When canceled {@link TransferRequest#onTransferCanceled()} is called.
+     * Cancel transfer. Caller will wait for termination if the transfer is active. When canceled
+     * {@link TransferRequest#onTransferCanceled()} is called.
      * 
      * @throws TransferException
-     *             When transfer already finished.
+     *             When transfer is finished or failed.
      */
     void cancel();
 }

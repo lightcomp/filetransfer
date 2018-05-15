@@ -1,7 +1,7 @@
 package com.lightcomp.ft.client;
 
 /**
- * Client dispatching all transfers.
+ * File transfer client, dispatching requests to server.
  */
 public interface Client {
 

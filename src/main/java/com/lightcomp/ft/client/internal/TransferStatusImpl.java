@@ -20,7 +20,7 @@ public class TransferStatusImpl implements TransferStatus {
     private long transferedSize;
 
     public TransferStatusImpl() {
-        state = TransferState.INITIALIZED;
+        state = TransferState.CREATED;
         lastActivity = LocalDateTime.now();
     }
 

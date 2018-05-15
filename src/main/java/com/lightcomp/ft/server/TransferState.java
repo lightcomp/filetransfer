@@ -3,14 +3,13 @@ package com.lightcomp.ft.server;
 import com.lightcomp.ft.xsd.v1.FileTransferState;
 
 /**
- * Internal receiver transfer state. <i>Implementation note: Do not change
- * defined order, ordinal is used.</i>
+ * Internal transfer state. <i>Implementation note: Do not change defined order, ordinal is used.</i>
  */
 public enum TransferState {
     /**
      * Implicit state after creation.
      */
-    INITIALIZED(null),
+    CREATED(null),
     /**
      * Data is transferring.
      */
@@ -28,11 +27,11 @@ public enum TransferState {
      */
     FINISHED(FileTransferState.FINISHED),
     /**
-     * File transfer is failed.
+     * Transfer is failed.
      */
     FAILED(FileTransferState.FAILED),
     /**
-     * File transfer is canceled.
+     * Transfer is canceled.
      */
     CANCELED(FileTransferState.FAILED);
 
@@ -42,10 +41,18 @@ public enum TransferState {
         this.external = external;
     }
 
+    /**
+     * @return Returns true for FINISHED, FAILED and CANCELED states.
+     */
     public boolean isTerminal() {
         return ordinal() >= FINISHED.ordinal();
     }
 
+    /**
+     * Converts internal state to external state for API communication.
+     * 
+     * @return External state or null when internal state is not possible to convert.
+     */
     public FileTransferState toExternal() {
         return external;
     }

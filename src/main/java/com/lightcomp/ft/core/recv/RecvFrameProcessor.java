@@ -2,7 +2,6 @@ package com.lightcomp.ft.core.recv;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
@@ -25,32 +24,30 @@ public class RecvFrameProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(RecvFrameProcessor.class);
 
+    private final RecvContext recvCtx;
+
     private final int seqNum;
 
     private final boolean last;
 
     private final Collection<FrameBlock> blocks;
 
-    private final DataHandler data;
+    private final DataHandler dataHandler;
 
     private final long dataSize;
-
-    private final RecvContext recvCtx;
 
     private Path dataFile;
 
     private long dataPos;
 
-    private ReadableByteChannel dataChannel;
-
-    private RecvFrameProcessor(int seqNum, boolean last, Collection<FrameBlock> blocks, DataHandler data, long dataSize,
-            RecvContext recvCtx) {
+    private RecvFrameProcessor(RecvContext recvCtx, int seqNum, boolean last, Collection<FrameBlock> blocks,
+            DataHandler dataHandler, long dataSize) {
+        this.recvCtx = recvCtx;
         this.seqNum = seqNum;
         this.last = last;
         this.blocks = blocks;
-        this.data = data;
+        this.dataHandler = dataHandler;
         this.dataSize = dataSize;
-        this.recvCtx = recvCtx;
     }
 
     public int getSeqNum() {
@@ -61,26 +58,25 @@ public class RecvFrameProcessor {
         return last;
     }
 
-    public void transfer(Path workDir) {
+    public void prepareData(Path workDir) {
         Validate.isTrue(dataFile == null);
-        // create temporary data file
-        String prefix = Integer.toString(seqNum);
+        // create temporary file
         try {
-            dataFile = Files.createTempFile(workDir, prefix, null);
+            dataFile = Files.createTempFile(workDir, Integer.toString(seqNum), null);
         } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            throw TransferExceptionBuilder.from("Failed to create temporary file for frame data").setCause(e).build();
         }
-        // copy whole frame data to file
-        try (InputStream is = data.getInputStream()) {
+        // copy frame data to file
+        try (InputStream is = dataHandler.getInputStream()) {
             long length = Files.copy(is, dataFile, StandardCopyOption.REPLACE_EXISTING);
             // copied length must match with specified data size
             if (length != dataSize) {
-                clearResources();
+                deleteData();
                 throw TransferExceptionBuilder.from("Frame size does not match data length").addParam("frameSeqNum", seqNum)
                         .addParam("frameSize", dataSize).addParam("dataLength", length).build();
             }
         } catch (IOException e) {
-            clearResources();
+            deleteData();
             throw TransferExceptionBuilder.from("Failed to transfer frame data").addParam("frameSeqNum", seqNum).setCause(e)
                     .build();
         }
@@ -88,9 +84,9 @@ public class RecvFrameProcessor {
 
     public void process() {
         int blockNum = 1;
-        try (ReadableByteChannel rbch = openDataChannel()) {
-            // set input channel for receive context
-            recvCtx.setInputChannel(rbch);
+        try (ReadableByteChannel dch = openDataChannel()) {
+            // set input channel to receive context
+            recvCtx.setInputChannel(dch);
             // process all blocks
             for (FrameBlock block : blocks) {
                 block.receive(recvCtx);
@@ -100,18 +96,16 @@ public class RecvFrameProcessor {
             throw TransferExceptionBuilder.from("Failed to process frame block").addParam("frameSeqNum", seqNum)
                     .addParam("blockNum", blockNum).setCause(t).build();
         } finally {
-            // release input channel
             recvCtx.setInputChannel(null);
-            // close and delete temp data
-            clearResources();
+            deleteData();
         }
         validate();
     }
 
     private ReadableByteChannel openDataChannel() {
-        Validate.isTrue(dataChannel == null);
+        ReadableByteChannel dch;
         try {
-            dataChannel = Files.newByteChannel(dataFile, StandardOpenOption.READ);
+            dch = Files.newByteChannel(dataFile, StandardOpenOption.READ);
         } catch (IOException e) {
             throw TransferExceptionBuilder.from("Failed to open temporary frame data").addParam("frameSeqNum", seqNum)
                     .addParam("dataFile", dataFile).setCause(e).build();
@@ -119,17 +113,17 @@ public class RecvFrameProcessor {
         return new ReadableByteChannel() {
             @Override
             public boolean isOpen() {
-                return dataChannel.isOpen();
+                return dch.isOpen();
             }
 
             @Override
             public void close() throws IOException {
-                dataChannel.close();
+                dch.close();
             }
 
             @Override
             public int read(ByteBuffer dst) throws IOException {
-                int n = dataChannel.read(dst);
+                int n = dch.read(dst);
                 dataPos += n;
                 return n;
             }
@@ -155,22 +149,18 @@ public class RecvFrameProcessor {
         }
     }
 
-    private void clearResources() {
+    private void deleteData() {
         try {
-            if (dataChannel != null) {
-                dataChannel.close();
-                dataChannel = null;
-            }
             Files.delete(dataFile);
         } catch (Throwable t) {
-            TransferExceptionBuilder.from("Failed to clear temporary frame data").addParam("frameSeqNum", seqNum).setCause(t)
+            TransferExceptionBuilder.from("Failed to delete temporary frame data").addParam("frameSeqNum", seqNum).setCause(t)
                     .log(logger);
         }
     }
 
-    public static RecvFrameProcessor create(Frame frame, RecvContext recvCtx) {
+    public static RecvFrameProcessor create(RecvContext recvCtx, Frame frame) {
         boolean last = Boolean.TRUE.equals(frame.isLast());
         Collection<FrameBlock> blocks = frame.getBlocks().getDesAndFdsAndFes();
-        return new RecvFrameProcessor(frame.getSeqNum(), last, blocks, frame.getData(), frame.getDataSize(), recvCtx);
+        return new RecvFrameProcessor(recvCtx, frame.getSeqNum(), last, blocks, frame.getData(), frame.getDataSize());
     }
 }

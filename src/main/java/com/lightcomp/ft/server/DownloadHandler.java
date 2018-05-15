@@ -4,10 +4,13 @@ import java.util.Iterator;
 
 import com.lightcomp.ft.core.send.items.SourceItem;
 
-public interface DownloadAcceptor extends TransferAcceptor {
+/**
+ * Handler for download transfer.
+ */
+public interface DownloadHandler extends TransferDataHandler {
 
     /**
-     * Returns new source item iterator.
+     * Returns new iterator for root items, not-null.
      */
     Iterator<SourceItem> getItemIterator();
 }

@@ -8,7 +8,7 @@ import java.util.Iterator;
 public interface SourceDir extends SourceItem {
 
     /**
-     * Returns new item iterator for directory content.
+     * Returns new iterator for directory items.
      */
     Iterator<SourceItem> getItemIterator();
 }

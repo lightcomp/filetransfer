@@ -5,11 +5,11 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import com.lightcomp.ft.server.TransferAcceptor;
-import com.lightcomp.ft.server.TransferReceiver;
+import com.lightcomp.ft.server.TransferDataHandler;
+import com.lightcomp.ft.server.TransferHandler;
 import com.lightcomp.ft.xsd.v1.GenericData;
 
-class ReceiverImpl implements TransferReceiver {
+class ReceiverImpl implements TransferHandler {
 
     private final Path transferDir;
 
@@ -20,7 +20,7 @@ class ReceiverImpl implements TransferReceiver {
     }
 
     @Override
-    public synchronized TransferAcceptor onTransferBegin(GenericData request) {
+    public synchronized TransferDataHandler onTransferBegin(GenericData request) {
         String transferId = Integer.toString(++lastTransferId);
         Path uploadDir = transferDir.resolve(transferId);
         // prepare transfer directory

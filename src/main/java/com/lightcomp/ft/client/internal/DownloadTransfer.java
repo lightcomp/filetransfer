@@ -1,7 +1,6 @@
 package com.lightcomp.ft.client.internal;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -48,26 +47,30 @@ public class DownloadTransfer extends AbstractTransfer implements RecvProgressIn
 
     @Override
     protected boolean transferFrames() {
-        createTempDir();
         try {
+            createTempDir();
             RecvContext recvCtx = new RecvContextImpl(this, downloadDir);
             return downloadFrames(recvCtx);
         } finally {
-            clearResources();
+            deleteTempDir();
         }
     }
 
     private boolean downloadFrames(RecvContext recvCtx) {
         int lastSeqNum = 1;
         while (true) {
+            // check if cancel requested
+            if (isCancelRequested()) {
+                return false;
+            }
             // receive frame
-            RecvOperation op = new RecvOperation(this, this, lastSeqNum);
+            RecvOperation op = new RecvOperation(transferId, this, lastSeqNum);
             if (!op.execute(service)) {
                 return false;
             }
-            // process response
-            RecvFrameProcessor rfp = RecvFrameProcessor.create(op.getResponse(), recvCtx);
-            rfp.transfer(tempDir);
+            // process frame
+            RecvFrameProcessor rfp = RecvFrameProcessor.create(recvCtx, op.getResponse());
+            rfp.prepareData(tempDir);
             rfp.process();
             // exit if last
             if (rfp.isLast()) {
@@ -81,19 +84,18 @@ public class DownloadTransfer extends AbstractTransfer implements RecvProgressIn
     private void createTempDir() {
         Validate.isTrue(tempDir == null);
         try {
-            tempDir = Files.createTempDirectory(transferId);
+            tempDir = Files.createTempDirectory(config.getWorkDir(), transferId);
         } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            throw TransferExceptionBuilder.from("Failed to create temporary download directory", this).setCause(e).build();
         }
     }
 
-    private void clearResources() {
-        // delete temporary files
+    private void deleteTempDir() {
         if (tempDir != null) {
             try {
                 PathUtils.deleteWithChildren(tempDir);
             } catch (IOException e) {
-                TransferExceptionBuilder.from("Failed to delete temporary download files", this).setCause(e).log(logger);
+                TransferExceptionBuilder.from("Failed to delete temporary download directory", this).setCause(e).log(logger);
             }
         }
     }

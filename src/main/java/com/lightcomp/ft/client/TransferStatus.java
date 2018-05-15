@@ -23,7 +23,7 @@ public interface TransferStatus {
     LocalDateTime getStartTime();
 
     /**
-     * Last transfer operation recovery count.
+     * Recovery count of communication with server.
      */
     int getRecoveryCount();
 

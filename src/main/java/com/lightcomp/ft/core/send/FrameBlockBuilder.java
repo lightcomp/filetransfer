@@ -30,26 +30,26 @@ public class FrameBlockBuilder {
                 currSplitter = null;
             }
             // get last directory and create begin/end if needed
-            DirContext dirCtx = dirStack.getLast();
-            if (!dirCtx.isStarted()) {
-                if (!prepareDirBegin(dirCtx, frameCtx)) {
+            DirContext dir = dirStack.getLast();
+            if (!dir.isStarted()) {
+                if (!prepareDirBegin(dir, frameCtx)) {
                     return; // frame filled
                 }
             }
-            if (!dirCtx.hasNextItem()) {
-                if (!prepareDirEnd(dirCtx, frameCtx)) {
+            if (!dir.hasNextItem()) {
+                if (!prepareDirEnd(dir, frameCtx)) {
                     return; // frame filled
                 }
                 dirStack.removeLast();
                 continue;
             }
             // last directory didn't end -> process next child
-            SourceItem item = dirCtx.getNextItem();
+            SourceItem item = dir.getNextItem();
             if (item.isDir()) {
-                dirCtx = DirContext.create(item.asDir(), dirCtx.getPath());
-                dirStack.addLast(dirCtx);
+                DirContext childDir = DirContext.create(item.asDir(), dir.getPath());
+                dirStack.addLast(childDir);
             } else {
-                currSplitter = FileSplitter.create(item.asFile(), dirCtx.getPath(), progressInfo);
+                currSplitter = FileSplitter.create(item.asFile(), dir.getPath(), progressInfo);
             }
         }
         frameCtx.setLast(true);
@@ -59,8 +59,7 @@ public class FrameBlockBuilder {
      * 
      * @param dirCtx
      * @param frameCtx
-     * @return Return true if dirBegin was prepared. Return false if dirBegin cannot
-     *         be add to the current frame (frame is full)
+     * @return Return true if dirBegin was prepared. Return false if dirBegin cannot be add to the current frame (frame is full)
      */
     private boolean prepareDirBegin(DirContext dirCtx, SendFrameContext frameCtx) {
         // Do not send dirBegin for root folder
