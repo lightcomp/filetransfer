@@ -7,6 +7,7 @@ import java.util.Iterator;
 import com.lightcomp.ft.common.PathUtils;
 import com.lightcomp.ft.core.send.items.SourceDir;
 import com.lightcomp.ft.core.send.items.SourceItem;
+import com.lightcomp.ft.exception.TransferException;
 import com.lightcomp.ft.exception.TransferExceptionBuilder;
 
 class DirContext {
@@ -53,13 +54,13 @@ class DirContext {
         return new DirContext(null, PathUtils.ROOT, itemIt);
     }
 
-    public static DirContext create(SourceDir srcDir, Path parentPath) {
+    public static DirContext create(SourceDir srcDir, Path parentPath) throws TransferException {
         String name = srcDir.getName();
         Path path;
         try {
             path = parentPath.resolve(name);
         } catch (InvalidPathException e) {
-            throw TransferExceptionBuilder.from("Invalid source directory name").addParam("parentPath", parentPath)
+            throw new TransferExceptionBuilder("Invalid source directory name").addParam("parentPath", parentPath)
                     .addParam("name", name).setCause(e).build();
         }
         return new DirContext(name, path, srcDir.getItemIterator());

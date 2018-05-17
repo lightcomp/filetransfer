@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import com.lightcomp.ft.common.ChecksumByteChannel;
 import com.lightcomp.ft.common.ChecksumGenerator;
+import com.lightcomp.ft.exception.TransferException;
 import com.lightcomp.ft.exception.TransferExceptionBuilder;
 
 class FileWriter {
@@ -43,15 +44,15 @@ class FileWriter {
         return file;
     }
 
-    public void write(ReadableByteChannel rbch, long offset, long length) {
+    public void write(ReadableByteChannel rbch, long offset, long length) throws TransferException {
         long writtenSize = chksmGenerator.getNumProcessed();
         if (offset != writtenSize) {
-            throw TransferExceptionBuilder.from("File must be written in sequence").addParam("path", file)
+            throw new TransferExceptionBuilder("File must be written in sequence").addParam("path", file)
                     .addParam("writtenSize", writtenSize).addParam("fileOffset", offset).build();
         }
         long newSize = offset + length;
         if (newSize > size) {
-            throw TransferExceptionBuilder.from("File data overlaps defined size").addParam("path", file)
+            throw new TransferExceptionBuilder("File data overlaps defined size").addParam("path", file)
                     .addParam("fileSize", size).addParam("newSize", newSize).build();
         }
         if (length == 0) {
@@ -65,15 +66,15 @@ class FileWriter {
                 copyData(rbch, wbch, length);
             }
         } catch (IOException e) {
-            throw TransferExceptionBuilder.from("Failed to open file").addParam("path", file).setCause(e).build();
+            throw new TransferExceptionBuilder("Failed to open file").addParam("path", file).setCause(e).build();
         }
     }
 
-    public void finish(long lastModified, byte[] checksum) {
+    public void finish(long lastModified, byte[] checksum) throws TransferException {
         // check written size
         long writtenSize = chksmGenerator.getNumProcessed();
         if (size != writtenSize) {
-            throw TransferExceptionBuilder.from("Incomplete file cannot be finished").addParam("path", file)
+            throw new TransferExceptionBuilder("Incomplete file cannot be finished").addParam("path", file)
                     .addParam("fileSize", size).addParam("writtenSize", writtenSize).build();
         }
         // validate checksum
@@ -82,18 +83,18 @@ class FileWriter {
             logger.debug("File={}, SHA512={}", file, DatatypeConverter.printHexBinary(chksm));
         }
         if (!Arrays.equals(chksm, checksum)) {
-            throw TransferExceptionBuilder.from("File checksums does not match").addParam("path", file).build();
+            throw new TransferExceptionBuilder("File checksums does not match").addParam("path", file).build();
         }
         // update last modification
         FileTime lm = FileTime.fromMillis(lastModified);
         try {
             Files.setLastModifiedTime(file, lm);
         } catch (IOException e) {
-            throw TransferExceptionBuilder.from("Failed to finilsh file").addParam("path", file).setCause(e).build();
+            throw new TransferExceptionBuilder("Failed to finilsh file").addParam("path", file).setCause(e).build();
         }
     }
 
-    private void copyData(ReadableByteChannel rbch, WritableByteChannel wbch, long length) {
+    private void copyData(ReadableByteChannel rbch, WritableByteChannel wbch, long length) throws TransferException {
         ByteBuffer bb = ByteBuffer.allocate(BUFFER_SIZE);
 
         while (length > 0) {
@@ -110,7 +111,7 @@ class FileWriter {
                     break;
                 }
             } catch (Throwable t) {
-                throw TransferExceptionBuilder.from("Failed to read file data").addParam("path", file).setCause(t).build();
+                throw new TransferExceptionBuilder("Failed to read file data").addParam("path", file).setCause(t).build();
             }
             // flip buffer for write
             bb.flip();
@@ -121,7 +122,7 @@ class FileWriter {
                 // destination file must be large enough
                 Validate.isTrue(!bb.hasRemaining());
             } catch (Throwable t) {
-                throw TransferExceptionBuilder.from("Failed to write file data").addParam("path", file).setCause(t).build();
+                throw new TransferExceptionBuilder("Failed to write file data").addParam("path", file).setCause(t).build();
             }
             length -= bb.limit();
             bb.rewind();

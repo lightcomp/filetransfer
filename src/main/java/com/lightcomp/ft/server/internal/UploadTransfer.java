@@ -13,8 +13,8 @@ import com.lightcomp.ft.common.TaskExecutor;
 import com.lightcomp.ft.core.recv.RecvContextImpl;
 import com.lightcomp.ft.core.recv.RecvFrameProcessor;
 import com.lightcomp.ft.core.recv.RecvProgressInfo;
-import com.lightcomp.ft.exception.ErrorBuilder;
 import com.lightcomp.ft.exception.TransferException;
+import com.lightcomp.ft.exception.TransferExceptionBuilder;
 import com.lightcomp.ft.server.ServerConfig;
 import com.lightcomp.ft.server.TransferState;
 import com.lightcomp.ft.server.TransferStatus;
@@ -61,7 +61,7 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
     protected void checkPreparedFinish() throws FileTransferException {
         // check if busy processing last frame
         if (lastFrameReceived && status.getState() != TransferState.TRANSFERED) {
-            throw new ErrorBuilder("Finish is not prepared").setTransfer(this).buildApiEx(ErrorCode.BUSY);
+            throw new ErrorBuilder("Finish is not prepared", this).buildEx(ErrorCode.BUSY);
         }
     }
 
@@ -71,11 +71,10 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
         try {
             tempDir = Files.createTempDirectory(config.getWorkDir(), transferId);
         } catch (IOException e) {
-            ErrorBuilder eb = new ErrorBuilder("Failed to create temporary upload directory").setTransfer(this)
+            TransferExceptionBuilder eb = new TransferExceptionBuilder("Failed to create temporary upload directory", this)
                     .addParam("parentPath", config.getWorkDir()).setCause(e);
-            // log complete IO exception, server will save only top level cause
             eb.log(logger);
-            throw eb.buildEx();
+            throw eb.build();
         }
         // update state to started
         super.init();
@@ -95,9 +94,9 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
 
     @Override
     public Frame sendFrame(long seqNum) throws FileTransferException {
-        ErrorBuilder eb = new ErrorBuilder("Transfer cannot send frame in upload mode").setTransfer(this);
+        ErrorBuilder eb = new ErrorBuilder("Transfer cannot send frame in upload mode", this);
         transferFailed(eb);
-        throw eb.buildApiEx();
+        throw eb.buildEx();
     }
 
     @Override
@@ -107,11 +106,11 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
             checkActiveTransfer();
             // check transferring frame
             if (transferring) {
-                throw new ErrorBuilder("Another frame is being transfered").setTransfer(this).buildApiEx(ErrorCode.BUSY);
+                throw new ErrorBuilder("Another frame is being transfered", this).buildEx(ErrorCode.BUSY);
             }
             // check started state
             if (status.getState() != TransferState.STARTED) {
-                eb = new ErrorBuilder("Unable to receive frame in current state").setTransfer(this).addParam("currentState",
+                eb = new ErrorBuilder("Unable to receive frame in current state", this).addParam("currentState",
                         status.getState());
                 // state must be changed in same sync block as check
                 status.changeStateToFailed(eb.buildDesc());
@@ -121,18 +120,19 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
                 transferring = true;
             }
         }
-        // transfer failed must be called outside sync block
+        // handler must be called outside of sync block
         if (eb != null) {
-            transferFailed(eb);
-            throw eb.buildApiEx();
+            eb.log(logger);
+            handler.onTransferFailed(eb.buildDesc());
+            throw eb.buildEx();
         }
         // process frame
         try {
             processFrame(frame);
         } catch (Throwable t) {
-            eb = new ErrorBuilder("Failed to process frame").setTransfer(this).addParam("seqNum", frame.getSeqNum());
+            eb = new ErrorBuilder("Failed to process frame", this).addParam("seqNum", frame.getSeqNum());
             transferFailed(eb);
-            eb.buildApiEx();
+            eb.buildEx();
         } finally {
             synchronized (this) {
                 transferring = false;
@@ -151,7 +151,7 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
         lastFrameReceived = Boolean.TRUE.equals(frame.isLast());
         // check and set last seq number
         if (lastSeqNum + 1 != frame.getSeqNum()) {
-            throw new ErrorBuilder("Invalid frame number").addParam("expectedSeqNum", lastSeqNum + 1).buildEx();
+            throw new TransferExceptionBuilder("Invalid frame number").addParam("expectedSeqNum", lastSeqNum + 1).build();
         }
         lastSeqNum++;
 
@@ -199,7 +199,7 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
             try {
                 PathUtils.deleteWithChildren(tempDir);
             } catch (IOException e) {
-                new ErrorBuilder("Failed to delete temporary upload files").setTransfer(this).setCause(e).log(logger);
+                new ErrorBuilder("Failed to delete temporary upload files", this).setCause(e).log(logger);
             }
         }
         // stop frame worker

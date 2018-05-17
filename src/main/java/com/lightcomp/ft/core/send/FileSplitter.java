@@ -8,13 +8,12 @@ import com.lightcomp.ft.core.blocks.FileBeginBlockImpl;
 import com.lightcomp.ft.core.blocks.FileDataBlockImpl;
 import com.lightcomp.ft.core.blocks.FileEndBlockImpl;
 import com.lightcomp.ft.core.send.items.SourceFile;
+import com.lightcomp.ft.exception.TransferException;
 import com.lightcomp.ft.exception.TransferExceptionBuilder;
 
 class FileSplitter {
 
     private final SourceFile srcFile;
-
-    private final String name;
 
     private final long size;
 
@@ -28,10 +27,9 @@ class FileSplitter {
 
     private long offset = -1;
 
-    private FileSplitter(SourceFile srcFile, String name, long size, ChecksumGenerator chksmGenerator, byte[] chksm,
+    private FileSplitter(SourceFile srcFile, long size, ChecksumGenerator chksmGenerator, byte[] chksm,
             SendProgressInfo progressInfo, Path logPath) {
         this.srcFile = srcFile;
-        this.name = name;
         this.size = size;
         this.chksmGenerator = chksmGenerator;
         this.chksm = chksm;
@@ -40,8 +38,7 @@ class FileSplitter {
     }
 
     /**
-     * @return True when all remaining blocks were added to frame (blocks fits the
-     *         frame).
+     * @return True when all remaining blocks were added to frame (blocks fits the frame).
      */
     public boolean prepareBlocks(SendFrameContext frameCtx) {
         while (offset <= size) {
@@ -67,7 +64,7 @@ class FileSplitter {
             return false;
         }
         FileBeginBlockImpl b = new FileBeginBlockImpl();
-        b.setN(name);
+        b.setN(srcFile.getName());
         b.setFs(size);
 
         frameCtx.addBlock(b);
@@ -110,31 +107,31 @@ class FileSplitter {
         return true;
     }
 
-    public static FileSplitter create(SourceFile srcFile, Path parentPath, SendProgressInfo progressInfo) {
+    public static FileSplitter create(SourceFile srcFile, Path parentPath, SendProgressInfo progressInfo)
+            throws TransferException {
         // validate base attributes
-        String name = srcFile.getName();
         Path path;
         try {
-            path = parentPath.resolve(name);
+            path = parentPath.resolve(srcFile.getName());
         } catch (InvalidPathException e) {
-            throw TransferExceptionBuilder.from("Invalid source file name").addParam("parentPath", parentPath)
-                    .addParam("name", name).setCause(e).build();
+            throw new TransferExceptionBuilder("Invalid source file name").addParam("parentPath", parentPath)
+                    .addParam("name", srcFile.getName()).setCause(e).build();
         }
         long size = srcFile.getSize();
         if (size < 0) {
-            throw TransferExceptionBuilder.from("Invalid source file size").addParam("path", path).addParam("size", size).build();
+            throw new TransferExceptionBuilder("Invalid source file size").addParam("path", path).addParam("size", size).build();
         }
         // validate checksum or initialize generator
         ChecksumGenerator chksmGenerator = null;
         byte[] chksm = srcFile.getChecksum();
         if (chksm != null) {
             if (chksm.length != ChecksumGenerator.LENGTH) {
-                throw TransferExceptionBuilder.from("File checksum has invalid length").addParam("path", path)
+                throw new TransferExceptionBuilder("File checksum has invalid length").addParam("path", path)
                         .addParam("checksumLength", chksm.length).build();
             }
         } else {
             chksmGenerator = ChecksumGenerator.create();
         }
-        return new FileSplitter(srcFile, name, size, chksmGenerator, chksm, progressInfo, path);
+        return new FileSplitter(srcFile, size, chksmGenerator, chksm, progressInfo, path);
     }
 }

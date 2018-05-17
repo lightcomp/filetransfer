@@ -1,8 +1,8 @@
 package com.lightcomp.ft.server.internal;
 
+import com.lightcomp.ft.server.TransferStatus;
 import com.lightcomp.ft.wsdl.v1.FileTransferException;
-import com.lightcomp.ft.xsd.v1.FileTransferStatus;
-import com.lightcomp.ft.xsd.v1.GenericData;
+import com.lightcomp.ft.xsd.v1.GenericDataType;
 
 public interface TransferManager {
 
@@ -13,7 +13,7 @@ public interface TransferManager {
      * 
      * @return transfer id
      */
-    String createTransferAsync(GenericData request) throws FileTransferException;
+    String createTransferAsync(GenericDataType request) throws FileTransferException;
 
     /**
      * @throws FileTransferException
@@ -31,5 +31,5 @@ public interface TransferManager {
      *             <li>fatal code when transfer status not found</li>
      *             </ul>
      */
-    FileTransferStatus getFileTransferStatus(String transferId) throws FileTransferException;
+    TransferStatus getConfirmedStatus(String transferId) throws FileTransferException;
 }

@@ -2,7 +2,7 @@ package com.lightcomp.ft.server;
 
 import java.time.LocalDateTime;
 
-import com.lightcomp.ft.xsd.v1.GenericData;
+import com.lightcomp.ft.xsd.v1.GenericDataType;
 
 /**
  * File transfer status.
@@ -37,7 +37,7 @@ public interface TransferStatus {
     /**
      * Server response after transfer is finished.
      */
-    GenericData getResponse();
+    GenericDataType getResponse();
 
     /**
      * Error description of transfer failure.

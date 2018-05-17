@@ -14,7 +14,7 @@ import com.lightcomp.ft.client.operations.OperationHandler;
 import com.lightcomp.ft.exception.TransferExceptionBuilder;
 import com.lightcomp.ft.wsdl.v1.FileTransferException;
 import com.lightcomp.ft.wsdl.v1.FileTransferService;
-import com.lightcomp.ft.xsd.v1.GenericData;
+import com.lightcomp.ft.xsd.v1.GenericDataType;
 
 public abstract class AbstractTransfer implements Runnable, Transfer, OperationHandler {
 
@@ -49,7 +49,7 @@ public abstract class AbstractTransfer implements Runnable, Transfer, OperationH
         if (id != null) {
             return id;
         }
-        GenericData data = request.getData();
+        GenericDataType data = request.getData();
         if (data != null) {
             return data.getId();
         }
@@ -66,12 +66,7 @@ public abstract class AbstractTransfer implements Runnable, Transfer, OperationH
     }
 
     @Override
-    public synchronized void recoverySucceeded() {
-        status.resetRecoveryCount();
-    }
-
-    @Override
-    public boolean prepareRecovery(boolean interruptible) {
+    public boolean prepareRecovery() {
         // increment recovery count
         TransferStatus ts = null;
         synchronized (this) {
@@ -92,7 +87,7 @@ public abstract class AbstractTransfer implements Runnable, Transfer, OperationH
                 try {
                     wait(delay * 1000);
                 } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
+                    // ignore
                 }
                 // check if thread awakened by cancel
                 if (cancelRequested && interruptible) {
@@ -124,8 +119,7 @@ public abstract class AbstractTransfer implements Runnable, Transfer, OperationH
                     try {
                         wait(100);
                     } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        throw new RuntimeException(e);
+                        // ignore
                     }
             }
         }

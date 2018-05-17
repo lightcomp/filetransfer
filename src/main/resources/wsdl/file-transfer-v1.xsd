@@ -3,7 +3,66 @@
 	<xs:annotation>
 		<xs:documentation>Definice datových typů - XSD schéma</xs:documentation>
 	</xs:annotation>
+	<xs:element name="AbortRequest" type="ft:AbortRequestType">
+		<xs:annotation>
+			<xs:documentation>Element s požadavkem na přerušení přenosu.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:element name="BeginRequest" type="ft:GenericDataType">
+		<xs:annotation>
+			<xs:documentation>Požadavek na zahájení přenosu.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:element name="BeginResponse" type="ft:BeginResponseType">
+		<xs:annotation>
+			<xs:documentation>Element s odpovědí na zahájení přenosu</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:element name="ErrorDescription" type="ft:ErrorDescriptionType">
+		<xs:annotation>
+			<xs:documentation>Element pro chybový stav.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:element name="FinishRequest" type="ft:FinishRequestType">
+		<xs:annotation>
+			<xs:documentation>Element s požadavkem na dokončení přenosu</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:element name="Frame" type="ft:FrameType"/>
+	<xs:element name="GenericData" type="ft:GenericDataType">
+		<xs:annotation>
+			<xs:documentation>Element reprezentující uživatelská dodatečná data.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:element name="ReceiveRequest" type="ft:ReceiveRequestType">
+		<xs:annotation>
+			<xs:documentation>Element pro požadavek na přijetí rámce</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:element name="SendRequest" type="ft:SendRequestType">
+		<xs:annotation>
+			<xs:documentation>Odesílaná data jednoho rámce</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:element name="TransferId" type="ft:TransferIdType">
+		<xs:annotation>
+			<xs:documentation>Identifikátor přenosu</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:element name="TransferStatus" type="ft:TransferStatusType">
+		<xs:annotation>
+			<xs:documentation>Element popisuje stav příjemce přenosu.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:element name="TransferStatusRequest" type="ft:TransferStatusRequestType">
+		<xs:annotation>
+			<xs:documentation>Požadavek na zjištění stavu přenosu</xs:documentation>
+		</xs:annotation>
+	</xs:element>
 	<xs:simpleType name="BinData">
+		<xs:annotation>
+			<xs:documentation>Binární data</xs:documentation>
+		</xs:annotation>
 		<xs:restriction base="xs:base64Binary"/>
 	</xs:simpleType>
 	<xs:simpleType name="ErrorCode">
@@ -16,6 +75,12 @@
 			<xs:enumeration value="FATAL"/>
 		</xs:restriction>
 	</xs:simpleType>
+	<xs:simpleType name="ErrorDetail">
+		<xs:annotation>
+			<xs:documentation>Volitelný textový popis chyby, který upřesňuje standardní chybu v SOAP obálce. Položka slouží k lepšímu porozumění a příčině chyby.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string"/>
+	</xs:simpleType>
 	<xs:simpleType name="FileTransferState">
 		<xs:restriction base="xs:string">
 			<xs:enumeration value="ACTIVE"/>
@@ -23,9 +88,34 @@
 			<xs:enumeration value="FINISHED"/>
 		</xs:restriction>
 	</xs:simpleType>
+	<xs:simpleType name="FrameSeqNum">
+		<xs:annotation>
+			<xs:documentation>Pořadové číslo rámce</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:int"/>
+	</xs:simpleType>
+	<xs:simpleType name="TransferIdType">
+		<xs:annotation>
+			<xs:documentation>Typ pro identifikátor přenosu</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string"/>
+	</xs:simpleType>
+	<xs:complexType name="AbortRequestType">
+		<xs:annotation>
+			<xs:documentation>Požadavek na přerušení přenosu.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="transferId" type="ft:TransferIdType" minOccurs="1" maxOccurs="1"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="BeginResponseType">
+		<xs:sequence>
+			<xs:element name="transferId" type="ft:TransferIdType" minOccurs="1" maxOccurs="1"/>
+		</xs:sequence>
+	</xs:complexType>
 	<xs:complexType name="DirBegin">
 		<xs:annotation>
-			<xs:documentation>Adresář, přenáší se jeho název a id rodičovského adresáře. Adresář může obsahovat další adresáře nebo soubory.</xs:documentation>
+			<xs:documentation>Adresář, přenáší se jeho název. Adresář může obsahovat další adresáře nebo soubory.</xs:documentation>
 		</xs:annotation>
 		<xs:complexContent>
 			<xs:extension base="ft:FrameBlock">
@@ -45,21 +135,14 @@
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
-	<xs:complexType name="ErrorDescription">
+	<xs:complexType name="ErrorDescriptionType">
 		<xs:annotation>
-			<xs:documentation>Obecná výjimka API.</xs:documentation>
+			<xs:documentation>Typ pro popis chyby. Každá chyba má povinně definovaný typ chyby a volitelný textový popis.</xs:documentation>
 		</xs:annotation>
-		<xs:sequence/>
-		<xs:attribute name="detail" use="optional" type="xs:string">
-			<xs:annotation>
-				<xs:documentation>Volitelný textový popis chyby, který upřesňuje standardní chybu v SOAP obálce. Položka slouží k lepšímu porozumění a příčině chyby.</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
-		<xs:attribute name="errorCode" use="required" type="ft:ErrorCode">
-			<xs:annotation>
-				<xs:documentation>Typ chyby.</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
+		<xs:sequence>
+			<xs:element name="detail" type="ft:ErrorDetail" minOccurs="0" maxOccurs="1"/>
+			<xs:element name="errorCode" type="ft:ErrorCode" minOccurs="1" maxOccurs="1"/>
+		</xs:sequence>
 	</xs:complexType>
 	<xs:complexType name="FileBegin">
 		<xs:annotation>
@@ -117,25 +200,39 @@
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
-	<xs:complexType name="FileTransferStatus">
+	<xs:complexType name="FinishRequestType">
 		<xs:annotation>
-			<xs:documentation>Reprezentuje stav příjemce přenosu. Včetně aktuálního stavu obsahuje i pořadové číslo posledního přijatého rámce (použito např. při obnově spojení).</xs:documentation>
+			<xs:documentation>Požadavek na dokončení přenosu</xs:documentation>
 		</xs:annotation>
 		<xs:sequence>
-			<xs:element name="resp" type="ft:GenericData" minOccurs="0" maxOccurs="1"/>
+			<xs:element name="transferId" type="ft:TransferIdType" minOccurs="1" maxOccurs="1"/>
 		</xs:sequence>
-		<xs:attribute name="lastFrameSeqNum" use="required" type="xs:int">
-			<xs:annotation>
-				<xs:documentation>Vrací pořadové číslo posledního zpracovaného rámce. Pokud nebyl žádný rámec přijat/odeslán je vrácena nulová hodnota.</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
-		<xs:attribute name="state" use="required" type="ft:FileTransferState">
-			<xs:annotation>
-				<xs:documentation>Stav přenosu</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
 	</xs:complexType>
-	<xs:complexType name="Frame">
+	<xs:complexType name="FrameBlock" abstract="true">
+		<xs:annotation>
+			<xs:documentation>Přenášený blok v jednom rámci. Blokem může být informace o souboru, adresáři nebo vlastní binární data.
+Každý blok se týká nějaké položka. ID položky musí být v bloku vždy určeno (viz atribut itemId).</xs:documentation>
+		</xs:annotation>
+		<xs:sequence/>
+	</xs:complexType>
+	<xs:complexType name="FrameBlocks">
+		<xs:annotation>
+			<xs:documentation>Kolekce bloků přenášených v jednom rámci.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:choice minOccurs="1" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Jeden přenášený blok</xs:documentation>
+				</xs:annotation>
+				<xs:element name="de" type="ft:DirEnd" minOccurs="0" maxOccurs="1"/>
+				<xs:element name="fd" type="ft:FileData" minOccurs="0" maxOccurs="1"/>
+				<xs:element name="fe" type="ft:FileEnd" minOccurs="0" maxOccurs="1"/>
+				<xs:element name="fb" type="ft:FileBegin" minOccurs="0" maxOccurs="1"/>
+				<xs:element name="db" type="ft:DirBegin" minOccurs="0" maxOccurs="1"/>
+			</xs:choice>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="FrameType">
 		<xs:annotation>
 			<xs:documentation>Rámec definuje přenášené složky a soubory, pro data souborů obsahuje jeden datový stream (preferovaná implementace je MTOM). Jeden velký soubor může být rozložen do několika rámců. Naopak několik menších souborů může být odesláno v jednom rámci. Vše se odvíjí od definované max. velikosti rámce a max. počtu bloků (složky + soubory) v rámci.</xs:documentation>
 		</xs:annotation>
@@ -166,42 +263,79 @@ If you would like to use MTOM you have to add the xmime:expectedContentTypes="ap
 			</xs:annotation>
 		</xs:attribute>
 	</xs:complexType>
-	<xs:complexType name="FrameBlock" abstract="true">
+	<xs:complexType name="GenericDataType">
 		<xs:annotation>
-			<xs:documentation>Přenášený blok v jednom rámci. Blokem může být informace o souboru, adresáři nebo vlastní binární data.
-Každý blok se týká nějaké položka. ID položky musí být v bloku vždy určeno (viz atribut itemId).</xs:documentation>
+			<xs:documentation>Doplňující uživatelská data, přenáší se při zahájení nebo ukončení přenosu.</xs:documentation>
 		</xs:annotation>
-		<xs:sequence/>
-	</xs:complexType>
-	<xs:complexType name="FrameBlocks">
-		<xs:annotation>
-			<xs:documentation>Kolekce bloků přenášených v jednom rámci.</xs:documentation>
-		</xs:annotation>
-		<xs:sequence>
-			<xs:choice minOccurs="1" maxOccurs="unbounded">
-				<xs:annotation>
-					<xs:documentation>Jeden přenášený blok</xs:documentation>
-				</xs:annotation>
-				<xs:element name="de" type="ft:DirEnd" minOccurs="0" maxOccurs="1"/>
-				<xs:element name="fd" type="ft:FileData" minOccurs="0" maxOccurs="1"/>
-				<xs:element name="fe" type="ft:FileEnd" minOccurs="0" maxOccurs="1"/>
-				<xs:element name="fb" type="ft:FileBegin" minOccurs="0" maxOccurs="1"/>
-				<xs:element name="db" type="ft:DirBegin" minOccurs="0" maxOccurs="1"/>
-			</xs:choice>
-		</xs:sequence>
-	</xs:complexType>
-	<xs:complexType name="GenericData">
 		<xs:sequence>
 			<xs:choice minOccurs="0" maxOccurs="1">
+				<xs:annotation>
+					<xs:documentation>Obálka umožňující přenos binárních nebo XML dat.</xs:documentation>
+				</xs:annotation>
+				<xs:element name="xmlData" type="ft:XmlData" minOccurs="0" maxOccurs="1"/>
 				<xs:element name="binData" type="ft:BinData" minOccurs="0" maxOccurs="1"/>
-				<xs:any processContents="lax" minOccurs="0" maxOccurs="1"/>
 			</xs:choice>
 		</xs:sequence>
-		<xs:attribute name="id" use="optional" type="xs:string"/>
-		<xs:attribute name="type" use="required" type="xs:string">
+		<xs:attribute name="id" use="optional" type="xs:string">
 			<xs:annotation>
-				<xs:documentation>Druh zaslané odpovědi</xs:documentation>
+				<xs:documentation>Identifikátor pro uživatelská data</xs:documentation>
 			</xs:annotation>
 		</xs:attribute>
+		<xs:attribute name="type" use="required" type="xs:string">
+			<xs:annotation>
+				<xs:documentation>Typ přenášených uživatelských dat</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="ReceiveRequestType">
+		<xs:annotation>
+			<xs:documentation>Požadavek na přijetí rámce.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="transferId" type="ft:TransferIdType" minOccurs="1" maxOccurs="1"/>
+			<xs:element name="frameSeqNum" type="ft:FrameSeqNum" minOccurs="1" maxOccurs="1"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="SendRequestType">
+		<xs:annotation>
+			<xs:documentation>Typ pro odesílaná data jednoho rámce.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="frame" type="ft:FrameType" minOccurs="1" maxOccurs="1"/>
+			<xs:element name="transferId" type="ft:TransferIdType" minOccurs="1" maxOccurs="1"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="TransferStatusRequestType">
+		<xs:sequence>
+			<xs:element name="transferId" type="ft:TransferIdType" minOccurs="1" maxOccurs="1"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="TransferStatusType">
+		<xs:annotation>
+			<xs:documentation>Typ reprezentuje stav příjemce přenosu. Včetně aktuálního stavu obsahuje i pořadové číslo posledního přijatého rámce (použito např. při obnově spojení).</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="resp" type="ft:GenericDataType" minOccurs="0" maxOccurs="1"/>
+			<xs:element name="FrameSeqNum" type="ft:FrameSeqNum" minOccurs="1" maxOccurs="1"/>
+		</xs:sequence>
+		<xs:attribute name="lastFrameSeqNum" use="required" type="ft:FrameSeqNum">
+			<xs:annotation>
+				<xs:documentation>Vrací pořadové číslo posledního zpracovaného rámce. Pokud nebyl žádný rámec přijat/odeslán je vrácena nulová hodnota.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="state" use="required" type="ft:FileTransferState">
+			<xs:annotation>
+				<xs:documentation>Stav přenosu</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="XmlData">
+		<xs:sequence>
+			<xs:any processContents="lax" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>XML data</xs:documentation>
+				</xs:annotation>
+			</xs:any>
+		</xs:sequence>
 	</xs:complexType>
 </xs:schema>

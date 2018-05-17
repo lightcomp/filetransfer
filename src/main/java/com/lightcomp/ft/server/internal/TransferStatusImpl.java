@@ -7,7 +7,7 @@ import org.apache.commons.lang3.Validate;
 import com.lightcomp.ft.server.ErrorDesc;
 import com.lightcomp.ft.server.TransferState;
 import com.lightcomp.ft.server.TransferStatus;
-import com.lightcomp.ft.xsd.v1.GenericData;
+import com.lightcomp.ft.xsd.v1.GenericDataType;
 
 public class TransferStatusImpl implements TransferStatus {
 
@@ -21,7 +21,7 @@ public class TransferStatusImpl implements TransferStatus {
 
     private int lastFrameSeqNum;
 
-    private GenericData response;
+    private GenericDataType response;
 
     private ErrorDesc errorDesc;
 
@@ -72,7 +72,7 @@ public class TransferStatusImpl implements TransferStatus {
     }
 
     @Override
-    public GenericData getResponse() {
+    public GenericDataType getResponse() {
         return response;
     }
 
@@ -99,7 +99,7 @@ public class TransferStatusImpl implements TransferStatus {
         updateActivity();
     }
 
-    public void changeStateToFinished(GenericData response) {
+    public void changeStateToFinished(GenericDataType response) {
         changeState(TransferState.FINISHED);
         this.response = response;
     }

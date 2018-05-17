@@ -1,6 +1,6 @@
 package com.lightcomp.ft.client;
 
-import com.lightcomp.ft.xsd.v1.GenericData;
+import com.lightcomp.ft.xsd.v1.GenericDataType;
 
 /**
  * File transfer request.
@@ -10,7 +10,7 @@ public interface TransferRequest {
     /**
      * Request data, not-null.
      */
-    GenericData getData();
+    GenericDataType getData();
 
     /**
      * Request id which is used only for logging, when null data id is used instead.
@@ -40,5 +40,5 @@ public interface TransferRequest {
     /**
      * Transfer success callback.
      */
-    void onTransferSuccess(GenericData response);
+    void onTransferSuccess(GenericDataType response);
 }

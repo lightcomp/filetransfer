@@ -1,6 +1,6 @@
 package com.lightcomp.ft.server;
 
-import com.lightcomp.ft.xsd.v1.GenericData;
+import com.lightcomp.ft.xsd.v1.GenericDataType;
 
 /**
  * Transfer data handler, initialized by {@link TransferHandler}. General interface which shouldn't be implemented directly,
@@ -31,7 +31,7 @@ public interface TransferDataHandler {
     /**
      * Transfer success callback.
      */
-    GenericData onTransferSuccess();
+    GenericDataType onTransferSuccess();
 
     /**
      * Transfer canceled callback.

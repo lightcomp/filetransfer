@@ -7,19 +7,19 @@ public class TransferException extends Exception {
 
     private static final long serialVersionUID = 1L;
 
-    protected final Map<String, Object> params;
+    private final Map<String, Object> params;
 
-    public TransferException(String message) {
-        this(message, null, null);
+    public TransferException(String message, Throwable cause, Map<String, Object> params) {
+        super(message, cause);
+        this.params = params;
     }
 
     public TransferException(String message, Throwable cause) {
         this(message, cause, null);
     }
 
-    public TransferException(String message, Throwable cause, Map<String, Object> params) {
-        super(message, cause);
-        this.params = params;
+    public TransferException(String message) {
+        this(message, null, null);
     }
 
     public Map<String, Object> getParams() {

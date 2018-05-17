@@ -51,7 +51,7 @@ public class RecvContextImpl implements RecvContext {
     }
 
     @Override
-    public void openDir(String name) {
+    public void openDir(String name) throws TransferException {
         if (logger.isDebugEnabled()) {
             logger.debug("Open directory '{}' in '{}'", name, relativeDir);
         }
@@ -59,20 +59,20 @@ public class RecvContextImpl implements RecvContext {
         try {
             dir = relativeDir.resolve(name);
         } catch (InvalidPathException e) {
-            throw TransferExceptionBuilder.from("Invalid directory name").addParam("parentPath", relativeDir)
+            throw new TransferExceptionBuilder("Invalid directory name").addParam("parentPath", relativeDir)
                     .addParam("name", name).setCause(e).build();
         }
         try {
             Path dstDir = rootDir.resolve(dir);
             Files.createDirectory(dstDir);
         } catch (Throwable e) {
-            throw TransferExceptionBuilder.from("Failed to create directory").addParam("path", dir).setCause(e).build();
+            throw new TransferExceptionBuilder("Failed to create directory").addParam("path", dir).setCause(e).build();
         }
         relativeDir = dir;
     }
 
     @Override
-    public void closeDir() {
+    public void closeDir() throws TransferException {
         if (PathUtils.ROOT.equals(relativeDir)) {
             throw new TransferException("Failed to close directory, transfer at root level");
         }
@@ -81,45 +81,45 @@ public class RecvContextImpl implements RecvContext {
     }
 
     @Override
-    public void openFile(String name, long size) {
+    public void openFile(String name, long size) throws TransferException {
         if (openWritter != null) {
-            throw TransferExceptionBuilder.from("Failed to open file, previous file must be closed first")
+            throw new TransferExceptionBuilder("Failed to open file, previous file must be closed first")
                     .addParam("previousFilePath", openWritter.getFile()).build();
         }
         Path file;
         try {
             file = relativeDir.resolve(name);
         } catch (InvalidPathException e) {
-            throw TransferExceptionBuilder.from("Invalid file name").addParam("parentPath", relativeDir).addParam("name", name)
+            throw new TransferExceptionBuilder("Invalid file name").addParam("parentPath", relativeDir).addParam("name", name)
                     .setCause(e).build();
         }
         Path dstFile = rootDir.resolve(file);
         try {
             Files.createFile(dstFile);
         } catch (IOException e) {
-            throw TransferExceptionBuilder.from("Failed to create file").addParam("path", file).setCause(e).build();
+            throw new TransferExceptionBuilder("Failed to create file").addParam("path", file).setCause(e).build();
         }
         openWritter = new FileWriter(dstFile, size);
     }
 
     @Override
-    public void writeFileData(long offset, long length) {
+    public void writeFileData(long offset, long length) throws TransferException {
         openWritter.write(inputChannel, offset, length);
         progressInfo.onDataReceived(length);
     }
 
     @Override
-    public void closeFile(long lastModified) {
+    public void closeFile(long lastModified) throws TransferException {
         if (openWritter == null) {
-            throw TransferExceptionBuilder.from("Failed to close file, no current file found").addParam("dirPath", relativeDir)
+            throw new TransferExceptionBuilder("Failed to close file, no current file found").addParam("dirPath", relativeDir)
                     .build();
         }
         byte[] checksum;
         try {
             checksum = readFileChecksum();
         } catch (IOException e) {
-            throw TransferExceptionBuilder.from("Failed to read file checksum").addParam("path", openWritter.getFile())
-                    .setCause(e).build();
+            throw new TransferExceptionBuilder("Failed to read file checksum").addParam("path", openWritter.getFile()).setCause(e)
+                    .build();
         }
         openWritter.finish(lastModified, checksum);
         openWritter = null;
@@ -128,6 +128,7 @@ public class RecvContextImpl implements RecvContext {
     private byte[] readFileChecksum() throws IOException {
         ByteBuffer bb = ByteBuffer.allocate(ChecksumGenerator.LENGTH);
         while (inputChannel.read(bb) > 0) {
+            // read while channel has data and buffer is not full
         }
         if (bb.hasRemaining()) {
             throw new IOException("Frame stream ended prematurely");

@@ -1,49 +1,49 @@
 package com.lightcomp.ft.client.operations;
 
-import com.lightcomp.ft.exception.TransferExceptionBuilder;
+import com.lightcomp.ft.client.internal.ExceptionType;
+import com.lightcomp.ft.client.operations.OperationStatus.Type;
 import com.lightcomp.ft.wsdl.v1.FileTransferException;
 import com.lightcomp.ft.wsdl.v1.FileTransferService;
 import com.lightcomp.ft.xsd.v1.FileTransferState;
-import com.lightcomp.ft.xsd.v1.FileTransferStatus;
-import com.lightcomp.ft.xsd.v1.GenericData;
+import com.lightcomp.ft.xsd.v1.FinishRequest;
+import com.lightcomp.ft.xsd.v1.GenericDataType;
+import com.lightcomp.ft.xsd.v1.TransferStatus;
 
-public class FinishOperation extends RecoverableOperation {
+public class FinishOperation extends AbstractOperation {
 
-    private GenericData response;
+    private GenericDataType response;
 
-    public FinishOperation(String transferId, OperationHandler handler) {
-        super(transferId, handler);
+    public FinishOperation(OperationHandler handler, FileTransferService service) {
+        super(handler, service);
     }
 
-    public GenericData getResponse() {
+    public GenericDataType getResponse() {
         return response;
     }
 
     @Override
-    public boolean isInterruptible() {
-        return false;
-    }
-
-    @Override
-    public TransferExceptionBuilder prepareException(Throwable t) {
-        return TransferExceptionBuilder.from("Failed to finish transfer").setCause(t);
-    }
-
-    @Override
-    protected boolean isFinished(FileTransferStatus status) {
+    protected OperationStatus resolveServerStatus(TransferStatus status) {
         FileTransferState fts = status.getState();
         if (fts == FileTransferState.ACTIVE) {
-            return false; // next try
+            return null; // next try
         }
         if (fts == FileTransferState.FINISHED) {
             response = status.getResp();
-            return true; // success
+            return new OperationStatus(Type.SUCCESS, recovery);
         }
-        throw TransferExceptionBuilder.from("Invalid server state").addParam("name", fts).build();
+        return new OperationStatus(Type.FAIL, recovery).setFailureMessage("Failed to finish transfer, invalid server state")
+                .addFailureParam("serverState", fts);
     }
 
     @Override
-    protected void send(FileTransferService service) throws FileTransferException {
-        response = service.finish(transferId);
+    protected void send() throws FileTransferException {
+        FinishRequest fr = new FinishRequest();
+        fr.setTransferId(handler.getTransferId());
+        response = service.finish(fr);
+    }
+
+    @Override
+    protected OperationStatus recoveryFailed(Type type, Throwable ex, ExceptionType exType) {
+        return super.recoveryFailed(type, ex, exType).setFailureMessage("Failed to finish transfer");
     }
 }

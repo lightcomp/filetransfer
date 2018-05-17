@@ -62,8 +62,7 @@ public class TaskExecutor {
                 try {
                     wait(100);
                 } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new RuntimeException(e);
+                    // ignore
                 }
             }
         }

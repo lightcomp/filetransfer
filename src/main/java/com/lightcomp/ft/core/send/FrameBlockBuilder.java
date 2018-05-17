@@ -6,6 +6,7 @@ import java.util.LinkedList;
 import com.lightcomp.ft.core.blocks.DirBeginBlockImpl;
 import com.lightcomp.ft.core.blocks.DirEndBlockImpl;
 import com.lightcomp.ft.core.send.items.SourceItem;
+import com.lightcomp.ft.exception.TransferException;
 
 public class FrameBlockBuilder {
 
@@ -20,7 +21,7 @@ public class FrameBlockBuilder {
         this.progressInfo = progressInfo;
     }
 
-    public void build(SendFrameContext frameCtx) {
+    public void build(SendFrameContext frameCtx) throws TransferException {
         while (dirStack.size() > 0) {
             // add all blocks from current file first
             if (currSplitter != null) {

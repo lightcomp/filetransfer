@@ -1,6 +1,6 @@
 package com.lightcomp.ft.server;
 
-import com.lightcomp.ft.xsd.v1.GenericData;
+import com.lightcomp.ft.xsd.v1.GenericDataType;
 
 /**
  * Handler for upload transfer.
@@ -16,5 +16,5 @@ public interface TransferHandler {
      *            client request
      * @return Returns data handler or null when rejected.
      */
-    TransferDataHandler onTransferBegin(String transferId, GenericData request);
+    TransferDataHandler onTransferBegin(String transferId, GenericDataType request);
 }

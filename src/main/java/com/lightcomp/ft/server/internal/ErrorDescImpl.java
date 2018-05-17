@@ -1,4 +1,4 @@
-package com.lightcomp.ft.exception;
+package com.lightcomp.ft.server.internal;
 
 import java.util.Collections;
 import java.util.Map;

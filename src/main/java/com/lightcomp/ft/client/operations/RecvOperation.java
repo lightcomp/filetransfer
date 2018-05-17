@@ -1,22 +1,22 @@
 package com.lightcomp.ft.client.operations;
 
-import java.math.BigInteger;
-
-import com.lightcomp.ft.exception.TransferExceptionBuilder;
+import com.lightcomp.ft.client.internal.ExceptionType;
+import com.lightcomp.ft.client.operations.OperationStatus.Type;
 import com.lightcomp.ft.wsdl.v1.FileTransferException;
 import com.lightcomp.ft.wsdl.v1.FileTransferService;
 import com.lightcomp.ft.xsd.v1.FileTransferState;
-import com.lightcomp.ft.xsd.v1.FileTransferStatus;
 import com.lightcomp.ft.xsd.v1.Frame;
+import com.lightcomp.ft.xsd.v1.ReceiveRequest;
+import com.lightcomp.ft.xsd.v1.TransferStatus;
 
-public class RecvOperation extends RecoverableOperation {
+public class RecvOperation extends AbstractOperation {
 
     private final int seqNum;
 
     private Frame response;
 
-    public RecvOperation(String transferId, OperationHandler handler, int seqNum) {
-        super(transferId, handler);
+    public RecvOperation(OperationHandler handler, FileTransferService service, int seqNum) {
+        super(handler, service);
         this.seqNum = seqNum;
     }
 
@@ -25,33 +25,38 @@ public class RecvOperation extends RecoverableOperation {
     }
 
     @Override
-    public TransferExceptionBuilder prepareException(Throwable t) {
-        return TransferExceptionBuilder.from("Failed to receive frame").addParam("seqNum", seqNum).setCause(t);
-    }
-
-    @Override
-    protected boolean isFinished(FileTransferStatus status) {
+    protected OperationStatus resolveServerStatus(TransferStatus status) {
         // check transfer state
         FileTransferState fts = status.getState();
         if (fts != FileTransferState.ACTIVE) {
-            throw TransferExceptionBuilder.from("Invalid transfer state").addParam("name", fts).build();
+            return new OperationStatus(Type.FAIL, recovery).setFailureMessage("Failed to receive frame, invalid server state")
+                    .addFailureParam("serverState", fts);
         }
         // check frame seq number
         int lastSeqNum = status.getLastFrameSeqNum();
         // test if succeeded
         if (seqNum == lastSeqNum) {
-            return true;
+            return new OperationStatus(Type.SUCCESS, recovery);
         }
         // test if match with previous frame
         if (seqNum == lastSeqNum + 1) {
-            return false;
+            return null; // next try
         }
-        throw TransferExceptionBuilder.from("Cannot recover last received frame").addParam("seqNum", seqNum)
-                .addParam("serverSeqNum", lastSeqNum).build();
+        return new OperationStatus(Type.FAIL, recovery).setFailureMessage("Cannot recover last received frame")
+                .addFailureParam("seqNum", seqNum).addFailureParam("serverSeqNum", lastSeqNum);
     }
 
     @Override
-    protected void send(FileTransferService service) throws FileTransferException {
-        response = service.receive(BigInteger.valueOf(seqNum), transferId);
+    protected void send() throws FileTransferException {
+        ReceiveRequest rr = new ReceiveRequest();
+        rr.setFrameSeqNum(seqNum);
+        rr.setTransferId(handler.getTransferId());
+        response = service.receive(rr);
+    }
+
+    @Override
+    protected OperationStatus recoveryFailed(Type type, Throwable ex, ExceptionType exType) {
+        return super.recoveryFailed(type, ex, exType).setFailureMessage("Failed to receive frame").addFailureParam("seqNum",
+                seqNum);
     }
 }

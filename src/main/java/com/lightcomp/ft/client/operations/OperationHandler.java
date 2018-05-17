@@ -1,11 +1,11 @@
 package com.lightcomp.ft.client.operations;
 
-public interface OperationHandler {
+import com.lightcomp.ft.core.TransferInfo;
+
+public interface OperationHandler extends TransferInfo {
 
     /**
-     * @return Returns true when operation can be recovered.
+     * @return true when operation can be recovered
      */
-    boolean prepareRecovery(boolean interruptible);
-
-    void recoverySucceeded();
+    boolean prepareRecovery();
 }

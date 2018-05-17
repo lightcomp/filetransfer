@@ -5,7 +5,6 @@ import java.util.LinkedList;
 import org.apache.commons.lang3.Validate;
 
 import com.lightcomp.ft.core.recv.RecvFrameProcessor;
-import com.lightcomp.ft.exception.ErrorBuilder;
 
 public class UploadFrameWorker implements Runnable {
 
@@ -28,12 +27,12 @@ public class UploadFrameWorker implements Runnable {
             return;
         }
         state = State.STOPPING;
+        // wait until terminate
         while (state != State.TERMINATED) {
             try {
                 wait(100);
             } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException(e);
+                // ignore
             }
         }
     }
@@ -76,8 +75,8 @@ public class UploadFrameWorker implements Runnable {
                     break; // terminated transfer
                 }
             } catch (Throwable t) {
-                ErrorBuilder eb = new ErrorBuilder("Frame processor failed").setTransfer(transfer)
-                        .addParam("seqNum", rfp.getSeqNum()).setCause(t);
+                ErrorBuilder eb = new ErrorBuilder("Frame processor failed", transfer).addParam("seqNum", rfp.getSeqNum())
+                        .setCause(t);
                 transfer.transferFailed(eb);
                 break; // processor failed
             }

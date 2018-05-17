@@ -15,7 +15,7 @@ import com.lightcomp.ft.core.send.items.SourceFile;
 class FileDataStream implements FrameBlockStream {
 
     private static final Logger logger = LoggerFactory.getLogger(FileDataStream.class);
-    
+
     private final SourceFile srcFile;
 
     private final long offset;
@@ -70,9 +70,9 @@ class FileDataStream implements FrameBlockStream {
         // read data from source file
         ByteBuffer bb = ByteBuffer.wrap(b, off, len);
         if (channel.read(bb) < len) {
-            String msg = "Source file data stream ended prematurely, path=" + logPath;
-            logger.error(msg);
-            throw new IOException(msg);
+            String message = "Data stream of source file ended prematurely, path=" + logPath;
+            logger.error(message);
+            throw new IOException(message);
         }
         // update checksum generator if present
         if (chksmGenerator != null) {

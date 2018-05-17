@@ -11,7 +11,11 @@ import com.lightcomp.ft.xsd.v1.ErrorCode;
 import com.lightcomp.ft.xsd.v1.ErrorDescription;
 
 public enum ExceptionType {
-    UKNOWN, FATAL, CONNECTION, BUSY;
+    UKNOWN, CONNECTION, BUSY, FATAL;
+
+    public boolean isServerError() {
+        return this == BUSY || this == FATAL;
+    }
 
     public static ExceptionType resolve(Throwable t) {
         while (t != null) {
