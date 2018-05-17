@@ -213,6 +213,7 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
                 break;
             }
         }
+        handler.onTransferCanceled();
     }
 
     public void terminate() {

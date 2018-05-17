@@ -94,7 +94,7 @@ public class ErrorBuilder {
      */
     public void log(Logger logger) {
         StringBuilder sb = new StringBuilder();
-        append(buildDesc(), sb);
+        appendErrorDesc(buildDesc(), sb);
         logger.error(sb.toString(), cause);
     }
 
@@ -108,7 +108,7 @@ public class ErrorBuilder {
      */
     public void log(Logger logger, String message) {
         StringBuilder sb = new StringBuilder(message);
-        append(buildDesc(), sb);
+        appendErrorDesc(buildDesc(), sb);
         logger.error(sb.toString(), cause);
     }
 
@@ -116,7 +116,7 @@ public class ErrorBuilder {
         desc = null;
     }
 
-    private static void append(ErrorDesc desc, StringBuilder sb) {
+    private static void appendErrorDesc(ErrorDesc desc, StringBuilder sb) {
         // append description
         if (sb.length() > 0) {
             sb.append(", ");
@@ -142,7 +142,7 @@ public class ErrorBuilder {
      */
     public static FileTransferException buildEx(ErrorDesc errorDesc, ErrorCode errorCode) {
         StringBuilder sb = new StringBuilder();
-        append(errorDesc, sb);
+        appendErrorDesc(errorDesc, sb);
 
         ErrorDescription desc = new ErrorDescription();
         desc.setDetail(sb.toString());

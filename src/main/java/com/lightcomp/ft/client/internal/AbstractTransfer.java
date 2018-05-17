@@ -1,5 +1,6 @@
 package com.lightcomp.ft.client.internal;
 
+import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,7 +70,6 @@ public abstract class AbstractTransfer implements Runnable, Transfer, OperationH
         // increment recovery count
         TransferStatus ts = null;
         synchronized (this) {
-            // update current state
             status.incrementRetryCount();
             // copy status in synch block
             ts = status.copy();
@@ -156,6 +156,17 @@ public abstract class AbstractTransfer implements Runnable, Transfer, OperationH
 
     protected abstract boolean transferFrames() throws TransferException;
 
+    protected void frameProcessed(int seqNum) {
+        TransferStatus ts;
+        synchronized (this) {
+            Validate.isTrue(status.getLastFrameSeqNum() + 1 == seqNum);
+            status.incrementFrameSeqNum();
+            // copy status in synch block
+            ts = status.copy();
+        }
+        request.onTransferProgress(ts);
+    }
+
     private boolean begin() {
         if (cancelIfRequested()) {
             return false;
@@ -170,7 +181,6 @@ public abstract class AbstractTransfer implements Runnable, Transfer, OperationH
         // change state to started
         TransferStatus ts;
         synchronized (this) {
-            // update current state
             status.changeState(TransferState.STARTED);
             // copy status in synch block
             ts = status.copy();
@@ -189,7 +199,6 @@ public abstract class AbstractTransfer implements Runnable, Transfer, OperationH
         // change state to transfered
         TransferStatus ts;
         synchronized (this) {
-            // update current state
             status.changeState(TransferState.TRANSFERED);
             // copy status in synch block
             ts = status.copy();
@@ -210,7 +219,6 @@ public abstract class AbstractTransfer implements Runnable, Transfer, OperationH
         }
         // change state to finished
         synchronized (this) {
-            // update current state
             status.changeState(TransferState.FINISHED);
             // notify canceling threads
             notifyAll();
@@ -224,7 +232,6 @@ public abstract class AbstractTransfer implements Runnable, Transfer, OperationH
             if (!cancelRequested) {
                 return false;
             }
-            // update current state
             status.changeState(TransferState.CANCELED);
             // notify canceling threads
             notifyAll();
@@ -259,7 +266,6 @@ public abstract class AbstractTransfer implements Runnable, Transfer, OperationH
 
     private void transferFailed(Throwable cause, ExceptionType type) {
         synchronized (this) {
-            // update current state
             status.changeState(TransferState.FAILED);
             // notify canceling threads
             notifyAll();
@@ -268,7 +274,7 @@ public abstract class AbstractTransfer implements Runnable, Transfer, OperationH
         if (type != ExceptionType.FATAL) {
             abortServerTransfer();
         }
-        request.onTransferFailed(cause);
+        request.onTransferFailed();
     }
 
     private void abortServerTransfer() {

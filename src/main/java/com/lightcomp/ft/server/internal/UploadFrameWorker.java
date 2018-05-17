@@ -71,7 +71,7 @@ public class UploadFrameWorker implements Runnable {
             }
             try {
                 rfp.process();
-                if (!transfer.addProcessedFrame(rfp.getSeqNum(), rfp.isLast())) {
+                if (!transfer.frameProcessed(rfp.getSeqNum(), rfp.isLast())) {
                     break; // terminated transfer
                 }
             } catch (Throwable t) {

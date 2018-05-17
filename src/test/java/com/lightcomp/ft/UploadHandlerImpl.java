@@ -81,6 +81,8 @@ public class UploadHandlerImpl implements UploadHandler {
 
     @Override
     public GenericDataType onTransferSuccess() {
+        logger.info("Server transfer succeeded, transferId={}", transferId);
+        
         TransferStatus ts = server.getCurrentStatus(transferId);
         waiter.assertEquals(TransferState.FINISHING, ts.getState());
 
@@ -94,6 +96,8 @@ public class UploadHandlerImpl implements UploadHandler {
 
     @Override
     public void onTransferCanceled() {
+        logger.info("Server transfer canceled, transferId={}", transferId);
+        
         TransferStatus ts = server.getCurrentStatus(transferId);
         waiter.assertEquals(TransferState.CANCELED, ts.getState());
 
@@ -106,6 +110,8 @@ public class UploadHandlerImpl implements UploadHandler {
 
     @Override
     public void onTransferFailed(ErrorDesc errorDesc) {
+        logger.info("Server transfer failed, transferId={}, desc: {}", transferId, errorDesc);
+        
         TransferStatus ts = server.getCurrentStatus(transferId);
         waiter.assertEquals(TransferState.FAILED, ts.getState());
 

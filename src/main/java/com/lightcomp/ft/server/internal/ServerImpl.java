@@ -124,7 +124,7 @@ public class ServerImpl implements Server, TransferManager {
     public TransferStatus getCurrentStatus(String transferId) {
         synchronized (this) {
             Validate.isTrue(state == State.RUNNING);
-            // try to get status from transfer
+            // get status from current transfer
             AbstractTransfer transfer = transferIdMap.get(transferId);
             if (transfer != null) {
                 return transfer.getStatus();
@@ -141,7 +141,7 @@ public class ServerImpl implements Server, TransferManager {
         synchronized (this) {
             checkServerState();
             checkNewTransfer(transferId);
-            // get active transfer
+            // get current transfer
             AbstractTransfer transfer = transferIdMap.get(transferId);
             if (transfer != null) {
                 return transfer;
@@ -161,11 +161,11 @@ public class ServerImpl implements Server, TransferManager {
         synchronized (this) {
             checkServerState();
             checkNewTransfer(transferId);
-            // try to get status from transfer
+            // get status from current transfer
             AbstractTransfer transfer = transferIdMap.get(transferId);
             if (transfer != null) {
                 TransferStatusImpl ts = transfer.getStatus();
-                // status must respect busy state
+                // confirmed status must respect busy state
                 if (ts.isBusy()) {
                     throw new ErrorBuilder("Transfer is busy", transfer).buildEx(ErrorCode.BUSY);
                 }

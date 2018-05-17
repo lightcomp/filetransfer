@@ -51,7 +51,7 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
             return true;
         }
         // busy processing last frame
-        if (lastFrameReceived && status.getState() != TransferState.TRANSFERED) {
+        if (lastFrameReceived && status.getState() == TransferState.STARTED) {
             return true;
         }
         return super.isBusy();
@@ -60,7 +60,7 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
     @Override
     protected void checkPreparedFinish() throws FileTransferException {
         // check if busy processing last frame
-        if (lastFrameReceived && status.getState() != TransferState.TRANSFERED) {
+        if (lastFrameReceived && status.getState() == TransferState.STARTED) {
             throw new ErrorBuilder("Finish is not prepared", this).buildEx(ErrorCode.BUSY);
         }
     }
@@ -76,7 +76,6 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
             eb.log(logger);
             throw eb.build();
         }
-        // update state to started
         super.init();
     }
 
@@ -171,7 +170,7 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
     /**
      * @return True when frame was added otherwise transfer is terminated and cannot accept more frames.
      */
-    boolean addProcessedFrame(int seqNum, boolean last) {
+    protected boolean frameProcessed(int seqNum, boolean last) {
         TransferStatus ts;
         synchronized (this) {
             if (status.getState().isTerminal()) {
