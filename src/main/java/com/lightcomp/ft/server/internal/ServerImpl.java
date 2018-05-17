@@ -81,9 +81,9 @@ public class ServerImpl implements Server, TransferManager {
         Validate.isTrue(state == State.INIT);
 
         state = State.RUNNING;
-        // start manager thread
-        Thread managerThread = new Thread(this::run, "FileTransfer_TransferManager");
-        managerThread.start();
+        // start server thread
+        Thread serverThread = new Thread(this::run, "FileTransfer_Server");
+        serverThread.start();
         // start shared executor
         executor.start();
     }
@@ -94,9 +94,9 @@ public class ServerImpl implements Server, TransferManager {
             state = State.STOPPING;
             // stop shared executor
             executor.stop();
-            // notify manager thread about stopping
+            // notify server thread
             notifyAll();
-            // wait until manager thread terminates
+            // wait until server thread terminates
             while (state != State.TERMINATED) {
                 try {
                     wait(100);
@@ -137,15 +137,23 @@ public class ServerImpl implements Server, TransferManager {
     /* transfer manager methods */
 
     @Override
-    public synchronized Transfer getTransfer(String transferId) throws FileTransferException {
-        checkServerState();
-        checkNewTransfer(transferId);
-        // we must return existing transfer or throw exception
-        AbstractTransfer transfer = transferIdMap.get(transferId);
-        if (transfer == null) {
-            throw new ErrorBuilder("Transfer not found").addParam("transferId", transferId).buildEx();
+    public Transfer getTransfer(String transferId) throws FileTransferException {
+        synchronized (this) {
+            checkServerState();
+            checkNewTransfer(transferId);
+            // get active transfer
+            AbstractTransfer transfer = transferIdMap.get(transferId);
+            if (transfer != null) {
+                return transfer;
+            }
         }
-        return transfer;
+        // transfer not found -> check storage for reason
+        TransferStatus ts = statusStorage.getTransferStatus(transferId);
+        if (ts != null) {
+            throw new ErrorBuilder("Transfer is terminated").addParam("finalState", ts.getState())
+                    .addParam("transferId", transferId).buildEx();
+        }
+        throw new ErrorBuilder("Transfer not found").addParam("transferId", transferId).buildEx();
     }
 
     @Override
@@ -251,7 +259,7 @@ public class ServerImpl implements Server, TransferManager {
         }
     }
 
-    /* async manager methods */
+    /* async server methods */
 
     private void run() {
         List<AbstractTransfer> currentTransfers;

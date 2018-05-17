@@ -1,5 +1,6 @@
 package com.lightcomp.ft.server.internal;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 
@@ -52,5 +53,11 @@ public class ErrorDescImpl implements ErrorDesc {
 
     public void setStackTrace(StackTraceElement[] stackTrace) {
         this.stackTrace = stackTrace;
+    }
+
+    @Override
+    public String toString() {
+        return "ErrorDescImpl [message=" + message + ", detail=" + detail + ", params=" + params + ", stackTrace="
+                + Arrays.toString(stackTrace) + "]";
     }
 }

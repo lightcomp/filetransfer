@@ -22,6 +22,13 @@ public class FinishOperation extends AbstractOperation {
     }
 
     @Override
+    protected void send() throws FileTransferException {
+        FinishRequest fr = new FinishRequest();
+        fr.setTransferId(handler.getTransferId());
+        response = service.finish(fr);
+    }
+
+    @Override
     protected OperationStatus resolveServerStatus(TransferStatus status) {
         FileTransferState fts = status.getState();
         if (fts == FileTransferState.ACTIVE) {
@@ -29,17 +36,10 @@ public class FinishOperation extends AbstractOperation {
         }
         if (fts == FileTransferState.FINISHED) {
             response = status.getResp();
-            return new OperationStatus(Type.SUCCESS, recovery);
+            return new OperationStatus(Type.SUCCESS);
         }
-        return new OperationStatus(Type.FAIL, recovery).setFailureMessage("Failed to finish transfer, invalid server state")
+        return new OperationStatus(Type.FAIL).setFailureMessage("Failed to finish transfer, invalid server state")
                 .addFailureParam("serverState", fts);
-    }
-
-    @Override
-    protected void send() throws FileTransferException {
-        FinishRequest fr = new FinishRequest();
-        fr.setTransferId(handler.getTransferId());
-        response = service.finish(fr);
     }
 
     @Override

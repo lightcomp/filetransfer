@@ -5,21 +5,22 @@ import java.nio.file.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.lightcomp.ft.server.ErrorDesc;
 import com.lightcomp.ft.server.TransferStatus;
 import com.lightcomp.ft.server.UploadHandler;
-import com.lightcomp.ft.xsd.v1.GenericData;
+import com.lightcomp.ft.xsd.v1.GenericDataType;
 
-public class UploadAcceptorImpl implements UploadHandler {
+public class UploadHandlerImpl implements UploadHandler {
 
-    private static final Logger logger = LoggerFactory.getLogger(UploadAcceptorImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(UploadHandlerImpl.class);
 
     private final String transferId;
 
-    private final GenericData response;
+    private final GenericDataType response;
 
     private final Path uploadDir;
 
-    public UploadAcceptorImpl(String transferId, GenericData response, Path uploadDir) {
+    public UploadHandlerImpl(String transferId, GenericDataType response, Path uploadDir) {
         this.transferId = transferId;
         this.response = response;
         this.uploadDir = uploadDir;
@@ -28,11 +29,6 @@ public class UploadAcceptorImpl implements UploadHandler {
     @Override
     public Mode getMode() {
         return Mode.UPLOAD;
-    }
-
-    @Override
-    public String getTransferId() {
-        return transferId;
     }
 
     @Override
@@ -51,7 +47,7 @@ public class UploadAcceptorImpl implements UploadHandler {
     }
 
     @Override
-    public GenericData onTransferSuccess() {
+    public GenericDataType onTransferSuccess() {
         logger.info("Server transfer succeeded, transferId={}", transferId);
         return response;
     }
@@ -62,7 +58,7 @@ public class UploadAcceptorImpl implements UploadHandler {
     }
 
     @Override
-    public void onTransferFailed(Throwable cause) {
-        logger.info("Server transfer failed, transferId=" + transferId, cause);
+    public void onTransferFailed(ErrorDesc errorDesc) {
+        logger.info("Server transfer failed, transferId={}, desc: {}", transferId, errorDesc);
     }
 }

@@ -7,21 +7,18 @@ import java.nio.file.Path;
 
 import com.lightcomp.ft.server.TransferDataHandler;
 import com.lightcomp.ft.server.TransferHandler;
-import com.lightcomp.ft.xsd.v1.GenericData;
+import com.lightcomp.ft.xsd.v1.GenericDataType;
 
-class ReceiverImpl implements TransferHandler {
+class TransferHandlerImpl implements TransferHandler {
 
     private final Path transferDir;
 
-    private int lastTransferId;
-
-    public ReceiverImpl(Path transferDir) {
+    public TransferHandlerImpl(Path transferDir) {
         this.transferDir = transferDir;
     }
 
     @Override
-    public synchronized TransferDataHandler onTransferBegin(GenericData request) {
-        String transferId = Integer.toString(++lastTransferId);
+    public synchronized TransferDataHandler onTransferBegin(String transferId, GenericDataType request) {
         Path uploadDir = transferDir.resolve(transferId);
         // prepare transfer directory
         try {
@@ -29,7 +26,7 @@ class ReceiverImpl implements TransferHandler {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-        // TODO: download acceptor
-        return new UploadAcceptorImpl(transferId, request, uploadDir);
+        // TODO: download impl
+        return new UploadHandlerImpl(transferId, request, uploadDir);
     }
 }

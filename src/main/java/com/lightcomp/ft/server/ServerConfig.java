@@ -12,12 +12,12 @@ import com.lightcomp.ft.core.TransferIdGenerator;
  * Server configuration.
  */
 public class ServerConfig {
+   
+    private final TransferStatusStorage transferStatusStorage;
 
+    private final TransferHandler transferHandler;   
+    
     private TransferIdGenerator transferIdGenerator = new SimpleIdGenerator();
-
-    private TransferStatusStorage transferStatusStorage;
-
-    private TransferHandler transferHandler;
 
     private Path workDir = PathUtils.SYS_TEMP;
 
@@ -25,28 +25,25 @@ public class ServerConfig {
 
     private int inactiveTimeout = 60 * 5;
 
-    public TransferIdGenerator getTransferIdGenerator() {
-        return transferIdGenerator;
-    }
-
-    public void setTransferIdGenerator(TransferIdGenerator transferIdGenerator) {
-        this.transferIdGenerator = transferIdGenerator;
-    }
-
-    public TransferStatusStorage getTransferStatusStorage() {
-        return transferStatusStorage;
-    }
-
-    public void setTransferStatusStorage(TransferStatusStorage transferStatusStorage) {
-        this.transferStatusStorage = transferStatusStorage;
+    public ServerConfig(TransferHandler transferHandler, TransferStatusStorage transferStatusStorage) {
+        this.transferHandler = Validate.notNull(transferHandler);
+        this.transferStatusStorage = Validate.notNull(transferStatusStorage);
     }
 
     public TransferHandler getTransferHandler() {
         return transferHandler;
     }
 
-    public void setTransferHandler(TransferHandler transferHandler) {
-        this.transferHandler = transferHandler;
+    public TransferStatusStorage getTransferStatusStorage() {
+        return transferStatusStorage;
+    }
+    
+    public TransferIdGenerator getTransferIdGenerator() {
+        return transferIdGenerator;
+    }
+
+    public void setTransferIdGenerator(TransferIdGenerator transferIdGenerator) {
+        this.transferIdGenerator = transferIdGenerator;
     }
 
     /**

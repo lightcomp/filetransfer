@@ -10,6 +10,7 @@ public class DownloadTransfer extends AbstractTransfer {
 
     protected DownloadTransfer(String transferId, DownloadHandler handler, ServerConfig config, TaskExecutor executor) {
         super(transferId, handler, config, executor);
+        // TODO: download impl
     }
 
     @Override

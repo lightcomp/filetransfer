@@ -23,9 +23,9 @@ public interface TransferStatus {
     LocalDateTime getStartTime();
 
     /**
-     * Recovery count of communication with server.
+     * Retry count of communication with server.
      */
-    int getRecoveryCount();
+    int getRetryCount();
 
     /**
      * Transfered size in bytes.

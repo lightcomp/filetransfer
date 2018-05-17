@@ -40,6 +40,8 @@ import com.lightcomp.ft.client.internal.AbstractTransfer;
 import com.lightcomp.ft.client.internal.ClientImpl;
 import com.lightcomp.ft.client.internal.UploadFrameContext;
 import com.lightcomp.ft.client.internal.UploadTransfer;
+import com.lightcomp.ft.client.operations.OperationStatus;
+import com.lightcomp.ft.client.operations.OperationStatus.Type;
 import com.lightcomp.ft.client.operations.SendOperation;
 import com.lightcomp.ft.common.PathUtils;
 import com.lightcomp.ft.core.blocks.DirBeginBlockImpl;
@@ -50,7 +52,8 @@ import com.lightcomp.ft.server.ServerConfig;
 import com.lightcomp.ft.server.UploadHandler;
 import com.lightcomp.ft.simple.StatusStorageImpl;
 import com.lightcomp.ft.xsd.v1.DirBegin;
-import com.lightcomp.ft.xsd.v1.GenericData;
+import com.lightcomp.ft.xsd.v1.GenericDataType;
+import com.lightcomp.ft.xsd.v1.XmlData;
 
 import net.jodah.concurrentunit.Waiter;
 
@@ -106,10 +109,10 @@ public class TransferTest {
 
     @Test
     public void testFolderUpload() throws TimeoutException {
-        UploadReceiver ur = new UploadReceiver(tempDir) {
+        TransferHandlerImpl ur = new TransferHandlerImpl(tempDir) {
             @Override
-            protected UploadHandler createUploadAcceptor(String transferId, Path uploadDir, GenericData request) {
-                return new UploadAcceptorImpl(transferId, null, request.getId(), uploadDir, server, waiter,
+            protected UploadHandler createUploadAcceptor(String transferId, Path uploadDir, GenericDataType request) {
+                return new UploadHandlerImpl(transferId, null, request.getId(), uploadDir, server, waiter,
                         com.lightcomp.ft.server.TransferState.FINISHING);
             }
         };
@@ -151,10 +154,10 @@ public class TransferTest {
 
     @Test
     public void testInactiveTransfer() throws TimeoutException {
-        UploadReceiver ur = new UploadReceiver(tempDir) {
+        TransferHandlerImpl ur = new TransferHandlerImpl(tempDir) {
             @Override
-            protected UploadHandler createUploadAcceptor(String transferId, Path uploadDir, GenericData request) {
-                return new UploadAcceptorImpl(transferId, null, request.getId(), uploadDir, server, waiter,
+            protected UploadHandler createUploadAcceptor(String transferId, Path uploadDir, GenericDataType request) {
+                return new UploadHandlerImpl(transferId, null, request.getId(), uploadDir, server, waiter,
                         com.lightcomp.ft.server.TransferState.FAILED);
             }
         };
@@ -191,10 +194,10 @@ public class TransferTest {
 
     @Test
     public void testMaxFrameSizeUpload() throws TimeoutException {
-        UploadReceiver ur = new UploadReceiver(tempDir) {
+        TransferHandlerImpl ur = new TransferHandlerImpl(tempDir) {
             @Override
-            protected UploadHandler createUploadAcceptor(String transferId, Path uploadDir, GenericData request) {
-                return new UploadAcceptorImpl(transferId, null, request.getId(), uploadDir, server, waiter,
+            protected UploadHandler createUploadAcceptor(String transferId, Path uploadDir, GenericDataType request) {
+                return new UploadHandlerImpl(transferId, null, request.getId(), uploadDir, server, waiter,
                         com.lightcomp.ft.server.TransferState.FINISHING);
             }
         };
@@ -234,10 +237,10 @@ public class TransferTest {
 
     @Test
     public void testMaxFrameBlocksUpload() throws TimeoutException {
-        UploadReceiver ur = new UploadReceiver(tempDir) {
+        TransferHandlerImpl ur = new TransferHandlerImpl(tempDir) {
             @Override
-            protected UploadHandler createUploadAcceptor(String transferId, Path uploadDir, GenericData request) {
-                return new UploadAcceptorImpl(transferId, null, request.getId(), uploadDir, server, waiter,
+            protected UploadHandler createUploadAcceptor(String transferId, Path uploadDir, GenericDataType request) {
+                return new UploadHandlerImpl(transferId, null, request.getId(), uploadDir, server, waiter,
                         com.lightcomp.ft.server.TransferState.FINISHING);
             }
         };
@@ -273,10 +276,10 @@ public class TransferTest {
 
     @Test
     public void testInvalidChecksum() throws TimeoutException {
-        UploadReceiver ur = new UploadReceiver(tempDir) {
+        TransferHandlerImpl ur = new TransferHandlerImpl(tempDir) {
             @Override
-            protected UploadHandler createUploadAcceptor(String transferId, Path uploadDir, GenericData request) {
-                return new UploadAcceptorImpl(transferId, null, request.getId(), uploadDir, server, waiter,
+            protected UploadHandler createUploadAcceptor(String transferId, Path uploadDir, GenericDataType request) {
+                return new UploadHandlerImpl(transferId, null, request.getId(), uploadDir, server, waiter,
                         com.lightcomp.ft.server.TransferState.FAILED);
             }
         };
@@ -313,10 +316,10 @@ public class TransferTest {
     public void testMixedContentUpload() throws TimeoutException {
         int blockMax = 5;
 
-        UploadReceiver ur = new UploadReceiver(tempDir) {
+        TransferHandlerImpl ur = new TransferHandlerImpl(tempDir) {
             @Override
-            protected UploadHandler createUploadAcceptor(String transferId, Path uploadDir, GenericData request) {
-                return new UploadAcceptorImpl(transferId, null, request.getId(), uploadDir, server, waiter,
+            protected UploadHandler createUploadAcceptor(String transferId, Path uploadDir, GenericDataType request) {
+                return new UploadHandlerImpl(transferId, null, request.getId(), uploadDir, server, waiter,
                         com.lightcomp.ft.server.TransferState.FINISHING);
             }
         };
@@ -352,10 +355,10 @@ public class TransferTest {
 
     @Test
     public void testInvalidFrameUpload() throws TimeoutException {
-        UploadReceiver ur = new UploadReceiver(tempDir) {
+        TransferHandlerImpl ur = new TransferHandlerImpl(tempDir) {
             @Override
-            protected UploadHandler createUploadAcceptor(String transferId, Path uploadDir, GenericData request) {
-                return new UploadAcceptorImpl(transferId, null, request.getId(), uploadDir, server, waiter,
+            protected UploadHandler createUploadAcceptor(String transferId, Path uploadDir, GenericDataType request) {
+                return new UploadHandlerImpl(transferId, null, request.getId(), uploadDir, server, waiter,
                         com.lightcomp.ft.server.TransferState.FAILED);
             }
         };
@@ -382,8 +385,13 @@ public class TransferTest {
                         frameCtx.addBlock(db); // unclosed child directory -> failure
                         frameCtx.addBlock(new DirEndBlockImpl());
                         frameCtx.setLast(true);
-                        SendOperation op = new SendOperation(this, this, frameCtx);
-                        return op.execute(service);
+                        SendOperation so = new SendOperation(this, service, frameCtx);
+                        OperationStatus sos = so.execute();
+                        if (sos.getType() != Type.SUCCESS) {
+                            transferFailed(sos);
+                            return false;
+                        }
+                        return true;
                     }
                 };
                 transferExecutor.addTask(transfer);
@@ -403,10 +411,10 @@ public class TransferTest {
 
     @Test
     public void testUploadRequestResponse() throws TimeoutException, ParserConfigurationException {
-        UploadReceiver ur = new UploadReceiver(tempDir) {
+        TransferHandlerImpl ur = new TransferHandlerImpl(tempDir) {
             @Override
-            protected UploadHandler createUploadAcceptor(String transferId, Path uploadDir, GenericData request) {
-                return new UploadAcceptorImpl(transferId, request, request.getId(), uploadDir, server, waiter,
+            protected UploadHandler createUploadAcceptor(String transferId, Path uploadDir, GenericDataType request) {
+                return new UploadHandlerImpl(transferId, request, request.getId(), uploadDir, server, waiter,
                         com.lightcomp.ft.server.TransferState.FINISHING);
             }
         };
@@ -428,17 +436,19 @@ public class TransferTest {
         Document doc = db.newDocument();
         Element el = doc.createElement("el");
 
-        GenericData req = new GenericData();
+        GenericDataType req = new GenericDataType();
         req.setId("id");
         req.setBinData(new byte[] { 3 });
-        req.setAny(el);
+        XmlData xmlData = new XmlData();
+        xmlData.getAnies().add(el);
+        req.setXmlData(xmlData);
 
         UploadRequestImpl request = new UploadRequestImpl(req, Collections.emptyList(), waiter, TransferState.FINISHED) {
             @Override
-            public void onTransferSuccess(GenericData response) {
+            public void onTransferSuccess(GenericDataType response) {
                 waiter.assertTrue(response.getId().equals("id"));
                 waiter.assertTrue(response.getBinData()[0] == 3);
-                waiter.assertTrue(response.getAny().getTagName().equals("el"));
+                waiter.assertTrue(response.getXmlData().getAnies().get(0).getTagName().equals("el"));
                 super.onTransferSuccess(response);
             }
         };
@@ -454,11 +464,11 @@ public class TransferTest {
         Assert.assertTrue(sts.getState() == com.lightcomp.ft.server.TransferState.FINISHED);
         Assert.assertTrue(sts.getResponse().getId().equals("id"));
         Assert.assertTrue(sts.getResponse().getBinData()[0] == 3);
-        Assert.assertTrue(sts.getResponse().getAny().getTagName().equals("el"));
+        Assert.assertTrue(sts.getResponse().getXmlData().getAnies().get(0).getTagName().equals("el"));
     }
 
-    public static GenericData createReqData(String id) {
-        GenericData gd = new GenericData();
+    public static GenericDataType createReqData(String id) {
+        GenericDataType gd = new GenericDataType();
         gd.setId(id);
         return gd;
     }

@@ -15,7 +15,7 @@ import com.lightcomp.ft.client.UploadRequest;
 import com.lightcomp.ft.core.send.items.SimpleDir;
 import com.lightcomp.ft.core.send.items.SimpleFile;
 import com.lightcomp.ft.core.send.items.SourceItem;
-import com.lightcomp.ft.xsd.v1.GenericData;
+import com.lightcomp.ft.xsd.v1.GenericDataType;
 
 public class UploadRequestImpl implements UploadRequest {
 
@@ -23,17 +23,17 @@ public class UploadRequestImpl implements UploadRequest {
 
     private final Path dataDir;
 
-    private final GenericData data;
+    private final GenericDataType data;
 
     private Transfer transfer;
 
-    public UploadRequestImpl(Path dataDir, GenericData data) {
+    public UploadRequestImpl(Path dataDir, GenericDataType data) {
         this.dataDir = dataDir;
         this.data = data;
     }
 
     @Override
-    public GenericData getData() {
+    public GenericDataType getData() {
         return data;
     }
 
@@ -69,7 +69,7 @@ public class UploadRequestImpl implements UploadRequest {
     }
 
     @Override
-    public void onTransferSuccess(GenericData response) {
+    public void onTransferSuccess(GenericDataType response) {
         logger.info("Client transfer succeeded, transferId={}, response: {}", transfer.getTransferId(), response);
     }
 

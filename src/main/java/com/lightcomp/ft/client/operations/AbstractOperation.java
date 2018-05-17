@@ -13,14 +13,13 @@ public abstract class AbstractOperation {
 
     protected final FileTransferService service;
 
-    protected boolean recovery;
-
     protected AbstractOperation(OperationHandler handler, FileTransferService service) {
         this.handler = handler;
         this.service = service;
     }
 
     public OperationStatus execute() {
+        boolean recovery = false;
         while (true) {
             try {
                 if (recovery) {
@@ -29,9 +28,10 @@ public abstract class AbstractOperation {
                     if (status != null) {
                         return status;
                     }
+                    // null -> we can continue (resend)
                 }
                 send();
-                return new OperationStatus(Type.SUCCESS, recovery);
+                break;
             } catch (Throwable t) {
                 ExceptionType type = ExceptionType.resolve(t);
                 if (!isRecoverable(type)) {
@@ -43,24 +43,35 @@ public abstract class AbstractOperation {
                 recovery = true;
             }
         }
+        if (recovery) {
+            handler.recoverySucceeded();
+        }
+        return operationFinished();
     }
-
-    /**
-     * @return Operation status when execute should terminate or null if recovery can continue.
-     */
-    protected abstract OperationStatus resolveServerStatus(TransferStatus ss);
 
     protected abstract void send() throws FileTransferException;
 
-    /**
-     * @return Operation status which represents recovery failure.
-     */
-    protected OperationStatus recoveryFailed(Type type, Throwable ex, ExceptionType exType) {
-        return new OperationStatus(type, recovery).setFailureCause(ex).setFailureType(exType);
-    }
-
     protected boolean isRecoverable(ExceptionType type) {
         return type == ExceptionType.BUSY || type == ExceptionType.CONNECTION;
+    }
+
+    /**
+     * @return Returns operation status when execute should terminate or null when operation wasn't executed.
+     */
+    protected abstract OperationStatus resolveServerStatus(TransferStatus status);
+
+    /**
+     * @return Return operation status which represents finish. Can be fail when result didn't pass validation.
+     */
+    protected OperationStatus operationFinished() {
+        return new OperationStatus(Type.SUCCESS);
+    }
+
+    /**
+     * @return Return operation status which represents recovery failure.
+     */
+    protected OperationStatus recoveryFailed(Type type, Throwable ex, ExceptionType exType) {
+        return new OperationStatus(type).setFailureCause(ex).setFailureType(exType);
     }
 
     private TransferStatus sendServerStatus() throws FileTransferException {

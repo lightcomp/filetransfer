@@ -16,25 +16,18 @@ public class OperationStatus {
 
     private final Type type;
 
-    private final boolean recovery;
-
     private String failureMessage;
 
     private Throwable failureCause;
 
     private ExceptionType failureType;
 
-    public OperationStatus(Type type, boolean recovery) {
+    public OperationStatus(Type type) {
         this.type = type;
-        this.recovery = recovery;
     }
 
     public Type getType() {
         return type;
-    }
-
-    public boolean isRecovery() {
-        return recovery;
     }
 
     public String getFailureMessage() {

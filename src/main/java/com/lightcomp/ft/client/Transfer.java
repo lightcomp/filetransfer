@@ -20,5 +20,5 @@ public interface Transfer extends TransferInfo {
      * @throws TransferException
      *             When transfer is finished or failed.
      */
-    void cancel();
+    void cancel() throws TransferException;
 }

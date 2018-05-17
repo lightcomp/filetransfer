@@ -1,5 +1,7 @@
 package com.lightcomp.ft.client.operations;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.lightcomp.ft.client.internal.ExceptionType;
 import com.lightcomp.ft.client.operations.OperationStatus.Type;
 import com.lightcomp.ft.wsdl.v1.FileTransferException;
@@ -24,11 +26,6 @@ public class BeginOperation extends AbstractOperation {
     }
 
     @Override
-    protected OperationStatus resolveServerStatus(TransferStatus status) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     protected void send() throws FileTransferException {
         BeginResponse br = service.begin(request);
         transferId = br.getTransferId();
@@ -37,6 +34,19 @@ public class BeginOperation extends AbstractOperation {
     @Override
     protected boolean isRecoverable(ExceptionType type) {
         return false;
+    }
+
+    @Override
+    protected OperationStatus resolveServerStatus(TransferStatus status) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    protected OperationStatus operationFinished() {
+        if (StringUtils.isEmpty(transferId)) {
+            return new OperationStatus(Type.FAIL).setFailureMessage("Server returned empty transfer id");
+        }
+        return super.operationFinished();
     }
 
     @Override

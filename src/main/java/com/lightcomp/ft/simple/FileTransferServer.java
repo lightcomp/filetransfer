@@ -25,7 +25,7 @@ public class FileTransferServer {
         logger.debug("Starting FileTransferServer {} {}", args[0], args[1]);
 
         Path transferDir = Paths.get(args[1]);
-        ReceiverImpl receiver = new ReceiverImpl(transferDir);
+        TransferHandlerImpl receiver = new TransferHandlerImpl(transferDir);
         StatusStorageImpl statusStorage = new StatusStorageImpl();
         ServerConfig cfg = new ServerConfig(receiver, statusStorage);
 

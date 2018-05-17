@@ -20,11 +20,20 @@ public class SendOperation extends AbstractOperation {
     }
 
     @Override
+    protected void send() throws FileTransferException {
+        Frame frame = frameCtx.createFrame();
+        SendRequest sr = new SendRequest();
+        sr.setFrame(frame);
+        sr.setTransferId(handler.getTransferId());
+        service.send(sr);
+    }
+
+    @Override
     protected OperationStatus resolveServerStatus(TransferStatus status) {
         // check transfer state
         FileTransferState fts = status.getState();
         if (fts != FileTransferState.ACTIVE) {
-            return new OperationStatus(Type.FAIL, recovery).setFailureMessage("Failed to send frame, invalid server state")
+            return new OperationStatus(Type.FAIL).setFailureMessage("Failed to send frame, invalid server state")
                     .addFailureParam("serverState", fts);
         }
         // check frame seq number
@@ -32,24 +41,15 @@ public class SendOperation extends AbstractOperation {
         int seqNum = frameCtx.getSeqNum();
         // test if succeeded
         if (seqNum == lastSeqNum) {
-            return new OperationStatus(Type.SUCCESS, recovery);
+            return new OperationStatus(Type.SUCCESS);
         }
         // test if match with previous frame
         if (seqNum == lastSeqNum + 1) {
             return null; // next try
         }
         // incorrect frame number
-        return new OperationStatus(Type.FAIL, recovery).setFailureMessage("Cannot recover last send frame")
+        return new OperationStatus(Type.FAIL).setFailureMessage("Cannot recover last send frame")
                 .addFailureParam("seqNum", seqNum).addFailureParam("serverSeqNum", lastSeqNum);
-    }
-
-    @Override
-    protected void send() throws FileTransferException {
-        Frame frame = frameCtx.createFrame();
-        SendRequest sr = new SendRequest();
-        sr.setFrame(frame);
-        sr.setTransferId(handler.getTransferId());
-        service.send(sr);
     }
 
     @Override

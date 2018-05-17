@@ -161,6 +161,7 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
         synchronized (this) {
             while (true) {
                 TransferState ts = status.getState();
+                // wait until finished or failed
                 if (ts == TransferState.FINISHING) {
                     try {
                         wait(100);
@@ -188,6 +189,7 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
         synchronized (this) {
             while (true) {
                 TransferState ts = status.getState();
+                // wait until finished or failed
                 if (ts == TransferState.FINISHING) {
                     try {
                         wait(100);

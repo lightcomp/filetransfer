@@ -7,6 +7,8 @@ import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 
 import com.lightcomp.ft.core.TransferInfo;
+import com.lightcomp.ft.wsdl.v1.FileTransferException;
+import com.lightcomp.ft.xsd.v1.ErrorDescription;
 
 public class TransferExceptionBuilder {
 
@@ -36,6 +38,11 @@ public class TransferExceptionBuilder {
         return this;
     }
 
+    public TransferExceptionBuilder addParams(Map<String, Object> params) {
+        this.params.putAll(params);
+        return this;
+    }
+
     public TransferExceptionBuilder setCause(Throwable cause) {
         this.cause = cause;
         return this;
@@ -47,18 +54,27 @@ public class TransferExceptionBuilder {
     }
 
     public void log(Logger logger) {
-        logger.error(buildMsg(), cause);
-    }
-
-    private String buildMsg() {
-        if (params.isEmpty()) {
-            return message;
-        }
         StringBuilder sb = new StringBuilder(message);
-        sb.append(", params=[");
-        params.forEach((k, v) -> sb.append(k).append('=').append(v).append(','));
-        // replace last separator with bracket
-        sb.setCharAt(sb.length() - 1, ']');
-        return sb.toString();
+        // append parameters
+        if (params.size() > 0) {
+            sb.append(", params=[");
+            params.forEach((k, v) -> sb.append(k).append('=').append(v).append(','));
+            // replace last separator with bracket
+            sb.setCharAt(sb.length() - 1, ']');
+        }
+        // log server detail if present
+        if (cause instanceof FileTransferException) {
+            ErrorDescription desc = ((FileTransferException) cause).getFaultInfo();
+            if (desc != null) {
+                // server description found
+                sb.append(System.lineSeparator()).append("Server description: ").append(desc.getDetail());
+                if (!logger.isDebugEnabled()) {
+                    // do not log stack trace
+                    logger.error(sb.toString());
+                    return;
+                }
+            }
+        }
+        logger.error(sb.toString(), cause);
     }
 }

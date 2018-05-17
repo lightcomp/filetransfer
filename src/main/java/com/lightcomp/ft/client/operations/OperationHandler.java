@@ -1,11 +1,13 @@
 package com.lightcomp.ft.client.operations;
 
-import com.lightcomp.ft.core.TransferInfo;
+public interface OperationHandler {
 
-public interface OperationHandler extends TransferInfo {
+    String getTransferId();
 
     /**
      * @return true when operation can be recovered
      */
     boolean prepareRecovery();
+
+    void recoverySucceeded();
 }

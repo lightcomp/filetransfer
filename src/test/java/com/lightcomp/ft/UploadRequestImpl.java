@@ -11,7 +11,7 @@ import com.lightcomp.ft.client.TransferState;
 import com.lightcomp.ft.client.TransferStatus;
 import com.lightcomp.ft.client.UploadRequest;
 import com.lightcomp.ft.core.send.items.SourceItem;
-import com.lightcomp.ft.xsd.v1.GenericData;
+import com.lightcomp.ft.xsd.v1.GenericDataType;
 
 import net.jodah.concurrentunit.Waiter;
 
@@ -19,7 +19,7 @@ public class UploadRequestImpl implements UploadRequest {
 
     private final Logger logger = LoggerFactory.getLogger(UploadRequestImpl.class);
 
-    private final GenericData data;
+    private final GenericDataType data;
 
     private final Collection<SourceItem> items;
 
@@ -31,7 +31,7 @@ public class UploadRequestImpl implements UploadRequest {
 
     private TransferState progressState;
 
-    public UploadRequestImpl(GenericData data, Collection<SourceItem> items, Waiter waiter, TransferState terminalState) {
+    public UploadRequestImpl(GenericDataType data, Collection<SourceItem> items, Waiter waiter, TransferState terminalState) {
         this.data = data;
         this.items = items;
         this.waiter = waiter;
@@ -39,7 +39,7 @@ public class UploadRequestImpl implements UploadRequest {
     }
 
     @Override
-    public GenericData getData() {
+    public GenericDataType getData() {
         return data;
     }
 
@@ -79,7 +79,7 @@ public class UploadRequestImpl implements UploadRequest {
     }
 
     @Override
-    public void onTransferSuccess(GenericData response) {
+    public void onTransferSuccess(GenericDataType response) {
         TransferStatus ts = transfer.getStatus();
         waiter.assertEquals(TransferState.FINISHED, ts.getState());
 

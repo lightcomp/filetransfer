@@ -3,9 +3,12 @@ package com.lightcomp.ft.client.internal;
 import com.lightcomp.ft.client.ClientConfig;
 import com.lightcomp.ft.client.TransferStatus;
 import com.lightcomp.ft.client.UploadRequest;
+import com.lightcomp.ft.client.operations.OperationStatus;
+import com.lightcomp.ft.client.operations.OperationStatus.Type;
 import com.lightcomp.ft.client.operations.SendOperation;
 import com.lightcomp.ft.core.send.FrameBlockBuilder;
 import com.lightcomp.ft.core.send.SendProgressInfo;
+import com.lightcomp.ft.exception.TransferException;
 import com.lightcomp.ft.wsdl.v1.FileTransferService;
 
 public class UploadTransfer extends AbstractTransfer implements SendProgressInfo {
@@ -30,28 +33,29 @@ public class UploadTransfer extends AbstractTransfer implements SendProgressInfo
     }
 
     @Override
-    protected boolean transferFrames() {
-        FrameBlockBuilder builder = new FrameBlockBuilder(request.getItemIterator(), this);
-        int lastSeqNum = 1;
+    protected boolean transferFrames() throws TransferException {
+        FrameBlockBuilder fbr = new FrameBlockBuilder(request.getItemIterator(), this);
+        int currSeqNum = 1;
         while (true) {
-            // check if cancel requested
-            if (isCancelRequested()) {
+            if (cancelIfRequested()) {
                 return false;
             }
             // prepare frame
-            UploadFrameContext frameCtx = new UploadFrameContext(lastSeqNum, config);
-            builder.build(frameCtx);
+            UploadFrameContext frameCtx = new UploadFrameContext(currSeqNum, config);
+            fbr.build(frameCtx);
             // send frame
-            SendOperation op = new SendOperation(transferId, this, frameCtx);
-            if (!op.execute(service)) {
+            SendOperation so = new SendOperation(this, service, frameCtx);
+            OperationStatus sos = so.execute();
+            if (sos.getType() != Type.SUCCESS) {
+                transferFailed(sos);
                 return false;
             }
             // exit if last
             if (frameCtx.isLast()) {
                 return true;
             }
-            // increment last frame number
-            lastSeqNum++;
+            // increment frame number
+            currSeqNum++;
         }
     }
 }

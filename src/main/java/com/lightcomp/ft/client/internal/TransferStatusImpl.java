@@ -15,7 +15,7 @@ public class TransferStatusImpl implements TransferStatus {
 
     private LocalDateTime startTime;
 
-    private int recoveryCount;
+    private int retryCount;
 
     private long transferedSize;
 
@@ -31,7 +31,7 @@ public class TransferStatusImpl implements TransferStatus {
         state = source.state;
         lastActivity = source.lastActivity;
         startTime = source.startTime;
-        recoveryCount = source.recoveryCount;
+        retryCount = source.retryCount;
         transferedSize = source.transferedSize;
     }
 
@@ -51,8 +51,8 @@ public class TransferStatusImpl implements TransferStatus {
     }
 
     @Override
-    public int getRecoveryCount() {
-        return recoveryCount;
+    public int getRetryCount() {
+        return retryCount;
     }
 
     @Override
@@ -62,12 +62,12 @@ public class TransferStatusImpl implements TransferStatus {
 
     /* modify methods */
 
-    public void resetRecoveryCount() {
-        recoveryCount = 0;
+    public void resetRetryCount() {
+        retryCount = 0;
     }
 
-    public void incrementRecoveryCount() {
-        recoveryCount++;
+    public void incrementRetryCount() {
+        retryCount++;
     }
 
     public void addTransferedData(long size) {
@@ -97,6 +97,6 @@ public class TransferStatusImpl implements TransferStatus {
     @Override
     public String toString() {
         return "TransferStatusImpl [state=" + state + ", lastActivity=" + lastActivity + ", startTime=" + startTime
-                + ", recoveryCount=" + recoveryCount + ", transferedSize=" + transferedSize + "]";
+                + ", retryCount=" + retryCount + ", transferedSize=" + transferedSize + "]";
     }
 }
