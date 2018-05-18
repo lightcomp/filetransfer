@@ -9,6 +9,8 @@ import com.lightcomp.ft.client.operations.OperationStatus;
 import com.lightcomp.ft.client.operations.OperationStatus.Type;
 import com.lightcomp.ft.client.operations.SendOperation;
 import com.lightcomp.ft.core.send.FrameBlockBuilder;
+import com.lightcomp.ft.core.send.SendFrameContext;
+import com.lightcomp.ft.core.send.SendFrameContextImpl;
 import com.lightcomp.ft.core.send.SendProgressInfo;
 import com.lightcomp.ft.core.send.items.SourceItem;
 import com.lightcomp.ft.exception.TransferException;
@@ -38,7 +40,7 @@ public class UploadTransfer extends AbstractTransfer implements SendProgressInfo
     @Override
     protected boolean transferFrames() throws TransferException {
         Iterator<SourceItem> itemIt = request.getItemIterator();
-        FrameBlockBuilder fbb = new FrameBlockBuilder(itemIt, this);
+        FrameBlockBuilder fbBuilder = new FrameBlockBuilder(itemIt, this);
         // send all frames
         int currSeqNum = 1;
         while (true) {
@@ -46,8 +48,9 @@ public class UploadTransfer extends AbstractTransfer implements SendProgressInfo
                 return false;
             }
             // prepare frame
-            UploadFrameContext frameCtx = new UploadFrameContext(currSeqNum, config);
-            fbb.build(frameCtx);
+            SendFrameContext frameCtx = new SendFrameContextImpl(currSeqNum, config.getMaxFrameBlocks(),
+                    config.getMaxFrameSize());
+            fbBuilder.build(frameCtx);
             // send frame
             SendOperation so = new SendOperation(this, service, frameCtx);
             OperationStatus sos = so.execute();

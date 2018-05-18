@@ -150,10 +150,10 @@ public class ServerImpl implements Server, TransferManager {
         // transfer not found -> check storage for reason
         TransferStatus ts = statusStorage.getTransferStatus(transferId);
         if (ts != null) {
-            throw new ErrorBuilder("Transfer is terminated").addParam("finalState", ts.getState())
-                    .addParam("transferId", transferId).buildEx();
+            throw new ErrorContext("Transfer is terminated").addParam("finalState", ts.getState())
+                    .addParam("transferId", transferId).createEx();
         }
-        throw new ErrorBuilder("Transfer not found").addParam("transferId", transferId).buildEx();
+        throw new ErrorContext("Transfer not found").addParam("transferId", transferId).createEx();
     }
 
     @Override
@@ -167,7 +167,7 @@ public class ServerImpl implements Server, TransferManager {
                 TransferStatusImpl ts = transfer.getStatus();
                 // confirmed status must respect busy state
                 if (ts.isBusy()) {
-                    throw new ErrorBuilder("Transfer is busy", transfer).buildEx(ErrorCode.BUSY);
+                    throw new ErrorContext("Transfer is busy", transfer).setCode(ErrorCode.BUSY).createEx();
                 }
                 return ts;
             }
@@ -175,7 +175,7 @@ public class ServerImpl implements Server, TransferManager {
         // get status from storage or throw exception
         TransferStatus ts = statusStorage.getTransferStatus(transferId);
         if (ts == null) {
-            throw new ErrorBuilder("Transfer status not found").addParam("transferId", transferId).buildEx();
+            throw new ErrorContext("Transfer status not found").addParam("transferId", transferId).createEx();
         }
         return ts;
     }
@@ -184,14 +184,14 @@ public class ServerImpl implements Server, TransferManager {
     public String createTransferAsync(GenericDataType request) throws FileTransferException {
         String transferId = idGenerator.generateId();
         if (StringUtils.isEmpty(transferId)) {
-            throw new ErrorBuilder("Id generator returned empty transfer id").buildEx();
+            throw new ErrorContext("Id generator returned empty transfer id").createEx();
         }
         synchronized (this) {
             checkServerState();
             // check running transfers and new transfers for duplicate id
             if (transferIdMap.containsKey(transferId) || newTransferIds.contains(transferId)) {
-                throw new ErrorBuilder("Id generator generated duplicate transfer id").addParam("transferId", transferId)
-                        .buildEx();
+                throw new ErrorContext("Id generator generated duplicate transfer id")
+                        .addParam("transferId", transferId).createEx();
             }
             // add new transfer to lookup
             newTransferIds.add(transferId);
@@ -225,11 +225,12 @@ public class ServerImpl implements Server, TransferManager {
     }
 
     private void transferCreationFailed(String transferId, Throwable cause) {
-        ErrorBuilder eb = new ErrorBuilder("Failed to create transfer").addParam("transferId", transferId).setCause(cause);
-        eb.log(logger);
+        ErrorContext ec = new ErrorContext("Failed to create transfer").addParam("transferId", transferId)
+                .setCause(cause);
+        ec.log(logger);
         // create failed status for storage
         TransferStatusImpl status = new TransferStatusImpl();
-        status.changeStateToFailed(eb.buildDesc());
+        status.changeStateToFailed(ec.getDesc());
         try {
             statusStorage.saveTransferStatus(transferId, status);
         } catch (Throwable t) {
@@ -246,16 +247,18 @@ public class ServerImpl implements Server, TransferManager {
      */
     private void checkServerState() throws FileTransferException {
         if (state != State.RUNNING) {
-            throw new ErrorBuilder("Server is not running").buildEx();
+            throw new ErrorContext("Server is not running").createEx();
         }
     }
 
     /**
-     * When transfer is not yet created then busy exception is thrown. Caller must ensure synchronization.
+     * When transfer is not yet created then busy exception is thrown. Caller must ensure
+     * synchronization.
      */
     private void checkNewTransfer(String transferId) throws FileTransferException {
         if (newTransferIds.contains(transferId)) {
-            throw new ErrorBuilder("Transfer is busy").addParam("transferId", transferId).buildEx(ErrorCode.BUSY);
+            throw new ErrorContext("Transfer is busy").addParam("transferId", transferId).setCode(ErrorCode.BUSY)
+                    .createEx();
         }
     }
 

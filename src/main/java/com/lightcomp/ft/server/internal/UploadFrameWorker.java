@@ -71,13 +71,13 @@ public class UploadFrameWorker implements Runnable {
             }
             try {
                 rfp.process();
-                if (!transfer.frameProcessed(rfp.getSeqNum(), rfp.isLast())) {
+                if (!transfer.frameProcessed(rfp)) {
                     break; // terminated transfer
                 }
             } catch (Throwable t) {
-                ErrorBuilder eb = new ErrorBuilder("Frame processor failed", transfer).addParam("seqNum", rfp.getSeqNum())
-                        .setCause(t);
-                transfer.transferFailed(eb);
+                ErrorContext ec = new ErrorContext("Frame processor failed", transfer)
+                        .addParam("seqNum", rfp.getSeqNum()).setCause(t);
+                transfer.frameProcessingFailed(ec);
                 break; // processor failed
             }
         }

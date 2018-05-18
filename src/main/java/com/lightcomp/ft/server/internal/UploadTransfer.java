@@ -35,7 +35,7 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
 
     private int lastSeqNum;
 
-    private boolean transferring;
+    private boolean receivingFrame;
 
     private boolean lastFrameReceived;
 
@@ -45,45 +45,48 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
     }
 
     @Override
-    public synchronized boolean isBusy() {
-        // busy transferring frame
-        if (transferring) {
-            return true;
-        }
-        // busy processing last frame
-        if (lastFrameReceived && status.getState() == TransferState.STARTED) {
-            return true;
-        }
-        return super.isBusy();
-    }
-
-    @Override
-    protected void checkPreparedFinish() throws FileTransferException {
-        // check if busy processing last frame
-        if (lastFrameReceived && status.getState() == TransferState.STARTED) {
-            throw new ErrorBuilder("Finish is not prepared", this).buildEx(ErrorCode.BUSY);
-        }
-    }
-
-    @Override
     public void init() throws TransferException {
         // create temporary folder
         try {
             tempDir = Files.createTempDirectory(config.getWorkDir(), transferId);
         } catch (IOException e) {
-            TransferExceptionBuilder eb = new TransferExceptionBuilder("Failed to create temporary upload directory", this)
-                    .addParam("parentPath", config.getWorkDir()).setCause(e);
+            TransferExceptionBuilder eb = new TransferExceptionBuilder("Failed to create temporary upload directory",
+                    this).addParam("parentPath", config.getWorkDir()).setCause(e);
             eb.log(logger);
             throw eb.build();
         }
+        // call super
         super.init();
+    }
+
+    @Override
+    public synchronized boolean isBusy() {
+        // check if already receiving frame
+        if (receivingFrame) {
+            return true;
+        }
+        // check if processing last frame
+        if (lastFrameReceived && status.getState() == TransferState.STARTED) {
+            return true;
+        }
+        // call super
+        return super.isBusy();
+    }
+
+    @Override
+    protected ErrorContext prepareFinish() {
+        // check if busy processing last frame
+        if (lastFrameReceived && status.getState() == TransferState.STARTED) {
+            return new ErrorContext("Finish is not prepared", this).setCode(ErrorCode.BUSY);
+        }
+        // call super
+        return super.prepareFinish();
     }
 
     @Override
     public void onDataReceived(long size) {
         TransferStatus ts;
         synchronized (this) {
-            // update current state
             status.addTransferedData(size);
             // copy status in synch block
             ts = status.copy();
@@ -92,73 +95,89 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
     }
 
     @Override
-    public Frame sendFrame(long seqNum) throws FileTransferException {
-        ErrorBuilder eb = new ErrorBuilder("Transfer cannot send frame in upload mode", this);
-        transferFailed(eb);
-        throw eb.buildEx();
+    public Frame sendFrame(int seqNum) throws FileTransferException {
+        ErrorContext ec = new ErrorContext("Transfer cannot send frame in upload mode", this);
+        transferFailed(ec);
+        throw ec.createEx();
     }
 
     @Override
     public void recvFrame(Frame frame) throws FileTransferException {
-        ErrorBuilder eb = null;
+        ErrorContext ec = null;
         synchronized (this) {
             checkActiveTransfer();
-            // check transferring frame
-            if (transferring) {
-                throw new ErrorBuilder("Another frame is being transfered", this).buildEx(ErrorCode.BUSY);
-            }
-            // check started state
-            if (status.getState() != TransferState.STARTED) {
-                eb = new ErrorBuilder("Unable to receive frame in current state", this).addParam("currentState",
-                        status.getState());
-                // state must be changed in same sync block as check
-                status.changeStateToFailed(eb.buildDesc());
+            ec = prepareReceive(frame);
+            // fail transfer if fatal error
+            if (ec != null && ec.isFatal()) {
+                // state must be changed in same sync block
+                status.changeStateToFailed(ec.getDesc());
                 // notify canceling threads
                 notifyAll();
-            } else {
-                transferring = true;
             }
         }
-        // handler must be called outside of sync block
-        if (eb != null) {
-            eb.log(logger);
-            handler.onTransferFailed(eb.buildDesc());
-            throw eb.buildEx();
+        // onTransferFailed must be called outside of sync block
+        if (ec != null) {
+            if (ec.isFatal()) {
+                onTransferFailed(ec);
+            }
+            throw ec.createEx();
         }
-        // process frame
+        // receive is blocked by flag but not synchronized
         try {
-            processFrame(frame);
-        } catch (Throwable t) {
-            eb = new ErrorBuilder("Failed to process frame", this).addParam("seqNum", frame.getSeqNum());
-            transferFailed(eb);
-            eb.buildEx();
+            receiveInternal(frame);
         } finally {
             synchronized (this) {
-                transferring = false;
+                receivingFrame = false;
             }
         }
     }
 
     /**
-     * Transfers frame data and starts async frame processor. Caller must ensure synchronization.
+     * Prepares frame receive, method is called in synchronized block.
+     * 
+     * @return Returns error context if transfer failed.
      */
-    private void processFrame(Frame frame) throws TransferException {
-        // check and set last frame received
+    private ErrorContext prepareReceive(Frame frame) {
+        // check if is busy receiving frame
+        if (receivingFrame) {
+            return new ErrorContext("Another frame is being received", this).setCode(ErrorCode.BUSY);
+        }
+        // check started state
+        if (status.getState() != TransferState.STARTED) {
+            return new ErrorContext("Unable to receive frame in current state", this).addParam("currentState",
+                    status.getState());
+        }
+        // check last frame received
         if (lastFrameReceived) {
-            throw new TransferException("Server already received last frame");
+            return new ErrorContext("Server already received last frame", this);
+        }
+        // check last frame number
+        int seqNum = frame.getSeqNum();
+        if (seqNum != lastSeqNum + 1) {
+            return new ErrorContext("Failed to receive frame, invalid frame number", this)
+                    .addParam("expectedSeqNum", lastSeqNum + 1).addParam("receivedSeqNum", seqNum);
         }
         lastFrameReceived = Boolean.TRUE.equals(frame.isLast());
-        // check and set last seq number
-        if (lastSeqNum + 1 != frame.getSeqNum()) {
-            throw new TransferExceptionBuilder("Invalid frame number").addParam("expectedSeqNum", lastSeqNum + 1).build();
-        }
-        lastSeqNum++;
+        receivingFrame = true;
+        lastSeqNum = seqNum;
+        return null;
+    }
 
-        // transfer data and start async processor
+    /**
+     * Transfers frame data and starts async frame processing.
+     */
+    private void receiveInternal(Frame frame) throws FileTransferException {
         RecvFrameProcessor rfp = RecvFrameProcessor.create(recvCtx, frame);
-        rfp.prepareData(tempDir);
-
-        // add frame to worker
+        // transfer data
+        try {
+            rfp.prepareData(tempDir);
+        } catch (TransferException e) {
+            ErrorContext ec = new ErrorContext("Failed to receive frame", this).addParam("seqNum", frame.getSeqNum())
+                    .setCause(e);
+            transferFailed(ec);
+            throw ec.createEx();
+        }
+        // start async processor
         if (frameWorker != null && frameWorker.addFrame(rfp)) {
             return;
         }
@@ -168,9 +187,9 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
     }
 
     /**
-     * @return True when frame was added otherwise transfer is terminated and cannot accept more frames.
+     * @return True when frame was accepted, false when transfer is terminated.
      */
-    protected boolean frameProcessed(int seqNum, boolean last) {
+    boolean frameProcessed(RecvFrameProcessor rfp) {
         TransferStatus ts;
         synchronized (this) {
             if (status.getState().isTerminal()) {
@@ -178,10 +197,10 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
             }
             // integrity checks
             Validate.isTrue(status.getState() == TransferState.STARTED);
-            Validate.isTrue(status.getLastFrameSeqNum() + 1 == seqNum);
+            Validate.isTrue(status.getLastFrameSeqNum() + 1 == rfp.getSeqNum());
             // update status
             status.incrementFrameSeqNum();
-            if (last) {
+            if (rfp.isLast()) {
                 status.changeState(TransferState.TRANSFERED);
             }
             // copy status in synch block
@@ -191,6 +210,10 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
         return true;
     }
 
+    void frameProcessingFailed(ErrorContext ec) {
+        transferFailed(ec);
+    }
+
     @Override
     protected void clearResources() {
         // delete temporary files
@@ -198,7 +221,7 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
             try {
                 PathUtils.deleteWithChildren(tempDir);
             } catch (IOException e) {
-                new ErrorBuilder("Failed to delete temporary upload files", this).setCause(e).log(logger);
+                new ErrorContext("Failed to delete temporary upload files", this).setCause(e).log(logger);
             }
         }
         // stop frame worker

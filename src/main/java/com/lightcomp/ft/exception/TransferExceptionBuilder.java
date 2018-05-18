@@ -20,7 +20,7 @@ public class TransferExceptionBuilder {
     private Throwable cause;
 
     public TransferExceptionBuilder(String message) {
-        this.message = Validate.notEmpty(message);
+        this.message = Validate.notBlank(message);
     }
 
     public TransferExceptionBuilder(String message, TransferInfo transfer) {

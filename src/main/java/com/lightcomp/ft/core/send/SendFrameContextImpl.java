@@ -1,4 +1,4 @@
-package com.lightcomp.ft.client.internal;
+package com.lightcomp.ft.core.send;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -9,17 +9,13 @@ import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.lightcomp.ft.client.ClientConfig;
-import com.lightcomp.ft.core.send.FrameBlockStream;
-import com.lightcomp.ft.core.send.FrameDataSource;
-import com.lightcomp.ft.core.send.SendFrameContext;
 import com.lightcomp.ft.xsd.v1.Frame;
 import com.lightcomp.ft.xsd.v1.FrameBlock;
 import com.lightcomp.ft.xsd.v1.FrameBlocks;
 
-public class UploadFrameContext implements SendFrameContext {
+public class SendFrameContextImpl implements SendFrameContext {
 
-    private static final Logger logger = LoggerFactory.getLogger(UploadFrameContext.class);
+    private static final Logger logger = LoggerFactory.getLogger(SendFrameContextImpl.class);
 
     private final List<FrameBlock> blocks = new ArrayList<>();
 
@@ -27,21 +23,26 @@ public class UploadFrameContext implements SendFrameContext {
 
     private final int seqNum;
 
-    private final ClientConfig config;
+    private final int maxFrameBlocks;
+
+    private final long maxFrameSize;
 
     private long dataSize;
 
     private boolean last;
 
-    public UploadFrameContext(int seqNum, ClientConfig config) {
+    public SendFrameContextImpl(int seqNum, int maxFrameBlocks, long maxFrameSize) {
         this.seqNum = seqNum;
-        this.config = config;
+        this.maxFrameBlocks = maxFrameBlocks;
+        this.maxFrameSize = maxFrameSize;
     }
 
+    @Override
     public int getSeqNum() {
         return seqNum;
     }
 
+    @Override
     public boolean isLast() {
         return last;
     }
@@ -53,17 +54,17 @@ public class UploadFrameContext implements SendFrameContext {
 
     @Override
     public long getRemainingDataSize() {
-        return config.getMaxFrameSize() - dataSize;
+        return maxFrameSize - dataSize;
     }
 
     @Override
     public boolean isBlockListFull() {
-        return blocks.size() >= config.getMaxFrameBlocks();
+        return blocks.size() >= maxFrameBlocks;
     }
 
     @Override
     public void addBlock(FrameBlock block) {
-        Validate.isTrue(blocks.size() < config.getMaxFrameBlocks());
+        Validate.isTrue(blocks.size() < maxFrameBlocks);
         if (logger.isDebugEnabled()) {
             logger.debug("Adding block: {}", block);
         }
@@ -73,7 +74,7 @@ public class UploadFrameContext implements SendFrameContext {
     @Override
     public void addBlock(FrameBlock block, FrameBlockStream blockStream) {
         long newSize = dataSize + blockStream.getSize();
-        Validate.isTrue(newSize <= config.getMaxFrameSize());
+        Validate.isTrue(newSize <= maxFrameSize);
         addBlock(block);
         if (logger.isDebugEnabled()) {
             logger.debug("Adding data for block: {}", blockStream);
@@ -82,6 +83,7 @@ public class UploadFrameContext implements SendFrameContext {
         dataSize = newSize;
     }
 
+    @Override
     public Frame createFrame() {
         // create frame
         Frame frame = new Frame();

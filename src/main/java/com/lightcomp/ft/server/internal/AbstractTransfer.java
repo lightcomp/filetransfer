@@ -10,7 +10,6 @@ import com.lightcomp.ft.common.TaskExecutor;
 import com.lightcomp.ft.core.TransferInfo;
 import com.lightcomp.ft.exception.TransferException;
 import com.lightcomp.ft.exception.TransferExceptionBuilder;
-import com.lightcomp.ft.server.ErrorDesc;
 import com.lightcomp.ft.server.ServerConfig;
 import com.lightcomp.ft.server.TransferDataHandler;
 import com.lightcomp.ft.server.TransferState;
@@ -33,7 +32,8 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
 
     protected final TaskExecutor executor;
 
-    protected AbstractTransfer(String transferId, TransferDataHandler handler, ServerConfig config, TaskExecutor executor) {
+    protected AbstractTransfer(String transferId, TransferDataHandler handler, ServerConfig config,
+            TaskExecutor executor) {
         this.transferId = transferId;
         this.handler = handler;
         this.config = config;
@@ -51,30 +51,25 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
     }
 
     /**
-     * Transfer busy state. <i>Impl note: specialization should override this method.</i>
-     */
-    public synchronized boolean isBusy() {
-        return status.getState() == TransferState.FINISHING;
-    }
-
-    /**
      * Returns current status, method must return status impl to allow read busy state.
      */
     public synchronized TransferStatusImpl getStatus() {
         TransferStatusImpl ts = status.copy();
-        // busy is set only to this copy because only this method reveals status impl
-        ts.setBusy(isBusy());
+        // terminal state can be reported immediately
+        if (!status.getState().isTerminal()) {
+            // busy is set only to this copy because only this method reveals status impl
+            ts.setBusy(isBusy());
+        }
         return ts;
     }
 
     /**
-     * Initializes transfer. If succeeds then transfer is able to send/receive data. Status change when fails is not needed
-     * because the server never publishes an uninitialized transfer.
+     * Initializes transfer, after that is transfer able to send/receive. In case of fail the server
+     * never publishes an uninitialized transfer.
      */
     public void init() throws TransferException {
         TransferStatus ts;
         synchronized (this) {
-            // update current state
             status.changeState(TransferState.STARTED);
             // copy status in synch block
             ts = status.copy();
@@ -82,47 +77,60 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
         handler.onTransferProgress(ts);
     }
 
-    protected abstract void checkPreparedFinish() throws FileTransferException;
+    /**
+     * Transfer busy state. <i>Impl note: specialization should override this method.</i>
+     */
+    public synchronized boolean isBusy() {
+        return status.getState() == TransferState.FINISHING;
+    }
 
     @Override
     public GenericDataType finish() throws FileTransferException {
-        ErrorBuilder eb = null;
-        // check transfer state
+        ErrorContext ec = null;
         synchronized (this) {
             checkActiveTransfer();
-            checkPreparedFinish();
-            // check transfered frame
-            if (status.getState() != TransferState.TRANSFERED) {
-                eb = new ErrorBuilder("Unable to finish transfer in current state", this).addParam("currentState",
-                        status.getState());
-                // state must be changed in same sync block as check
-                status.changeStateToFailed(eb.buildDesc());
+            ec = prepareFinish();
+            // fail transfer if fatal error
+            if (ec != null && ec.isFatal()) {
+                // state must be changed in same sync block
+                status.changeStateToFailed(ec.getDesc());
                 // notify canceling threads
                 notifyAll();
-            } else {
-                status.changeState(TransferState.FINISHING);
             }
         }
-        // handler must be called outside of sync block
-        if (eb != null) {
-            eb.log(logger);
-            handler.onTransferFailed(eb.buildDesc());
-            throw eb.buildEx();
+        // onTransferFailed must be called outside of sync block
+        if (ec != null) {
+            if (ec.isFatal()) {
+                onTransferFailed(ec);
+            }
+            throw ec.createEx();
         }
-        return createResponse();
+        return finishInternal();
     }
 
     /**
-     * Creates response, if succeeds transfer will be finished.
+     * Prepares finish. Method is called in synchronized block.
+     * 
+     * @return Returns error context if transfer failed.
      */
-    private GenericDataType createResponse() throws FileTransferException {
+    protected ErrorContext prepareFinish() {
+        // check transfered frame
+        if (status.getState() != TransferState.TRANSFERED) {
+            return new ErrorContext("Unable to finish transfer in current state", this).addParam("currentState",
+                    status.getState());
+        }
+        status.changeState(TransferState.FINISHING);
+        return null;
+    }
+
+    private GenericDataType finishInternal() throws FileTransferException {
         GenericDataType response;
         try {
             response = handler.onTransferSuccess();
         } catch (Throwable t) {
-            ErrorBuilder eb = new ErrorBuilder("Success callback of data handler cause exception", this).setCause(t);
-            transferFailed(eb);
-            throw eb.buildEx();
+            ErrorContext ec = new ErrorContext("Success callback of data handler cause exception", this).setCause(t);
+            transferFailed(ec);
+            throw ec.createEx();
         }
         synchronized (this) {
             // transfer can fail during finishing only when callback throws exception
@@ -133,45 +141,15 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
         return response;
     }
 
-    /**
-     * Handles transfer failure. If transfer is already terminated error is logged.
-     */
-    protected void transferFailed(ErrorBuilder eb) {
-        ErrorDesc desc = eb.buildDesc();
-        synchronized (this) {
-            if (status.getState().isTerminal()) {
-                // transfer already terminated
-                desc = null;
-            } else {
-                status.changeStateToFailed(desc);
-                // notify canceling threads
-                notifyAll();
-            }
-        }
-        if (desc != null) {
-            handler.onTransferFailed(desc);
-            eb.log(logger);
-        } else {
-            eb.log(logger, "Terminated trasfer thrown exception");
-        }
-    }
-
     @Override
     public synchronized void abort() throws FileTransferException {
         synchronized (this) {
             while (true) {
+                waitWhileFinishing();
+                // check terminal states
                 TransferState ts = status.getState();
-                // wait until finished or failed
-                if (ts == TransferState.FINISHING) {
-                    try {
-                        wait(100);
-                    } catch (InterruptedException e) {
-                        // ignore
-                    }
-                    continue;
-                }
                 if (ts == TransferState.FINISHED) {
-                    throw new ErrorBuilder("Finished transfer cannot be aborted", this).buildEx();
+                    throw new ErrorContext("Finished transfer cannot be aborted", this).createEx();
                 }
                 if (ts == TransferState.CANCELED || ts == TransferState.FAILED) {
                     return; // failed will be handled as canceled
@@ -188,16 +166,9 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
     public void cancel() throws TransferException {
         synchronized (this) {
             while (true) {
+                waitWhileFinishing();
+                // check terminal states
                 TransferState ts = status.getState();
-                // wait until finished or failed
-                if (ts == TransferState.FINISHING) {
-                    try {
-                        wait(100);
-                    } catch (InterruptedException e) {
-                        // ignore
-                    }
-                    continue;
-                }
                 if (ts == TransferState.FINISHED) {
                     throw new TransferExceptionBuilder("Finished transfer cannot be canceled", this).build();
                 }
@@ -219,15 +190,8 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
     public void terminate() {
         boolean canceled = false;
         synchronized (this) {
-            // wait until finished or failed
-            while (status.getState() == TransferState.FINISHING) {
-                try {
-                    wait(100);
-                } catch (InterruptedException e) {
-                    // ignore
-                }
-            }
-            // if not terminal change to canceled
+            waitWhileFinishing();
+            // if terminal job done
             if (!status.getState().isTerminal()) {
                 status.changeState(TransferState.CANCELED);
                 canceled = true;
@@ -240,65 +204,105 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
                 handler.onTransferCanceled();
             } catch (Throwable t) {
                 // exception is only logged
-                new ErrorBuilder("Cancel callback of data handler cause exception", this).setCause(t).log(logger);
+                new ErrorContext("Cancel callback of data handler cause exception", this).setCause(t).log(logger);
             }
         }
         clearResources();
     }
 
     public boolean terminateIfInactive() {
-        ErrorDesc errorDesc = null;
+        ErrorContext ec = null;
         synchronized (this) {
-            // wait until finished or failed
-            while (status.getState() == TransferState.FINISHING) {
-                try {
-                    wait(100);
-                } catch (InterruptedException e) {
-                    // ignore
-                }
-            }
-            // if not terminal change to failed
+            waitWhileFinishing();
+            // if terminal job done
             if (!status.getState().isTerminal()) {
-                // test for inactive transfer
+                // check transfer for inactive timeout
                 long timeout = config.getInactiveTimeout();
                 LocalDateTime timeoutLimit = LocalDateTime.now().minus(timeout, ChronoUnit.SECONDS);
                 LocalDateTime lastActivity = status.getLastActivity();
                 if (timeoutLimit.isBefore(lastActivity)) {
-                    return false; // transfer still active
+                    return false;
                 }
-                // transfer inactive
-                errorDesc = new ErrorBuilder("Inactivity timeout reached", this).buildDesc();
-                status.changeStateToFailed(errorDesc);
+                // transfer is inactive
+                ec = new ErrorContext("Inactivity timeout reached", this);
+                status.changeStateToFailed(ec.getDesc());
                 // notify canceling threads
                 notifyAll();
             }
         }
-        if (errorDesc != null) {
-            try {
-                handler.onTransferFailed(errorDesc);
-            } catch (Throwable t) {
-                // exception is only logged
-                new ErrorBuilder("Cancel callback of data handler cause exception", this).setCause(t).log(logger);
-            }
+        if (ec != null) {
+            onTransferFailed(ec);
         }
         clearResources();
         return true;
     }
 
+    protected abstract void clearResources();
+
+    /**
+     * Handles transfer failure. If transfer is already terminated error is logged.
+     */
+    protected void transferFailed(ErrorContext ec) {
+        boolean terminated = false;
+        synchronized (this) {
+            if (status.getState().isTerminal()) {
+                terminated = true;
+            } else {
+                status.changeStateToFailed(ec.getDesc());
+                // notify canceling threads
+                notifyAll();
+            }
+        }
+        if (terminated) {
+            ec.log(logger, "Terminated trasfer thrown exception");
+        } else {
+            onTransferFailed(ec);
+        }
+    }
+
+    /**
+     * Logs error and notifies data handler about failure. Method should't be synchronized.
+     */
+    protected void onTransferFailed(ErrorContext ec) {
+        ec.log(logger);
+        try {
+            handler.onTransferFailed(ec.getDesc());
+        } catch (Throwable t) {
+            // exception is only logged
+            new ErrorContext("Fail callback of data handler cause exception", this).setCause(t).log(logger);
+        }
+    }
+
+    /**
+     * Check if transfer is active (STARTED and TRANSFERED state), must be synchronized by caller.
+     */
     protected void checkActiveTransfer() throws FileTransferException {
         switch (status.getState()) {
+            case CREATED:
+                throw new IllegalStateException(); // just to be sure
             case FINISHING:
-                throw new ErrorBuilder("Transfer is finishing", this).buildEx(ErrorCode.BUSY);
+                throw new ErrorContext("Transfer is finishing", this).setCode(ErrorCode.BUSY).createEx();
             case FINISHED:
-                throw new ErrorBuilder("Transfer finished", this).buildEx();
+                throw new ErrorContext("Transfer finished", this).createEx();
             case CANCELED:
-                throw new ErrorBuilder("Transfer canceled", this).buildEx();
+                throw new ErrorContext("Transfer canceled", this).createEx();
             case FAILED:
-                throw ErrorBuilder.buildEx(status.getErrorDesc(), ErrorCode.FATAL);
+                throw ErrorContext.createEx(status.getErrorDesc(), ErrorCode.FATAL);
             default:
                 return; // active transfer
         }
     }
 
-    protected abstract void clearResources();
+    /**
+     * Method waits while transfer finishing, must be synchronized by caller.
+     */
+    private void waitWhileFinishing() {
+        while (status.getState() == TransferState.FINISHING) {
+            try {
+                wait(100);
+            } catch (InterruptedException e) {
+                // ignore
+            }
+        }
+    }
 }

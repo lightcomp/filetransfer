@@ -1,8 +1,8 @@
 package com.lightcomp.ft.client.operations;
 
 import com.lightcomp.ft.client.internal.ExceptionType;
-import com.lightcomp.ft.client.internal.UploadFrameContext;
 import com.lightcomp.ft.client.operations.OperationStatus.Type;
+import com.lightcomp.ft.core.send.SendFrameContext;
 import com.lightcomp.ft.wsdl.v1.FileTransferException;
 import com.lightcomp.ft.wsdl.v1.FileTransferService;
 import com.lightcomp.ft.xsd.v1.FileTransferState;
@@ -12,9 +12,9 @@ import com.lightcomp.ft.xsd.v1.TransferStatus;
 
 public class SendOperation extends AbstractOperation {
 
-    private final UploadFrameContext frameCtx;
+    private final SendFrameContext frameCtx;
 
-    public SendOperation(OperationHandler handler, FileTransferService servce, UploadFrameContext frameCtx) {
+    public SendOperation(OperationHandler handler, FileTransferService servce, SendFrameContext frameCtx) {
         super(handler, servce);
         this.frameCtx = frameCtx;
     }
