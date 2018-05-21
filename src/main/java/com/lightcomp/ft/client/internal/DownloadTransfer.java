@@ -76,6 +76,8 @@ public class DownloadTransfer extends AbstractTransfer implements RecvProgressIn
             RecvFrameProcessor rfp = RecvFrameProcessor.create(recvCtx, ro.getFrame());
             rfp.prepareData(tempDir);
             rfp.process();
+            // add processed frame num
+            frameProcessed(currSeqNum);
             // exit if last
             if (rfp.isLast()) {
                 return true;

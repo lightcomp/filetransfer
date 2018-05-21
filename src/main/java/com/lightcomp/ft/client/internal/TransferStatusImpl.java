@@ -19,6 +19,8 @@ public class TransferStatusImpl implements TransferStatus {
 
     private long transferedSize;
 
+    private int lastFrameSeqNum;
+
     public TransferStatusImpl() {
         state = TransferState.CREATED;
         lastActivity = LocalDateTime.now();
@@ -27,12 +29,13 @@ public class TransferStatusImpl implements TransferStatus {
     /**
      * Copy constructor.
      */
-    private TransferStatusImpl(TransferStatusImpl source) {
-        state = source.state;
-        lastActivity = source.lastActivity;
-        startTime = source.startTime;
-        retryCount = source.retryCount;
-        transferedSize = source.transferedSize;
+    private TransferStatusImpl(TransferStatusImpl src) {
+        state = src.state;
+        lastActivity = src.lastActivity;
+        startTime = src.startTime;
+        retryCount = src.retryCount;
+        transferedSize = src.transferedSize;
+        lastFrameSeqNum = src.lastFrameSeqNum;
     }
 
     @Override
@@ -60,10 +63,16 @@ public class TransferStatusImpl implements TransferStatus {
         return transferedSize;
     }
 
+    @Override
+    public int getLastFrameSeqNum() {
+        return lastFrameSeqNum;
+    }
+
     /* modify methods */
 
     public void resetRetryCount() {
         retryCount = 0;
+        updateActivity();
     }
 
     public void incrementRetryCount() {
@@ -77,6 +86,11 @@ public class TransferStatusImpl implements TransferStatus {
         updateActivity();
     }
 
+    public void incrementFrameSeqNum() {
+        lastFrameSeqNum++;
+        updateActivity();
+    }
+    
     public void changeState(TransferState nextState) {
         Validate.notNull(nextState);
         state = nextState;
@@ -97,6 +111,7 @@ public class TransferStatusImpl implements TransferStatus {
     @Override
     public String toString() {
         return "TransferStatusImpl [state=" + state + ", lastActivity=" + lastActivity + ", startTime=" + startTime
-                + ", retryCount=" + retryCount + ", transferedSize=" + transferedSize + "]";
+                + ", retryCount=" + retryCount + ", transferedSize=" + transferedSize + ", lastFrameSeqNum=" + lastFrameSeqNum
+                + "]";
     }
 }

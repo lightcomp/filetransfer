@@ -80,6 +80,8 @@ public class UploadRequestImpl implements UploadRequest {
 
     @Override
     public void onTransferSuccess(GenericDataType response) {
+        logger.info("Client transfer succeeded, response: {}", response);
+        
         TransferStatus ts = transfer.getStatus();
         waiter.assertEquals(TransferState.FINISHED, ts.getState());
 
@@ -92,6 +94,8 @@ public class UploadRequestImpl implements UploadRequest {
 
     @Override
     public void onTransferCanceled() {
+        logger.info("Client transfer canceled");
+        
         TransferStatus ts = transfer.getStatus();
         waiter.assertEquals(TransferState.CANCELED, ts.getState());
 
@@ -103,12 +107,14 @@ public class UploadRequestImpl implements UploadRequest {
     }
 
     @Override
-    public void onTransferFailed(Throwable cause) {
+    public void onTransferFailed() {
+        logger.info("Client transfer failed");
+        
         TransferStatus ts = transfer.getStatus();
         waiter.assertEquals(TransferState.FAILED, ts.getState());
 
         if (terminalState != TransferState.FAILED) {
-            waiter.fail("Client transfer failed, detail: " + cause.getMessage());
+            waiter.fail("Client transfer failed, detail");
         } else {
             waiter.resume();
         }

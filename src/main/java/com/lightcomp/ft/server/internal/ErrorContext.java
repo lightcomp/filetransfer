@@ -13,7 +13,7 @@ import com.lightcomp.ft.wsdl.v1.FileTransferException;
 import com.lightcomp.ft.xsd.v1.ErrorCode;
 import com.lightcomp.ft.xsd.v1.ErrorDescription;
 
-public class ErrorBuilder {
+public class ErrorContext {
 
     private final Map<String, Object> params = new LinkedHashMap<>();
 
@@ -23,67 +23,77 @@ public class ErrorBuilder {
 
     private ErrorDescImpl desc;
 
-    public ErrorBuilder(String message) {
-        this.message = Validate.notEmpty(message);
+    private ErrorCode code = ErrorCode.FATAL;
+
+    public ErrorContext(String message) {
+        this.message = Validate.notBlank(message);
     }
 
-    public ErrorBuilder(String message, TransferInfo transfer) {
+    public ErrorContext(String message, TransferInfo transfer) {
         this(message);
         setTransfer(transfer);
     }
 
-    public ErrorBuilder setTransfer(TransferInfo transfer) {
+    public ErrorContext setTransfer(TransferInfo transfer) {
         params.put("transferId", transfer.getTransferId());
         params.put("requestId", transfer.getRequestId());
         resetDesc();
         return this;
     }
 
-    public ErrorBuilder addParam(String name, Object value) {
+    public ErrorContext addParam(String name, Object value) {
         params.put(name, value);
         resetDesc();
         return this;
     }
 
-    public ErrorBuilder setCause(Throwable cause) {
+    public ErrorContext setCause(Throwable cause) {
         this.cause = cause;
         resetDesc();
         return this;
     }
 
-    public ErrorDesc buildDesc() {
-        if (desc != null) {
-            return desc;
-        }
-        desc = new ErrorDescImpl(message);
-        // copy builder parameters
-        Map<String, Object> allParams = new LinkedHashMap<>(params);
-        // prepare cause
-        if (cause != null) {
-            desc.setDetail(cause.getMessage());
-            desc.setStackTrace(cause.getStackTrace());
-            // copy missing parameters
-            if (cause instanceof TransferException) {
-                TransferException te = (TransferException) cause;
-                Map<String, Object> teParams = te.getParams();
-                if (teParams != null) {
-                    teParams.forEach(allParams::putIfAbsent);
-                }
-            }
-        }
-        // keep null if params are empty
-        if (allParams.size() > 0) {
-            desc.setParams(allParams);
+    public ErrorContext setCode(ErrorCode code) {
+        this.code = Validate.notNull(code);
+        resetDesc();
+        return this;
+    }
+
+    private void resetDesc() {
+        desc = null;
+    }
+
+    public boolean isFatal() {
+        return code == ErrorCode.FATAL;
+    }
+
+    public ErrorDesc getDesc() {
+        if (desc == null) {
+            desc = createDesc();
         }
         return desc;
     }
 
-    public FileTransferException buildEx() {
-        return buildEx(ErrorCode.FATAL);
+    private ErrorDescImpl createDesc() {
+        Map<String, Object> cpyMap = new LinkedHashMap<>(params);
+        ErrorDescImpl ed = new ErrorDescImpl(message);
+        ed.setParams(cpyMap);
+        if (cause != null) {
+            ed.setDetail(cause.getMessage());
+            ed.setStackTrace(cause.getStackTrace());
+            // copy missing attributes
+            if (cause instanceof TransferException) {
+                Map<String, Object> causeMap = ((TransferException) cause).getParams();
+                if (causeMap != null) {
+                    causeMap.forEach((n, v) -> cpyMap.putIfAbsent("cause." + n, v));
+                }
+            }
+        }
+        return ed;
     }
 
-    public FileTransferException buildEx(ErrorCode errorCode) {
-        return buildEx(buildDesc(), errorCode);
+    public FileTransferException createEx() {
+        return createEx(getDesc(), code);
     }
 
     /**
@@ -94,7 +104,7 @@ public class ErrorBuilder {
      */
     public void log(Logger logger) {
         StringBuilder sb = new StringBuilder();
-        append(buildDesc(), sb);
+        appendErrorDesc(getDesc(), sb);
         logger.error(sb.toString(), cause);
     }
 
@@ -108,20 +118,16 @@ public class ErrorBuilder {
      */
     public void log(Logger logger, String message) {
         StringBuilder sb = new StringBuilder(message);
-        append(buildDesc(), sb);
+        appendErrorDesc(getDesc(), sb);
         logger.error(sb.toString(), cause);
     }
 
-    private void resetDesc() {
-        desc = null;
-    }
-
-    private static void append(ErrorDesc desc, StringBuilder sb) {
+    private static void appendErrorDesc(ErrorDesc desc, StringBuilder sb) {
         // append description
         if (sb.length() > 0) {
-            sb.append(", ");
+            sb.append(", errorDesc=");
         }
-        sb.append("errorDesc=").append(desc.getMessage());
+        sb.append(desc.getMessage());
         // append detail
         String detail = desc.getDetail();
         if (detail != null) {
@@ -140,9 +146,9 @@ public class ErrorBuilder {
     /**
      * Builds exception from error description, stack trace is not used.
      */
-    public static FileTransferException buildEx(ErrorDesc errorDesc, ErrorCode errorCode) {
+    public static FileTransferException createEx(ErrorDesc errorDesc, ErrorCode errorCode) {
         StringBuilder sb = new StringBuilder();
-        append(errorDesc, sb);
+        appendErrorDesc(errorDesc, sb);
 
         ErrorDescription desc = new ErrorDescription();
         desc.setDetail(sb.toString());

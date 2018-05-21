@@ -8,7 +8,7 @@ public interface Transfer {
 
     void recvFrame(Frame frame) throws FileTransferException;
 
-    Frame sendFrame(long seqNum) throws FileTransferException;
+    Frame sendFrame(int seqNum) throws FileTransferException;
 
     GenericDataType finish() throws FileTransferException;
 

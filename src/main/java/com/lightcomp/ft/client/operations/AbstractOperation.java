@@ -56,19 +56,19 @@ public abstract class AbstractOperation {
     }
 
     /**
-     * @return Returns operation status when execute should terminate or null when operation wasn't executed.
+     * @return Returns operation status or null when operation wasn't executed.
      */
     protected abstract OperationStatus resolveServerStatus(TransferStatus status);
 
     /**
-     * @return Return operation status which represents finish. Can be fail when result didn't pass validation.
+     * @return Returns operation status. Can be fail when result didn't pass validation.
      */
     protected OperationStatus operationFinished() {
         return new OperationStatus(Type.SUCCESS);
     }
 
     /**
-     * @return Return operation status which represents recovery failure.
+     * @return Returns operation status which represents recovery failure.
      */
     protected OperationStatus recoveryFailed(Type type, Throwable ex, ExceptionType exType) {
         return new OperationStatus(type).setFailureCause(ex).setFailureType(exType);

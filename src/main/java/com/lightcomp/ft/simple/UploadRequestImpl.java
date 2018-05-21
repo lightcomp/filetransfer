@@ -79,7 +79,7 @@ public class UploadRequestImpl implements UploadRequest {
     }
 
     @Override
-    public void onTransferFailed(Throwable cause) {
-        logger.info("Client transfer failed, transferId=" + transfer.getTransferId(), cause);
+    public void onTransferFailed() {
+        logger.info("Client transfer failed, transferId=" + transfer.getTransferId());
     }
 }

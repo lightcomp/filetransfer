@@ -35,7 +35,7 @@ public interface TransferRequest {
     /**
      * Transfer failed callback.
      */
-    void onTransferFailed(Throwable cause);
+    void onTransferFailed();
 
     /**
      * Transfer success callback.
