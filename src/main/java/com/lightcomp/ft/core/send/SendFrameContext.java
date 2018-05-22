@@ -8,7 +8,7 @@ public interface SendFrameContext {
     int getSeqNum();
 
     boolean isLast();
-    
+
     boolean isBlockListFull();
 
     long getRemainingDataSize();
@@ -17,7 +17,7 @@ public interface SendFrameContext {
 
     void addBlock(FrameBlock block);
 
-    void addBlock(FrameBlock block, FrameBlockStream blockStream);
+    void addBlock(FrameBlock block, BlockStreamProvider streamProvider);
 
     Frame createFrame();
 }

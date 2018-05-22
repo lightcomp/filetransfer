@@ -10,7 +10,7 @@ import java.nio.file.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.lightcomp.ft.common.ChecksumGenerator;
+import com.lightcomp.ft.common.Checksum;
 import com.lightcomp.ft.common.PathUtils;
 import com.lightcomp.ft.exception.TransferException;
 import com.lightcomp.ft.exception.TransferExceptionBuilder;
@@ -23,15 +23,18 @@ public class RecvContextImpl implements RecvContext {
 
     private final Path rootDir;
 
+    private final Checksum.Algorithm checksumAlg;
+    
     private Path relativeDir;
 
     private FileWriter openWritter;
 
     private ReadableByteChannel inputChannel;
 
-    public RecvContextImpl(RecvProgressInfo progressInfo, Path rootDir) {
+    public RecvContextImpl(RecvProgressInfo progressInfo, Path rootDir, Checksum.Algorithm checksumAlg) {
         this.progressInfo = progressInfo;
         this.rootDir = rootDir;
+        this.checksumAlg = checksumAlg;
         this.relativeDir = PathUtils.ROOT;
     }
 
@@ -90,8 +93,8 @@ public class RecvContextImpl implements RecvContext {
         try {
             file = relativeDir.resolve(name);
         } catch (InvalidPathException e) {
-            throw new TransferExceptionBuilder("Invalid file name").addParam("parentPath", relativeDir).addParam("name", name)
-                    .setCause(e).build();
+            throw new TransferExceptionBuilder("Invalid file name").addParam("parentPath", relativeDir)
+                    .addParam("name", name).setCause(e).build();
         }
         Path dstFile = rootDir.resolve(file);
         try {
@@ -99,7 +102,7 @@ public class RecvContextImpl implements RecvContext {
         } catch (IOException e) {
             throw new TransferExceptionBuilder("Failed to create file").addParam("path", file).setCause(e).build();
         }
-        openWritter = new FileWriter(dstFile, size);
+        openWritter = new FileWriter(dstFile, size, checksumAlg);
     }
 
     @Override
@@ -111,22 +114,22 @@ public class RecvContextImpl implements RecvContext {
     @Override
     public void closeFile(long lastModified) throws TransferException {
         if (openWritter == null) {
-            throw new TransferExceptionBuilder("Failed to close file, no current file found").addParam("dirPath", relativeDir)
-                    .build();
+            throw new TransferExceptionBuilder("Failed to close file, no current file found")
+                    .addParam("dirPath", relativeDir).build();
         }
         byte[] checksum;
         try {
             checksum = readFileChecksum();
         } catch (IOException e) {
-            throw new TransferExceptionBuilder("Failed to read file checksum").addParam("path", openWritter.getFile()).setCause(e)
-                    .build();
+            throw new TransferExceptionBuilder("Failed to read file checksum").addParam("path", openWritter.getFile())
+                    .setCause(e).build();
         }
         openWritter.finish(lastModified, checksum);
         openWritter = null;
     }
 
     private byte[] readFileChecksum() throws IOException {
-        ByteBuffer bb = ByteBuffer.allocate(ChecksumGenerator.LENGTH);
+        ByteBuffer bb = ByteBuffer.allocate(checksumAlg.getByteLen());
         while (inputChannel.read(bb) > 0) {
             // read while channel has data and buffer is not full
         }

@@ -12,11 +12,11 @@ import com.lightcomp.ft.core.TransferIdGenerator;
  * Server configuration.
  */
 public class ServerConfig {
-   
+
     private final TransferStatusStorage transferStatusStorage;
 
-    private final TransferHandler transferHandler;   
-    
+    private final TransferHandler transferHandler;
+
     private TransferIdGenerator transferIdGenerator = new SimpleIdGenerator();
 
     private Path workDir = PathUtils.SYS_TEMP;
@@ -24,6 +24,10 @@ public class ServerConfig {
     private int threadPoolSize = 50;
 
     private int inactiveTimeout = 60 * 5;
+
+    private long maxFrameSize = 10 * 1024 * 1024;
+
+    private int maxFrameBlocks = 10000;
 
     public ServerConfig(TransferHandler transferHandler, TransferStatusStorage transferStatusStorage) {
         this.transferHandler = Validate.notNull(transferHandler);
@@ -37,7 +41,7 @@ public class ServerConfig {
     public TransferStatusStorage getTransferStatusStorage() {
         return transferStatusStorage;
     }
-    
+
     public TransferIdGenerator getTransferIdGenerator() {
         return transferIdGenerator;
     }
@@ -92,5 +96,37 @@ public class ServerConfig {
     public void setInactiveTimeout(int inactiveTimeout) {
         Validate.isTrue(inactiveTimeout > 0);
         this.inactiveTimeout = inactiveTimeout;
+    }
+
+    /**
+     * @return Maximum frame size in bytes.
+     */
+    public long getMaxFrameSize() {
+        return maxFrameSize;
+    }
+
+    /**
+     * @param maxFrameSize
+     *            maximum frame size in bytes, greater than zero
+     */
+    public void setMaxFrameSize(long maxFrameSize) {
+        Validate.isTrue(maxFrameSize > 0);
+        this.maxFrameSize = maxFrameSize;
+    }
+
+    /**
+     * @return Maximum number of blocks in one frame.
+     */
+    public int getMaxFrameBlocks() {
+        return maxFrameBlocks;
+    }
+
+    /**
+     * @param maxFrameBlocks
+     *            maximum number of blocks in one frame, greater than zero
+     */
+    public void setMaxFrameBlocks(int maxFrameBlocks) {
+        Validate.isTrue(maxFrameBlocks > 0);
+        this.maxFrameBlocks = maxFrameBlocks;
     }
 }

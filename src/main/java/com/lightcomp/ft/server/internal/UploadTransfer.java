@@ -8,6 +8,7 @@ import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.lightcomp.ft.common.Checksum;
 import com.lightcomp.ft.common.PathUtils;
 import com.lightcomp.ft.common.TaskExecutor;
 import com.lightcomp.ft.core.recv.RecvContextImpl;
@@ -41,11 +42,12 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
 
     public UploadTransfer(String transferId, UploadHandler handler, ServerConfig config, TaskExecutor executor) {
         super(transferId, handler, config, executor);
-        this.recvCtx = new RecvContextImpl(this, handler.getUploadDir());
+        this.recvCtx = new RecvContextImpl(this, handler.getUploadDir(), Checksum.Algorithm.SHA_512);
     }
 
     @Override
     public void init() throws TransferException {
+        super.init();
         // create temporary folder
         try {
             tempDir = Files.createTempDirectory(config.getWorkDir(), transferId);
@@ -55,8 +57,6 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
             eb.log(logger);
             throw eb.build();
         }
-        // call super
-        super.init();
     }
 
     @Override
@@ -187,9 +187,9 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
     }
 
     /**
-     * @return True when frame was accepted, false when transfer is terminated.
+     * @return Returns true when frame was added. If false transfer is not able to accept new frames.
      */
-    boolean frameProcessed(RecvFrameProcessor rfp) {
+    boolean addProcessedFrame(int seqNum, boolean last) {
         TransferStatus ts;
         synchronized (this) {
             if (status.getState().isTerminal()) {
@@ -197,10 +197,10 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
             }
             // integrity checks
             Validate.isTrue(status.getState() == TransferState.STARTED);
-            Validate.isTrue(status.getLastFrameSeqNum() + 1 == rfp.getSeqNum());
+            Validate.isTrue(status.getLastFrameSeqNum() + 1 == seqNum);
             // update status
             status.incrementFrameSeqNum();
-            if (rfp.isLast()) {
+            if (last) {
                 status.changeState(TransferState.TRANSFERED);
             }
             // copy status in synch block
@@ -210,12 +210,13 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
         return true;
     }
 
-    void frameProcessingFailed(ErrorContext ec) {
-        transferFailed(ec);
-    }
-
     @Override
     protected void clearResources() {
+        // stop frame worker
+        if (frameWorker != null) {
+            frameWorker.terminate();
+            frameWorker = null;
+        }
         // delete temporary files
         if (tempDir != null) {
             try {
@@ -223,10 +224,6 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
             } catch (IOException e) {
                 new ErrorContext("Failed to delete temporary upload files", this).setCause(e).log(logger);
             }
-        }
-        // stop frame worker
-        if (frameWorker != null) {
-            frameWorker.terminate();
         }
     }
 }

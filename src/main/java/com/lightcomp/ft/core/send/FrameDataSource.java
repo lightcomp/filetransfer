@@ -4,16 +4,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Collection;
-import java.util.List;
 
 import javax.activation.DataSource;
 
 public class FrameDataSource implements DataSource {
 
-    private final Collection<FrameBlockStream> blockStreams;
+    private final Collection<BlockStreamProvider> streamProviders;
 
-    public FrameDataSource(List<FrameBlockStream> blockStreams) {
-        this.blockStreams = blockStreams;
+    public FrameDataSource(Collection<BlockStreamProvider> streamProviders) {
+        this.streamProviders = streamProviders;
     }
 
     @Override
@@ -23,7 +22,7 @@ public class FrameDataSource implements DataSource {
 
     @Override
     public InputStream getInputStream() throws IOException {
-        return new FrameInputStream(blockStreams);
+        return new FrameInputStream(streamProviders);
     }
 
     @Override

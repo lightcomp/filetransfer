@@ -22,6 +22,23 @@ public class UploadFrameWorker implements Runnable {
         this.transfer = transfer;
     }
 
+    /**
+     * Adds frame processor to worker queue.
+     * 
+     * @return Returns true when added. False is returned in case of finished worker.
+     */
+    public synchronized boolean addFrame(RecvFrameProcessor rfp) {
+        Validate.notNull(rfp);
+        if (state == State.RUNNING) {
+            frameQueue.addLast(rfp);
+            return true;
+        }
+        if (state == State.FINISHED) {
+            return false;
+        }
+        throw new IllegalStateException("Worker is terminated");
+    }
+
     public synchronized void terminate() {
         if (state == State.TERMINATED || state == State.FINISHED) {
             return;
@@ -37,51 +54,32 @@ public class UploadFrameWorker implements Runnable {
         }
     }
 
-    /**
-     * Adds frame processor to worker queue.
-     * 
-     * @return Returns true when added. False is returned in case of finished worker.
-     */
-    public synchronized boolean addFrame(RecvFrameProcessor rfp) {
-        Validate.notNull(rfp);
-
-        if (state == State.RUNNING) {
-            frameQueue.addLast(rfp);
-            return true;
-        }
-        if (state == State.FINISHED) {
-            return false;
-        }
-        throw new IllegalStateException("Worker is not running");
-    }
-
     @Override
     public void run() {
         while (true) {
             RecvFrameProcessor rfp;
             synchronized (this) {
                 if (state != State.RUNNING) {
-                    break; // stopped worker
+                    break; // worker is stopping
                 }
                 if (frameQueue.isEmpty()) {
                     state = State.FINISHED;
-                    return;
+                    return; // no more frame to process
                 }
                 rfp = frameQueue.removeFirst();
             }
             try {
                 rfp.process();
-                if (!transfer.frameProcessed(rfp)) {
-                    break; // terminated transfer
+                if (!transfer.addProcessedFrame(rfp.getSeqNum(), rfp.isLast())) {
+                    break; // frame rejected
                 }
             } catch (Throwable t) {
                 ErrorContext ec = new ErrorContext("Frame processor failed", transfer)
                         .addParam("seqNum", rfp.getSeqNum()).setCause(t);
-                transfer.frameProcessingFailed(ec);
+                transfer.transferFailed(ec);
                 break; // processor failed
             }
         }
-        // terminate transfer and clear queue
         synchronized (this) {
             state = State.TERMINATED;
             frameQueue.clear();

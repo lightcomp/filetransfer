@@ -8,13 +8,16 @@ public class ChecksumByteChannel implements WritableByteChannel {
 
     private final WritableByteChannel wbch;
 
-    private final ChecksumGenerator chksmGenerator;
+    private final Checksum checksum;
 
-    private byte[] buffer = new byte[1024];
+    private long position;
 
-    public ChecksumByteChannel(WritableByteChannel wbch, ChecksumGenerator chksmGenerator) {
+    private byte[] buffer = new byte[256];
+
+    public ChecksumByteChannel(WritableByteChannel wbch, Checksum checksum, long position) {
         this.wbch = wbch;
-        this.chksmGenerator = chksmGenerator;
+        this.checksum = checksum;
+        this.position = position;
     }
 
     @Override
@@ -30,9 +33,14 @@ public class ChecksumByteChannel implements WritableByteChannel {
 
     @Override
     public int write(ByteBuffer src) throws IOException {
+        // duplicate buffer (not data) for checksum update
         ByteBuffer dsrc = src.duplicate();
+        // write to original channel
         int n = wbch.write(src);
+        // update checksum
         updateChecksum(dsrc, n);
+        // increment position
+        position += n;
         return n;
     }
 
@@ -43,6 +51,7 @@ public class ChecksumByteChannel implements WritableByteChannel {
         }
         // copy buffer
         bb.get(buffer, 0, len);
-        chksmGenerator.update(buffer, 0, len);
+        // update checksum
+        checksum.update(position, buffer, 0, len);
     }
 }

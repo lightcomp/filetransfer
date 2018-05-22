@@ -14,6 +14,7 @@ import com.lightcomp.ft.client.TransferStatus;
 import com.lightcomp.ft.client.operations.OperationStatus;
 import com.lightcomp.ft.client.operations.OperationStatus.Type;
 import com.lightcomp.ft.client.operations.RecvOperation;
+import com.lightcomp.ft.common.Checksum;
 import com.lightcomp.ft.common.PathUtils;
 import com.lightcomp.ft.core.recv.RecvContext;
 import com.lightcomp.ft.core.recv.RecvContextImpl;
@@ -52,7 +53,7 @@ public class DownloadTransfer extends AbstractTransfer implements RecvProgressIn
     protected boolean transferFrames() throws TransferException {
         try {
             createTempDir();
-            RecvContext recvCtx = new RecvContextImpl(this, downloadDir);
+            RecvContext recvCtx = new RecvContextImpl(this, downloadDir, Checksum.Algorithm.SHA_512);
             return downloadFrames(recvCtx);
         } finally {
             deleteTempDir();
@@ -92,7 +93,8 @@ public class DownloadTransfer extends AbstractTransfer implements RecvProgressIn
         try {
             tempDir = Files.createTempDirectory(config.getWorkDir(), transferId);
         } catch (IOException e) {
-            throw new TransferExceptionBuilder("Failed to create temporary download directory", this).setCause(e).build();
+            throw new TransferExceptionBuilder("Failed to create temporary download directory", this).setCause(e)
+                    .build();
         }
     }
 
@@ -101,7 +103,8 @@ public class DownloadTransfer extends AbstractTransfer implements RecvProgressIn
             try {
                 PathUtils.deleteWithChildren(tempDir);
             } catch (IOException e) {
-                new TransferExceptionBuilder("Failed to delete temporary download directory", this).setCause(e).log(logger);
+                new TransferExceptionBuilder("Failed to delete temporary download directory", this).setCause(e)
+                        .log(logger);
             }
         }
     }

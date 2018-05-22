@@ -6,9 +6,7 @@ import java.io.IOException;
  * Provides data for single frame block. Simplified interface used as a input
  * stream.
  */
-public interface FrameBlockStream {
-
-    long getSize();
+public interface BlockStream {
 
     void open() throws IOException;
 

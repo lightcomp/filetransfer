@@ -9,10 +9,10 @@ import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.lightcomp.ft.common.ChecksumGenerator;
+import com.lightcomp.ft.common.Checksum;
 import com.lightcomp.ft.core.send.items.SourceFile;
 
-class FileDataStream implements FrameBlockStream {
+public class FileDataStream implements BlockStream {
 
     private static final Logger logger = LoggerFactory.getLogger(FileDataStream.class);
 
@@ -22,36 +22,30 @@ class FileDataStream implements FrameBlockStream {
 
     private final long size;
 
-    private final ChecksumGenerator chksmGenerator;
+    private final Checksum checksum;
 
-    private final SendProgressInfo progressInfo;
+    private final FileDataProgress progress;
 
-    private final Path logPath;
+    private final Path srcPath;
 
     private ReadableByteChannel channel;
 
-    private long remaining;
+    private long position;
 
-    public FileDataStream(SourceFile srcFile, long offset, long size, ChecksumGenerator chksmGenerator,
-            SendProgressInfo progressInfo, Path logPath) {
+    public FileDataStream(SourceFile srcFile, long offset, long size, Checksum checksum, FileDataProgress progress,
+            Path srcPath) {
         this.srcFile = srcFile;
         this.offset = offset;
         this.size = size;
-        this.chksmGenerator = chksmGenerator;
-        this.progressInfo = progressInfo;
-        this.logPath = logPath;
-    }
-
-    @Override
-    public long getSize() {
-        return size;
+        this.checksum = checksum;
+        this.progress = progress;
+        this.srcPath = srcPath;
     }
 
     @Override
     public void open() throws IOException {
         Validate.isTrue(channel == null);
         channel = srcFile.openChannel(offset);
-        remaining = size;
     }
 
     @Override
@@ -62,25 +56,24 @@ class FileDataStream implements FrameBlockStream {
         if (len == 0) {
             return 0;
         }
-        if (remaining == 0) {
+        if (position == size) {
             return -1;
         }
         // adjust length by remaining bytes
-        len = (int) Math.min(remaining, len);
+        len = (int) Math.min(size - position, len);
         // read data from source file
         ByteBuffer bb = ByteBuffer.wrap(b, off, len);
         if (channel.read(bb) < len) {
-            String message = "Data stream of source file ended prematurely, path=" + logPath;
+            String message = "Data stream of source file ended prematurely, path=" + srcPath;
             logger.error(message);
             throw new IOException(message);
         }
         // update checksum generator if present
-        if (chksmGenerator != null) {
-            chksmGenerator.update(b, off, len);
-        }
-        remaining -= len;
+        checksum.update(position, b, off, len);
+        // increment position
+        position += len;
         // report progress
-        progressInfo.onDataSend(len);
+        progress.update(position);
         return len;
     }
 
@@ -90,6 +83,5 @@ class FileDataStream implements FrameBlockStream {
             channel.close();
             channel = null;
         }
-        remaining = 0;
     }
 }

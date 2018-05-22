@@ -17,6 +17,7 @@ import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.lightcomp.ft.common.Checksum;
 import com.lightcomp.ft.common.ChecksumByteChannel;
 import com.lightcomp.ft.common.ChecksumGenerator;
 import com.lightcomp.ft.exception.TransferException;
@@ -34,10 +35,10 @@ class FileWriter {
 
     private final ChecksumGenerator chksmGenerator;
 
-    public FileWriter(Path file, long size) {
+    public FileWriter(Path file, long size, Checksum.Algorithm checksumAlg) {
         this.file = file;
         this.size = size;
-        this.chksmGenerator = ChecksumGenerator.create();
+        this.chksmGenerator = ChecksumGenerator.create(checksumAlg);
     }
 
     public Path getFile() {
@@ -62,7 +63,7 @@ class FileWriter {
         try (SeekableByteChannel sbch = Files.newByteChannel(file, StandardOpenOption.APPEND)) {
             Validate.isTrue(sbch.position() == offset);
             // wrap channel for checksum calculating
-            try (WritableByteChannel wbch = new ChecksumByteChannel(sbch, chksmGenerator)) {
+            try (WritableByteChannel wbch = new ChecksumByteChannel(sbch, chksmGenerator, offset)) {
                 copyData(rbch, wbch, length);
             }
         } catch (IOException e) {
@@ -78,11 +79,11 @@ class FileWriter {
                     .addParam("fileSize", size).addParam("writtenSize", writtenSize).build();
         }
         // validate checksum
-        byte[] chksm = chksmGenerator.generate();
+        byte[] genChecksum = chksmGenerator.generate();
         if (logger.isDebugEnabled()) {
-            logger.debug("File={}, SHA512={}", file, DatatypeConverter.printHexBinary(chksm));
+            logger.debug("File={}, SHA512={}", file, DatatypeConverter.printHexBinary(genChecksum));
         }
-        if (!Arrays.equals(chksm, checksum)) {
+        if (!Arrays.equals(genChecksum, checksum)) {
             throw new TransferExceptionBuilder("File checksums does not match").addParam("path", file).build();
         }
         // update last modification
@@ -111,7 +112,8 @@ class FileWriter {
                     break;
                 }
             } catch (Throwable t) {
-                throw new TransferExceptionBuilder("Failed to read file data").addParam("path", file).setCause(t).build();
+                throw new TransferExceptionBuilder("Failed to read file data").addParam("path", file).setCause(t)
+                        .build();
             }
             // flip buffer for write
             bb.flip();
@@ -122,7 +124,8 @@ class FileWriter {
                 // destination file must be large enough
                 Validate.isTrue(!bb.hasRemaining());
             } catch (Throwable t) {
-                throw new TransferExceptionBuilder("Failed to write file data").addParam("path", file).setCause(t).build();
+                throw new TransferExceptionBuilder("Failed to write file data").addParam("path", file).setCause(t)
+                        .build();
             }
             length -= bb.limit();
             bb.rewind();

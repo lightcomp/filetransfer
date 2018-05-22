@@ -7,17 +7,17 @@ import java.util.Iterator;
 
 public class FrameInputStream extends InputStream {
 
-    private final Iterator<FrameBlockStream> blockStreamIt;
+    private final Iterator<BlockStreamProvider> streamProviderIt;
 
-    private FrameBlockStream currStream;
+    private BlockStream currStream;
 
     private long available;
 
     private boolean closed;
 
-    public FrameInputStream(Collection<FrameBlockStream> blockStreams) {
-        this.blockStreamIt = blockStreams.iterator();
-        this.available = blockStreams.stream().mapToLong(FrameBlockStream::getSize).sum();
+    public FrameInputStream(Collection<BlockStreamProvider> streamProviders) {
+        this.streamProviderIt = streamProviders.iterator();
+        this.available = streamProviders.stream().mapToLong(BlockStreamProvider::getStreamSize).sum();
     }
 
     @Override
@@ -46,14 +46,14 @@ public class FrameInputStream extends InputStream {
             }
             // prepare current block data
             if (currStream == null) {
-                if (!blockStreamIt.hasNext()) {
+                if (!streamProviderIt.hasNext()) {
                     // no more blocks
                     if (read == 0) {
                         read = -1;
                     }
                     break;
                 }
-                currStream = blockStreamIt.next();
+                currStream = streamProviderIt.next().create();
                 currStream.open();
             }
             // read block data

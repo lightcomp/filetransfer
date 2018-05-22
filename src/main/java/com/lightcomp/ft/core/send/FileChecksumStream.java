@@ -8,40 +8,32 @@ import javax.xml.bind.DatatypeConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.lightcomp.ft.common.ChecksumGenerator;
+import com.lightcomp.ft.common.Checksum;
 
-class FileChksmStream implements FrameBlockStream {
+public class FileChecksumStream implements BlockStream {
 
-    private static final Logger logger = LoggerFactory.getLogger(FileChksmStream.class);
+    private static final Logger logger = LoggerFactory.getLogger(FileChecksumStream.class);
 
-    private final ChecksumGenerator chksmGenerator;
+    private final Checksum checksum;
 
-    private final Path logPath;
+    private final Path srcPath;
 
     private byte[] arrChksm;
 
     private int remaining;
 
-    public FileChksmStream(ChecksumGenerator chksmGenerator, byte[] arrChksm, Path logPath) {
-        this.chksmGenerator = chksmGenerator;
-        this.arrChksm = arrChksm;
-        this.logPath = logPath;
-    }
-
-    @Override
-    public long getSize() {
-        return ChecksumGenerator.LENGTH;
+    public FileChecksumStream(Checksum checksum, Path srcPath) {
+        this.checksum = checksum;
+        this.srcPath = srcPath;
+        this.remaining = checksum.getAlgorithm().getByteLen();
     }
 
     @Override
     public void open() throws IOException {
-        if (arrChksm == null) {
-            arrChksm = chksmGenerator.generate();
-            if (logger.isDebugEnabled()) {
-                logger.debug("File={}, SHA512={}", logPath, DatatypeConverter.printHexBinary(arrChksm));
-            }
+        arrChksm = checksum.generate();
+        if (logger.isDebugEnabled()) {
+            logger.debug("File={}, SHA512={}", srcPath, DatatypeConverter.printHexBinary(arrChksm));
         }
-        remaining = arrChksm.length;
     }
 
     @Override
@@ -67,6 +59,5 @@ class FileChksmStream implements FrameBlockStream {
     @Override
     public void close() throws IOException {
         arrChksm = null;
-        remaining = 0;
     }
 }

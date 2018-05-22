@@ -3,7 +3,9 @@ package com.lightcomp.ft.core.send;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 
+import com.lightcomp.ft.common.Checksum;
 import com.lightcomp.ft.common.ChecksumGenerator;
+import com.lightcomp.ft.common.ChecksumHolder;
 import com.lightcomp.ft.core.blocks.FileBeginBlockImpl;
 import com.lightcomp.ft.core.blocks.FileDataBlockImpl;
 import com.lightcomp.ft.core.blocks.FileEndBlockImpl;
@@ -17,24 +19,20 @@ class FileSplitter {
 
     private final long size;
 
-    private final ChecksumGenerator chksmGenerator;
+    private final Checksum checksum;
 
-    private final byte[] chksm;
+    private final FileDataProgress progress;
 
-    private final SendProgressInfo progressInfo;
-
-    private final Path logPath;
+    private final Path srcPath;
 
     private long offset = -1;
 
-    private FileSplitter(SourceFile srcFile, long size, ChecksumGenerator chksmGenerator, byte[] chksm,
-            SendProgressInfo progressInfo, Path logPath) {
+    private FileSplitter(SourceFile srcFile, long size, Checksum checksum, FileDataProgress progress, Path srcPath) {
         this.srcFile = srcFile;
         this.size = size;
-        this.chksmGenerator = chksmGenerator;
-        this.chksm = chksm;
-        this.progressInfo = progressInfo;
-        this.logPath = logPath;
+        this.checksum = checksum;
+        this.progress = progress;
+        this.srcPath = srcPath;
     }
 
     /**
@@ -75,15 +73,16 @@ class FileSplitter {
 
     private boolean addEndBlock(SendFrameContext frameCtx) {
         long remFrameSize = frameCtx.getRemainingDataSize();
-        long size = ChecksumGenerator.LENGTH;
+        long size = checksum.getAlgorithm().getByteLen();
         if (remFrameSize < size || frameCtx.isBlockListFull()) {
             return false;
         }
         FileEndBlockImpl b = new FileEndBlockImpl();
         b.setLm(srcFile.getLastModified());
-        FrameBlockStream bs = new FileChksmStream(chksmGenerator, chksm, logPath);
 
-        frameCtx.addBlock(b, bs);
+        FileChecksumStreamProvider fchsp = new FileChecksumStreamProvider(checksum, srcPath);
+
+        frameCtx.addBlock(b, fchsp);
         offset += size;
 
         return true;
@@ -99,9 +98,11 @@ class FileSplitter {
         FileDataBlockImpl b = new FileDataBlockImpl();
         b.setDs(blockSize);
         b.setOff(offset);
-        FrameBlockStream bs = new FileDataStream(srcFile, offset, blockSize, chksmGenerator, progressInfo, logPath);
 
-        frameCtx.addBlock(b, bs);
+        FileDataStreamProvider fdsp = new FileDataStreamProvider(srcFile, remFrameSize, blockSize, checksum, progress,
+                srcPath);
+
+        frameCtx.addBlock(b, fdsp);
         offset += blockSize;
 
         return true;
@@ -109,7 +110,7 @@ class FileSplitter {
 
     public static FileSplitter create(SourceFile srcFile, Path parentPath, SendProgressInfo progressInfo)
             throws TransferException {
-        // validate base attributes
+        // validate file name and create source path mainly for logging
         Path path;
         try {
             path = parentPath.resolve(srcFile.getName());
@@ -117,21 +118,27 @@ class FileSplitter {
             throw new TransferExceptionBuilder("Invalid source file name").addParam("parentPath", parentPath)
                     .addParam("name", srcFile.getName()).setCause(e).build();
         }
+        // validate file size and copy value to be sure nobody will change it
         long size = srcFile.getSize();
         if (size < 0) {
-            throw new TransferExceptionBuilder("Invalid source file size").addParam("path", path).addParam("size", size).build();
+            throw new TransferExceptionBuilder("Invalid source file size").addParam("path", path).addParam("size", size)
+                    .build();
         }
-        // validate checksum or initialize generator
-        ChecksumGenerator chksmGenerator = null;
-        byte[] chksm = srcFile.getChecksum();
-        if (chksm != null) {
-            if (chksm.length != ChecksumGenerator.LENGTH) {
-                throw new TransferExceptionBuilder("File checksum has invalid length").addParam("path", path)
-                        .addParam("checksumLength", chksm.length).build();
+        Checksum checksum = createChecksum(Checksum.Algorithm.SHA_512, srcFile.getChecksum(), path);
+        FileDataProgress progress = new FileDataProgress(progressInfo);
+        return new FileSplitter(srcFile, size, checksum, progress, path);
+    }
+
+    private static Checksum createChecksum(Checksum.Algorithm checksumAlg, byte[] checksum, Path srcPath)
+            throws TransferException {
+        if (checksum != null) {
+            if (checksumAlg.getByteLen() != checksum.length) {
+                throw new TransferExceptionBuilder("File checksum has invalid length")
+                        .addParam("algorithm", checksumAlg.getRealName())
+                        .addParam("definedLen", checksumAlg.getByteLen()).addParam("chksmLen", checksum.length).build();
             }
-        } else {
-            chksmGenerator = ChecksumGenerator.create();
+            return new ChecksumHolder(checksumAlg, checksum);
         }
-        return new FileSplitter(srcFile, size, chksmGenerator, chksm, progressInfo, path);
+        return ChecksumGenerator.create(checksumAlg);
     }
 }

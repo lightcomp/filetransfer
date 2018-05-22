@@ -5,76 +5,69 @@ import java.security.NoSuchAlgorithmException;
 
 import org.apache.commons.lang3.Validate;
 
-public class ChecksumGenerator {
+public class ChecksumGenerator implements Checksum {
 
-    public static final String ALGORITHM = "SHA-512";
-
-    public static final byte LENGTH = 64;
+    private final Algorithm algorithm;
 
     private final MessageDigest md;
 
     // total number of processed bytes
     private long numProcessed;
 
-    // current data stream position
-    private long currStreamPos;
+    private byte[] result;
 
-    private ChecksumGenerator(MessageDigest md) {
+    private ChecksumGenerator(Algorithm algorithm, MessageDigest md) {
+        this.algorithm = algorithm;
         this.md = md;
     }
 
-    public long getNumProcessed() {
+    @Override
+    public Algorithm getAlgorithm() {
+        return algorithm;
+    }
+
+    /**
+     * Total number of bytes processed from data.
+     */
+    public synchronized long getNumProcessed() {
         return numProcessed;
     }
 
-    public void setStreamPos(long streamPos) {
-        Validate.isTrue(streamPos >= 0 && streamPos <= numProcessed);
-        currStreamPos = streamPos;
-    }
-
-    /**
-     * @param input
-     *            the array of bytes
-     * @param offset
-     *            the offset to start from in the array of bytes
-     * @param length
-     *            the number of bytes to use, starting at offset
-     */
-    public void update(byte[] input, int offset, int length) {
-        long posUpdate = currStreamPos + length;
+    @Override
+    public synchronized void update(long pos, byte[] b, int off, int len) {
+        long newPos = pos += len;
+        // when result generated just check boundaries
+        if (result != null) {
+            Validate.isTrue(newPos <= numProcessed);
+            return;
+        }
         // check if more bytes were processed than is current position
-        if (posUpdate > numProcessed) {
+        if (newPos > numProcessed) {
             // calculate new offset and length for checksum
-            int newLen = (int) (posUpdate - numProcessed);
-            int newOff = offset + (length - newLen);
+            int newLen = (int) (newPos - numProcessed);
+            int newOff = off + (len - newLen);
             // update checksum
-            md.update(input, newOff, newLen);
+            md.update(b, newOff, newLen);
             // increment number of bytes processed
             numProcessed += newLen;
         }
-        currStreamPos = posUpdate;
     }
 
-    /**
-     * Generates checksum. The generator is reset after this call is made.
-     */
-    public byte[] generate() {
-        byte[] arr = md.digest();
-        numProcessed = 0;
-        currStreamPos = 0;
-        return arr;
+    @Override
+    public synchronized byte[] generate() {
+        if (result == null) {
+            result = md.digest();
+        }
+        return result;
     }
 
-    /**
-     * Creates checksum generator with hash algorithm SHA-512.
-     */
-    public static ChecksumGenerator create() {
+    public static ChecksumGenerator create(Algorithm algorithm) {
         MessageDigest md;
         try {
-            md = MessageDigest.getInstance(ALGORITHM);
+            md = MessageDigest.getInstance(algorithm.getRealName());
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
-        return new ChecksumGenerator(md);
+        return new ChecksumGenerator(algorithm, md);
     }
 }
