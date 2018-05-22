@@ -7,14 +7,15 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.apache.commons.lang3.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TaskExecutor {
 
-    /**
-     * Internal state. Do not change definition order!
-     */
+    private static final Logger logger = LoggerFactory.getLogger(TaskExecutor.class);
+
     private enum State {
-        INIT, RUNNING, STOPPING, TERMINATED
+        RUNNING, STOPPING, TERMINATED
     }
 
     private final LinkedList<Runnable> taskQueue = new LinkedList<>();
@@ -25,56 +26,57 @@ public class TaskExecutor {
 
     private final int threadPoolSize;
 
-    private volatile State state = State.INIT;
+    private final String threadNamePostfix;
 
-    public TaskExecutor(int threadPoolSize) {
+    private State state = State.TERMINATED;
+
+    public TaskExecutor(int threadPoolSize, String threadNamePostfix) {
         Validate.isTrue(threadPoolSize > 0);
 
         this.processingTasks = new ArrayList<>(threadPoolSize);
         this.executorService = Executors.newFixedThreadPool(threadPoolSize);
         this.threadPoolSize = threadPoolSize;
+        this.threadNamePostfix = threadNamePostfix;
     }
 
     /**
      * Start async queue processing.
      */
     public synchronized void start() {
-        Validate.isTrue(state == State.INIT);
+        Validate.isTrue(state == State.TERMINATED);
 
         state = State.RUNNING;
-        Thread managerThread = new Thread(this::run, "TaskExecutorManager");
+        Thread managerThread = new Thread(this::runManager,
+                "TaskExecutorManager_" + threadNamePostfix + "_" + System.identityHashCode(this));
         managerThread.start();
     }
 
     /**
-     * Caller stop async queue processing. This operation will block caller thread
-     * until manager thread does not terminate.
-     *
-     * When terminated no more tasks will be passed to execution.
+     * Caller stop async queue processing. This operation will block caller thread until task executor
+     * does not terminate.
      */
     public synchronized void stop() {
-        if (state == State.RUNNING) {
-            state = State.STOPPING;
-            // notify manager thread about stopping
-            notifyAll();
-            // wait for termination
-            while (state != State.TERMINATED) {
-                try {
-                    wait(100);
-                } catch (InterruptedException e) {
-                    // ignore
-                }
+        if (state == State.TERMINATED) {
+            return;
+        }
+        state = State.STOPPING;
+        // notify manager thread about stopping
+        notifyAll();
+        // wait for termination
+        while (state != State.TERMINATED) {
+            try {
+                wait(100);
+            } catch (InterruptedException e) {
+                // ignore
             }
         }
     }
 
     /**
      * Adds task to queue for processing.
-     *
-     * @return False when task already in queue.
      */
     public synchronized void addTask(Runnable task) {
-        Validate.isTrue(state.ordinal() < State.STOPPING.ordinal());
+        Validate.isTrue(state == State.RUNNING);
         Validate.notNull(task);
 
         taskQueue.addLast(task);
@@ -84,38 +86,58 @@ public class TaskExecutor {
         }
     }
 
-    private synchronized void run() {
+    private synchronized void runManager() {
         while (state == State.RUNNING) {
+            // wait if maximum of processing task reached or taskQueue is empty
             if (processingTasks.size() >= threadPoolSize || taskQueue.isEmpty()) {
                 try {
-                    wait();  // TODO: test why timeout needed
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Task executor manager waiting ...");
+                    }
+                    wait();
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Task executor manager woke up, processingTasks={}, queuedTasks={}, state={}",
+                                processingTasks.size(), taskQueue.size(), state);
+                    }
                 } catch (InterruptedException e) {
-                    break;
+                    // ignore
                 }
                 continue;
             }
-
+            // execute next task from queue
             Runnable task = taskQueue.removeFirst();
-
             processingTasks.add(task);
             executorService.submit(() -> {
                 try {
                     task.run();
                 } finally {
-                    onTaskFinished(task);
+                    taskFinished(task);
                 }
             });
+        }
+        stopManager();
+    }
+
+    private void stopManager() {
+        // wait for currently processing tasks
+        while (processingTasks.size() > 0) {
+            try {
+                wait();
+            } catch (InterruptedException e) {
+                // ignore
+            }
+        }
+        if (logger.isDebugEnabled()) {
+            logger.debug("Task executor stopped");
         }
         state = State.TERMINATED;
         // notify stopping thread about termination
         notifyAll();
     }
 
-    private synchronized void onTaskFinished(Runnable task) {
+    private synchronized void taskFinished(Runnable task) {
         processingTasks.remove(task);
         // notify manager thread about ended task
-        if (taskQueue.size() > 0) {
-            notifyAll();
-        }
+        notifyAll();
     }
 }

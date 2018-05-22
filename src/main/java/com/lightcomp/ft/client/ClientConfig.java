@@ -4,12 +4,14 @@ import java.nio.file.Path;
 
 import org.apache.commons.lang3.Validate;
 
+import com.lightcomp.ft.common.Checksum.Algorithm;
 import com.lightcomp.ft.common.PathUtils;
+import com.lightcomp.ft.core.send.SendConfig;
 
 /**
  * Client configuration.
  */
-public final class ClientConfig {
+public final class ClientConfig implements SendConfig {
 
     private final String address;
 
@@ -24,6 +26,8 @@ public final class ClientConfig {
     private long maxFrameSize = 10 * 1024 * 1024;
 
     private int maxFrameBlocks = 10000;
+
+    private Algorithm checksumAlg = Algorithm.SHA_512;
 
     private boolean soapLogging;
 
@@ -106,25 +110,21 @@ public final class ClientConfig {
         this.recoveryDelay = recoveryDelay;
     }
 
-    /**
-     * @return Maximum frame size in bytes.
-     */
+    @Override
     public long getMaxFrameSize() {
         return maxFrameSize;
     }
 
     /**
      * @param maxFrameSize
-     *            maximum frame size in bytes, greater than zero
+     *            maximum frame size in bytes, must be at least equal to checksum byte length
      */
     public void setMaxFrameSize(long maxFrameSize) {
-        Validate.isTrue(maxFrameSize > 0);
+        Validate.isTrue(maxFrameSize > checksumAlg.getByteLen());
         this.maxFrameSize = maxFrameSize;
     }
 
-    /**
-     * @return Maximum number of blocks in one frame.
-     */
+    @Override
     public int getMaxFrameBlocks() {
         return maxFrameBlocks;
     }
@@ -136,6 +136,19 @@ public final class ClientConfig {
     public void setMaxFrameBlocks(int maxFrameBlocks) {
         Validate.isTrue(maxFrameBlocks > 0);
         this.maxFrameBlocks = maxFrameBlocks;
+    }
+
+    @Override
+    public Algorithm getChecksumAlg() {
+        return checksumAlg;
+    }
+
+    /**
+     * @param checksumAlg
+     *            checksum algorithm, not-null
+     */
+    public void setChecksumAlg(Algorithm checksumAlg) {
+        this.checksumAlg = Validate.notNull(checksumAlg);
     }
 
     /**

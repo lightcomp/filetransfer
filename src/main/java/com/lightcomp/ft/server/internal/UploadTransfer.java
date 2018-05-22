@@ -8,7 +8,6 @@ import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.lightcomp.ft.common.Checksum;
 import com.lightcomp.ft.common.PathUtils;
 import com.lightcomp.ft.common.TaskExecutor;
 import com.lightcomp.ft.core.recv.RecvContextImpl;
@@ -42,7 +41,7 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
 
     public UploadTransfer(String transferId, UploadHandler handler, ServerConfig config, TaskExecutor executor) {
         super(transferId, handler, config, executor);
-        this.recvCtx = new RecvContextImpl(this, handler.getUploadDir(), Checksum.Algorithm.SHA_512);
+        this.recvCtx = new RecvContextImpl(this, handler.getUploadDir(), config.getChecksumAlg());
     }
 
     @Override
@@ -221,6 +220,7 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
         if (tempDir != null) {
             try {
                 PathUtils.deleteWithChildren(tempDir);
+                tempDir = null;
             } catch (IOException e) {
                 new ErrorContext("Failed to delete temporary upload files", this).setCause(e).log(logger);
             }

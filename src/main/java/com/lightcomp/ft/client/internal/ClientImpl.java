@@ -27,7 +27,7 @@ public class ClientImpl implements Client {
     protected FileTransferService service;
 
     public ClientImpl(ClientConfig config) {
-        this.transferExecutor = new TaskExecutor(config.getThreadPoolSize());
+        this.transferExecutor = new TaskExecutor(config.getThreadPoolSize(), "client");
         this.config = config;
     }
 

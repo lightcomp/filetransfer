@@ -25,7 +25,7 @@ public class UploadFrameWorker implements Runnable {
     /**
      * Adds frame processor to worker queue.
      * 
-     * @return Returns true when added. False is returned in case of finished worker.
+     * @return Returns false when worker is finished.
      */
     public synchronized boolean addFrame(RecvFrameProcessor rfp) {
         Validate.notNull(rfp);
@@ -60,11 +60,12 @@ public class UploadFrameWorker implements Runnable {
             RecvFrameProcessor rfp;
             synchronized (this) {
                 if (state != State.RUNNING) {
-                    break; // worker is stopping
+                    state = State.TERMINATED;
+                    return; // worker is stopping
                 }
                 if (frameQueue.isEmpty()) {
                     state = State.FINISHED;
-                    return; // no more frame to process
+                    return; // no more frame
                 }
                 rfp = frameQueue.removeFirst();
             }

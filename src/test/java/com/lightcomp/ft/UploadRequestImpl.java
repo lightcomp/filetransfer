@@ -114,7 +114,7 @@ public class UploadRequestImpl implements UploadRequest {
         waiter.assertEquals(TransferState.FAILED, ts.getState());
 
         if (terminalState != TransferState.FAILED) {
-            waiter.fail("Client transfer failed, detail");
+            waiter.fail("Client transfer failed");
         } else {
             waiter.resume();
         }

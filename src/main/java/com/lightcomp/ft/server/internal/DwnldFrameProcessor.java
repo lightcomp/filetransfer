@@ -14,7 +14,7 @@ public class DwnldFrameProcessor {
 
     private final int seqNum;
 
-    private final DownloadTransfer transfer;
+    private final DwnldTransfer transfer;
 
     private final TransferDataHandler handler;
 
@@ -24,7 +24,7 @@ public class DwnldFrameProcessor {
 
     private TransferStatus statusCpy;
 
-    public DwnldFrameProcessor(int seqNum, DownloadTransfer transfer, TransferDataHandler handler) {
+    public DwnldFrameProcessor(int seqNum, DwnldTransfer transfer, TransferDataHandler handler) {
         this.seqNum = seqNum;
         this.transfer = transfer;
         this.handler = handler;

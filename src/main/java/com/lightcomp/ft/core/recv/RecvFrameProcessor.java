@@ -59,6 +59,9 @@ public class RecvFrameProcessor {
         return last;
     }
 
+    /**
+     * Receives data from request (MTOM data handler) for future processing.
+     */
     public void prepareData(Path workDir) throws TransferException {
         Validate.isTrue(dataFile == null);
         // create temporary file

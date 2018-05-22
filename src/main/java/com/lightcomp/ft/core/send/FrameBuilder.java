@@ -3,25 +3,51 @@ package com.lightcomp.ft.core.send;
 import java.util.Iterator;
 import java.util.LinkedList;
 
+import org.apache.commons.lang3.Validate;
+
 import com.lightcomp.ft.core.blocks.DirBeginBlockImpl;
 import com.lightcomp.ft.core.blocks.DirEndBlockImpl;
 import com.lightcomp.ft.core.send.items.SourceItem;
 import com.lightcomp.ft.exception.TransferException;
 
-public class FrameBlockBuilder {
+/**
+ * Frame builder, builds frame in sequence from first to last one. Implementation is not thread
+ * safe.
+ */
+public class FrameBuilder {
 
     private final LinkedList<DirContext> dirStack = new LinkedList<>();
 
     private final SendProgressInfo progressInfo;
 
+    private final SendConfig config;
+
     private FileSplitter currSplitter;
 
-    public FrameBlockBuilder(Iterator<SourceItem> itemIt, SendProgressInfo progressInfo) {
+    private int currSeqNum;
+
+    private boolean lastFrameBuilt;
+
+    public FrameBuilder(Iterator<SourceItem> itemIt, SendProgressInfo progressInfo, SendConfig config) {
         dirStack.add(DirContext.createRoot(itemIt));
         this.progressInfo = progressInfo;
+        this.config = config;
     }
 
-    public void build(SendFrameContext frameCtx) throws TransferException {
+    public Object getCurrentSeqNum() {
+        return currSeqNum;
+    }
+
+    public SendFrameContext build() throws TransferException {
+        Validate.isTrue(!lastFrameBuilt);
+
+        currSeqNum++;
+        SendFrameContextImpl frameCtx = new SendFrameContextImpl(currSeqNum, config);
+        buildBlocks(frameCtx);
+        return frameCtx;
+    }
+
+    private void buildBlocks(SendFrameContextImpl frameCtx) throws TransferException {
         while (dirStack.size() > 0) {
             // add all blocks from current file first
             if (currSplitter != null) {
@@ -33,12 +59,12 @@ public class FrameBlockBuilder {
             // get last directory and create begin/end if needed
             DirContext dir = dirStack.getLast();
             if (!dir.isStarted()) {
-                if (!prepareDirBegin(dir, frameCtx)) {
+                if (!addDirBegin(dir, frameCtx)) {
                     return; // frame filled
                 }
             }
             if (!dir.hasNextItem()) {
-                if (!prepareDirEnd(dir, frameCtx)) {
+                if (!addDirEnd(dir, frameCtx)) {
                     return; // frame filled
                 }
                 dirStack.removeLast();
@@ -50,19 +76,17 @@ public class FrameBlockBuilder {
                 DirContext childDir = DirContext.create(item.asDir(), dir.getPath());
                 dirStack.addLast(childDir);
             } else {
-                currSplitter = FileSplitter.create(item.asFile(), dir.getPath(), progressInfo);
+                currSplitter = FileSplitter.create(item.asFile(), dir.getPath(), progressInfo, config.getChecksumAlg());
             }
         }
         frameCtx.setLast(true);
+        lastFrameBuilt = true;
     }
 
     /**
-     * 
-     * @param dirCtx
-     * @param frameCtx
-     * @return Return true if dirBegin was prepared. Return false if dirBegin cannot be add to the current frame (frame is full)
+     * @return Return true if dir begin block was added. Return false if frame is full.
      */
-    private boolean prepareDirBegin(DirContext dirCtx, SendFrameContext frameCtx) {
+    private boolean addDirBegin(DirContext dirCtx, SendFrameContextImpl frameCtx) {
         // Do not send dirBegin for root folder
         if (dirStack.size() == 1) {
             return true;
@@ -77,7 +101,10 @@ public class FrameBlockBuilder {
         return true;
     }
 
-    private boolean prepareDirEnd(DirContext dirCtx, SendFrameContext frameCtx) {
+    /**
+     * @return Return true if dir end block was added. Return false if frame is full.
+     */
+    private boolean addDirEnd(DirContext dirCtx, SendFrameContextImpl frameCtx) {
         if (dirStack.size() == 1) {
             return true;
         }

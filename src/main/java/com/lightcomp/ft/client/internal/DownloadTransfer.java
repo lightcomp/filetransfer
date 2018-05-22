@@ -14,7 +14,6 @@ import com.lightcomp.ft.client.TransferStatus;
 import com.lightcomp.ft.client.operations.OperationStatus;
 import com.lightcomp.ft.client.operations.OperationStatus.Type;
 import com.lightcomp.ft.client.operations.RecvOperation;
-import com.lightcomp.ft.common.Checksum;
 import com.lightcomp.ft.common.PathUtils;
 import com.lightcomp.ft.core.recv.RecvContext;
 import com.lightcomp.ft.core.recv.RecvContextImpl;
@@ -53,7 +52,7 @@ public class DownloadTransfer extends AbstractTransfer implements RecvProgressIn
     protected boolean transferFrames() throws TransferException {
         try {
             createTempDir();
-            RecvContext recvCtx = new RecvContextImpl(this, downloadDir, Checksum.Algorithm.SHA_512);
+            RecvContext recvCtx = new RecvContextImpl(this, downloadDir, config.getChecksumAlg());
             return downloadFrames(recvCtx);
         } finally {
             deleteTempDir();

@@ -31,10 +31,10 @@ public class SendFrameContextImpl implements SendFrameContext {
 
     private boolean last;
 
-    public SendFrameContextImpl(int seqNum, int maxFrameBlocks, long maxFrameSize) {
+    public SendFrameContextImpl(int seqNum, SendConfig config) {
         this.seqNum = seqNum;
-        this.maxFrameBlocks = maxFrameBlocks;
-        this.maxFrameSize = maxFrameSize;
+        this.maxFrameBlocks = config.getMaxFrameBlocks();
+        this.maxFrameSize = config.getMaxFrameSize();
     }
 
     @Override
@@ -47,22 +47,18 @@ public class SendFrameContextImpl implements SendFrameContext {
         return last;
     }
 
-    @Override
     public void setLast(boolean last) {
         this.last = last;
     }
 
-    @Override
     public long getRemainingDataSize() {
         return maxFrameSize - dataSize;
     }
 
-    @Override
     public boolean isBlockListFull() {
         return blocks.size() >= maxFrameBlocks;
     }
 
-    @Override
     public void addBlock(FrameBlock block) {
         Validate.isTrue(blocks.size() < maxFrameBlocks);
         if (logger.isDebugEnabled()) {
@@ -71,7 +67,6 @@ public class SendFrameContextImpl implements SendFrameContext {
         blocks.add(block);
     }
 
-    @Override
     public void addBlock(FrameBlock block, BlockStreamProvider streamProvider) {
         long newSize = dataSize + streamProvider.getStreamSize();
         Validate.isTrue(newSize <= maxFrameSize);

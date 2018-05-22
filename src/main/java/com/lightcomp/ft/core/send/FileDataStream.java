@@ -40,6 +40,7 @@ public class FileDataStream implements BlockStream {
         this.checksum = checksum;
         this.progress = progress;
         this.srcPath = srcPath;
+        this.position = offset;
     }
 
     @Override

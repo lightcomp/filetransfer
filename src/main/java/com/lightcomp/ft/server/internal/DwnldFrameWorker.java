@@ -1,13 +1,7 @@
 package com.lightcomp.ft.server.internal;
 
-import java.util.Iterator;
-import java.util.LinkedList;
-
-import com.lightcomp.ft.core.send.FrameBlockBuilder;
+import com.lightcomp.ft.core.send.FrameBuilder;
 import com.lightcomp.ft.core.send.SendFrameContext;
-import com.lightcomp.ft.core.send.SendFrameContextImpl;
-import com.lightcomp.ft.core.send.items.SourceItem;
-import com.lightcomp.ft.server.ServerConfig;
 
 public class DwnldFrameWorker implements Runnable {
 
@@ -15,40 +9,31 @@ public class DwnldFrameWorker implements Runnable {
         RUNNING, STOPPING, TERMINATED, FINISHED
     }
 
-    public static final int MAX_PREPARED_FRAMES = 3;
+    private final DwnldTransfer transfer;
 
-    private final LinkedList<SendFrameContext> preparedFrames = new LinkedList<>();
-
-    private final DownloadTransfer transfer;
-
-    private final ServerConfig config;
-
-    private final FrameBlockBuilder fbBuilder;
+    private final FrameBuilder frameBuilder;
 
     private State state = State.RUNNING;
 
-    private int currSeqNum;
+    private int frameCounter;
 
-    public DwnldFrameWorker(DownloadTransfer transfer, ServerConfig config, Iterator<SourceItem> itemIt) {
+    public DwnldFrameWorker(DwnldTransfer transfer, FrameBuilder frameBuilder) {
         this.transfer = transfer;
-        this.config = config;
-        this.fbBuilder = new FrameBlockBuilder(itemIt, transfer);
-    }
-
-    public synchronized boolean isFinished() {
-        return state == State.FINISHED;
+        this.frameBuilder = frameBuilder;
     }
 
     /**
-     * @return Next context of prepared frame. Can be null when frame is not yet prepared or worker
-     *         finished.
+     * Adds request for next frame to be prepared.
+     * 
+     * @return Returns false when worker is finished.
      */
-    public synchronized SendFrameContext getNextFrame() {
-        if (state == State.RUNNING || state == State.FINISHED) {
-            if (preparedFrames.isEmpty()) {
-                return null;
-            }
-            return preparedFrames.getFirst();
+    public synchronized boolean prepareFrame() {
+        if (state == State.RUNNING) {
+            frameCounter++;
+            return true;
+        }
+        if (state == State.FINISHED) {
+            return false;
         }
         throw new IllegalStateException("Worker is terminated");
     }
@@ -71,32 +56,31 @@ public class DwnldFrameWorker implements Runnable {
     @Override
     public void run() {
         while (true) {
-            SendFrameContext frameCtx;
-            try {
-                currSeqNum++;
-                frameCtx = new SendFrameContextImpl(currSeqNum, config.getMaxFrameBlocks(), config.getMaxFrameSize());
-                fbBuilder.build(frameCtx);
-            } catch (Throwable t) {
-                ErrorContext ec = new ErrorContext("Failed to build download frame", transfer)
-                        .addParam("seqNum", currSeqNum).setCause(t);
-                transfer.transferFailed(ec);
-                break; // builder failed
-            }
             synchronized (this) {
                 if (state != State.RUNNING) {
-                    break; // worker is stopping
+                    state = State.TERMINATED;
+                    return; // worker is stopping
                 }
-                preparedFrames.addLast(frameCtx);
-                // check if last frame or maximum reached
-                if (frameCtx.isLast() || preparedFrames.size() >= MAX_PREPARED_FRAMES) {
+                if (frameCounter <= 0) {
                     state = State.FINISHED;
-                    return;
+                    return; // no more frames
                 }
+                frameCounter--;
+            }
+            try {
+                SendFrameContext frameCtx = frameBuilder.build();
+                if (!transfer.addPreparedFrame(frameCtx)) {
+                    break; // rejected frame
+                }
+            } catch (Throwable t) {
+                ErrorContext ec = new ErrorContext("Failed to build download frame", transfer)
+                        .addParam("seqNum", frameBuilder.getCurrentSeqNum()).setCause(t);
+                transfer.transferFailed(ec);
+                break; // builder failed
             }
         }
         synchronized (this) {
             state = State.TERMINATED;
-            preparedFrames.clear();
         }
     }
 }

@@ -10,7 +10,7 @@ import java.nio.file.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.lightcomp.ft.common.Checksum;
+import com.lightcomp.ft.common.Checksum.Algorithm;
 import com.lightcomp.ft.common.PathUtils;
 import com.lightcomp.ft.exception.TransferException;
 import com.lightcomp.ft.exception.TransferExceptionBuilder;
@@ -23,15 +23,15 @@ public class RecvContextImpl implements RecvContext {
 
     private final Path rootDir;
 
-    private final Checksum.Algorithm checksumAlg;
-    
+    private final Algorithm checksumAlg;
+
     private Path relativeDir;
 
     private FileWriter openWritter;
 
     private ReadableByteChannel inputChannel;
 
-    public RecvContextImpl(RecvProgressInfo progressInfo, Path rootDir, Checksum.Algorithm checksumAlg) {
+    public RecvContextImpl(RecvProgressInfo progressInfo, Path rootDir, Algorithm checksumAlg) {
         this.progressInfo = progressInfo;
         this.rootDir = rootDir;
         this.checksumAlg = checksumAlg;

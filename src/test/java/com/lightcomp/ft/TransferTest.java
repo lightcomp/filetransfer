@@ -19,13 +19,9 @@ import javax.xml.ws.Endpoint;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.cxf.Bus;
 import org.apache.cxf.BusFactory;
-import org.apache.log4j.BasicConfigurator;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -38,7 +34,6 @@ import com.lightcomp.ft.client.TransferStatus;
 import com.lightcomp.ft.client.UploadRequest;
 import com.lightcomp.ft.client.internal.AbstractTransfer;
 import com.lightcomp.ft.client.internal.ClientImpl;
-import com.lightcomp.ft.client.internal.UploadFrameContext;
 import com.lightcomp.ft.client.internal.UploadTransfer;
 import com.lightcomp.ft.client.operations.OperationStatus;
 import com.lightcomp.ft.client.operations.OperationStatus.Type;
@@ -46,6 +41,7 @@ import com.lightcomp.ft.client.operations.SendOperation;
 import com.lightcomp.ft.common.PathUtils;
 import com.lightcomp.ft.core.blocks.DirBeginBlockImpl;
 import com.lightcomp.ft.core.blocks.DirEndBlockImpl;
+import com.lightcomp.ft.core.send.SendFrameContextImpl;
 import com.lightcomp.ft.core.send.items.SourceItem;
 import com.lightcomp.ft.server.Server;
 import com.lightcomp.ft.server.ServerConfig;
@@ -61,19 +57,22 @@ public class TransferTest {
 
     private static final String SERVER_ADDR = "http://localhost:7979/";
 
+    private static final long TEST_TIMEOUT = 5 * 60 * 1000;
+
     private static int testCount;
 
     private Path tempDir;
 
-    private Server server;
-
     private Waiter waiter;
 
-    @BeforeClass
-    public static void beforeClass() {
-        BasicConfigurator.configure();
-        Logger.getRootLogger().setLevel(Level.INFO);
-    }
+    private Server server;
+
+    private Client client;
+
+    /*
+     * @BeforeClass public static void beforeClass() { BasicConfigurator.configure();
+     * Logger.getRootLogger().setLevel(Level.INFO); }
+     */
 
     @Before
     public void before() throws IOException {
@@ -83,13 +82,18 @@ public class TransferTest {
 
     @After
     public void after() throws IOException {
+        if (client != null) {
+            client.stop();
+            client = null;
+        }
         if (server != null) {
             server.stop();
+            server = null;
         }
-        if (tempDir == null) {
-            return;
+        if (tempDir != null) {
+            PathUtils.deleteWithChildren(tempDir);
+            tempDir = null;
         }
-        PathUtils.deleteWithChildren(tempDir);
     }
 
     public String publishEndpoint(ServerConfig cfg) {
@@ -125,7 +129,7 @@ public class TransferTest {
         ClientConfig ccfg = new ClientConfig(addr);
         ccfg.setRecoveryDelay(2);
         // ccfg.setSoapLogging(true);
-        Client client = FileTransfer.createClient(ccfg);
+        client = FileTransfer.createClient(ccfg);
 
         client.start();
 
@@ -134,7 +138,7 @@ public class TransferTest {
 
         Transfer transfer = client.upload(request);
 
-        waiter.await(10 * 1000, 2);
+        waiter.await(TEST_TIMEOUT, 2);
 
         TransferStatus cts = transfer.getStatus();
         Assert.assertTrue(cts.getState() == TransferState.FINISHED);
@@ -170,7 +174,7 @@ public class TransferTest {
         ClientConfig ccfg = new ClientConfig(addr);
         ccfg.setRecoveryDelay(5);
         // ccfg.setSoapLogging(true);
-        Client client = FileTransfer.createClient(ccfg);
+        client = FileTransfer.createClient(ccfg);
 
         client.start();
 
@@ -189,7 +193,7 @@ public class TransferTest {
 
         client.upload(request);
 
-        waiter.await(10 * 1000, 2);
+        waiter.await(TEST_TIMEOUT, 2);
     }
 
     @Test
@@ -203,28 +207,28 @@ public class TransferTest {
         };
         StatusStorageImpl ss = new StatusStorageImpl();
         ServerConfig scfg = new ServerConfig(ur, ss);
-        scfg.setInactiveTimeout(60);
+        scfg.setInactiveTimeout(6000);
 
         String addr = publishEndpoint(scfg);
 
         ClientConfig ccfg = new ClientConfig(addr);
         ccfg.setRecoveryDelay(2);
         // ccfg.setSoapLogging(true);
-        ccfg.setMaxFrameSize(100 * 1024); // 100kB
-        Client client = FileTransfer.createClient(ccfg);
+        ccfg.setMaxFrameSize(70); // 70B
+        client = FileTransfer.createClient(ccfg);
 
         client.start();
 
         MemoryDir dir = new MemoryDir("test");
         dir.addChild(new MemoryFile("1.txt", new byte[0], 0)); // empty
         dir.addChild(new MemoryFile("2.txt", new byte[] { 0x41, 0x42, 0x43, 0x44, 0x45 }, 0)); // 5 bytes
-        dir.addChild(new GeneratedFile("3.txt", 100 * 1024, 0)); // 100kB which overlaps first frame by 5 bytes
+        dir.addChild(new GeneratedFile("3.txt", 10, 0)); // 10B which overlaps first frame by 5 bytes
         List<SourceItem> items = Collections.singletonList(dir);
         UploadRequestImpl request = new UploadRequestImpl(createReqData("req"), items, waiter, TransferState.FINISHED);
 
         client.upload(request);
 
-        waiter.await(10 * 1000, 2);
+        waiter.await(TEST_TIMEOUT, 2);
 
         server.stop();
 
@@ -254,7 +258,7 @@ public class TransferTest {
         ccfg.setRecoveryDelay(2);
         ccfg.setMaxFrameBlocks(5); // 3 directories = 6 blocks, must be 2 frames
         // ccfg.setSoapLogging(true);
-        Client client = FileTransfer.createClient(ccfg);
+        client = FileTransfer.createClient(ccfg);
 
         client.start();
 
@@ -263,7 +267,7 @@ public class TransferTest {
 
         client.upload(request);
 
-        waiter.await(10 * 1000, 2);
+        waiter.await(TEST_TIMEOUT, 2);
 
         server.stop();
 
@@ -293,7 +297,7 @@ public class TransferTest {
         ccfg.setRecoveryDelay(2);
         ccfg.setMaxFrameBlocks(5); // 3 directories = 6 blocks, must be 2 frames
         // ccfg.setSoapLogging(true);
-        Client client = FileTransfer.createClient(ccfg);
+        client = FileTransfer.createClient(ccfg);
 
         client.start();
 
@@ -309,7 +313,7 @@ public class TransferTest {
 
         client.upload(request);
 
-        waiter.await(10 * 1000, 2);
+        waiter.await(TEST_TIMEOUT, 2);
     }
 
     @Test
@@ -333,16 +337,17 @@ public class TransferTest {
         ccfg.setRecoveryDelay(2);
         ccfg.setMaxFrameBlocks(blockMax);
         // ccfg.setSoapLogging(true);
-        Client client = FileTransfer.createClient(ccfg);
+        client = FileTransfer.createClient(ccfg);
 
         client.start();
 
         Pair<Collection<SourceItem>, Integer> pair = createMixedContent(3, blockMax);
-        UploadRequestImpl request = new UploadRequestImpl(createReqData("req"), pair.getLeft(), waiter, TransferState.FINISHED);
+        UploadRequestImpl request = new UploadRequestImpl(createReqData("req"), pair.getLeft(), waiter,
+                TransferState.FINISHED);
 
         client.upload(request);
 
-        waiter.await(10 * 1000, 2);
+        waiter.await(TEST_TIMEOUT, 2);
 
         server.stop();
 
@@ -372,13 +377,13 @@ public class TransferTest {
         ccfg.setRecoveryDelay(2);
         // ccfg.setSoapLogging(true);
 
-        Client client = new ClientImpl(ccfg) {
+        client = new ClientImpl(ccfg) {
             @Override
             public Transfer upload(UploadRequest request) {
                 AbstractTransfer transfer = new UploadTransfer(request, config, service) {
                     @Override
                     protected boolean transferFrames() {
-                        UploadFrameContext frameCtx = new UploadFrameContext(1, config);
+                        SendFrameContextImpl frameCtx = new SendFrameContextImpl(1, config);
                         DirBegin db = new DirBeginBlockImpl();
                         db.setN("test");
                         frameCtx.addBlock(db);
@@ -406,7 +411,7 @@ public class TransferTest {
 
         client.upload(request);
 
-        waiter.await(10 * 1000, 2);
+        waiter.await(TEST_TIMEOUT, 2);
     }
 
     @Test
@@ -427,7 +432,7 @@ public class TransferTest {
         ClientConfig ccfg = new ClientConfig(addr);
         ccfg.setRecoveryDelay(2);
         // ccfg.setSoapLogging(true);
-        Client client = FileTransfer.createClient(ccfg);
+        client = FileTransfer.createClient(ccfg);
 
         client.start();
 
@@ -443,7 +448,8 @@ public class TransferTest {
         xmlData.getAnies().add(el);
         req.setXmlData(xmlData);
 
-        UploadRequestImpl request = new UploadRequestImpl(req, Collections.emptyList(), waiter, TransferState.FINISHED) {
+        UploadRequestImpl request = new UploadRequestImpl(req, Collections.emptyList(), waiter,
+                TransferState.FINISHED) {
             @Override
             public void onTransferSuccess(GenericDataType response) {
                 waiter.assertTrue(response.getId().equals("id"));
@@ -455,7 +461,7 @@ public class TransferTest {
 
         client.upload(request);
 
-        waiter.await(10 * 1000, 2);
+        waiter.await(TEST_TIMEOUT, 2);
 
         server.stop();
 

@@ -61,7 +61,7 @@ public class ServerImpl implements Server, TransferManager {
 
     public ServerImpl(ServerConfig config) {
         this.config = config;
-        this.executor = new TaskExecutor(config.getThreadPoolSize());
+        this.executor = new TaskExecutor(config.getThreadPoolSize(), "server");
         this.idGenerator = config.getTransferIdGenerator();
         this.handler = config.getTransferHandler();
         this.statusStorage = config.getTransferStatusStorage();
@@ -111,7 +111,7 @@ public class ServerImpl implements Server, TransferManager {
     public void cancelTransfer(String transferId) throws TransferException {
         AbstractTransfer transfer;
         synchronized (this) {
-            Validate.isTrue(state == State.RUNNING);
+            Validate.isTrue(state == State.RUNNING || state == State.STOPPING);
             transfer = transferIdMap.get(transferId);
         }
         if (transfer == null) {
@@ -123,7 +123,7 @@ public class ServerImpl implements Server, TransferManager {
     @Override
     public TransferStatus getCurrentStatus(String transferId) {
         synchronized (this) {
-            Validate.isTrue(state == State.RUNNING);
+            Validate.isTrue(state == State.RUNNING || state == State.STOPPING);
             // get status from current transfer
             AbstractTransfer transfer = transferIdMap.get(transferId);
             if (transfer != null) {
@@ -214,7 +214,7 @@ public class ServerImpl implements Server, TransferManager {
             transfer = new UploadTransfer(transferId, uh, config, executor);
         } else {
             DownloadHandler dh = (DownloadHandler) dataHandler;
-            transfer = new DownloadTransfer(transferId, dh, config, executor);
+            transfer = new DwnldTransfer(transferId, dh, config, executor);
         }
         transfer.init();
         // publish initialized transfer

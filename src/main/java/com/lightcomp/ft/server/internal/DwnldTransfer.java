@@ -2,7 +2,10 @@ package com.lightcomp.ft.server.internal;
 
 import java.util.LinkedList;
 
+import org.apache.commons.lang3.Validate;
+
 import com.lightcomp.ft.common.TaskExecutor;
+import com.lightcomp.ft.core.send.FrameBuilder;
 import com.lightcomp.ft.core.send.SendFrameContext;
 import com.lightcomp.ft.core.send.SendProgressInfo;
 import com.lightcomp.ft.exception.TransferException;
@@ -14,27 +17,33 @@ import com.lightcomp.ft.wsdl.v1.FileTransferException;
 import com.lightcomp.ft.xsd.v1.Frame;
 import com.lightcomp.ft.xsd.v1.GenericDataType;
 
-public class DownloadTransfer extends AbstractTransfer implements SendProgressInfo {
+public class DwnldTransfer extends AbstractTransfer implements SendProgressInfo {
 
     public static final int MAX_PREPARED_FRAMES = 3;
 
     private final LinkedList<SendFrameContext> preparedFrames = new LinkedList<>();
 
-    private final DwnldFrameWorker frameWorker;
+    // used in async workers do not use locally
+    private final FrameBuilder frameBuilder;
+
+    private DwnldFrameWorker frameWorker;
 
     private SendFrameContext currFrameCtx;
 
-    protected DownloadTransfer(String transferId, DownloadHandler handler, ServerConfig config, TaskExecutor executor) {
+    protected DwnldTransfer(String transferId, DownloadHandler handler, ServerConfig config, TaskExecutor executor) {
         super(transferId, handler, config, executor);
-        frameWorker = new DwnldFrameWorker(this, handler.getItemIterator());
+        frameBuilder = new FrameBuilder(handler.getItemIterator(), this, config);
     }
 
     @Override
     public void init() throws TransferException {
         super.init();
-        // start async builder
+        // start async worker
+        frameWorker = new DwnldFrameWorker(this, frameBuilder);
+        for (int i = 0; i < MAX_PREPARED_FRAMES; i++) {
+            frameWorker.prepareFrame();
+        }
         executor.addTask(frameWorker);
-        // TODO: fill current frame
     }
 
     @Override
@@ -107,22 +116,48 @@ public class DownloadTransfer extends AbstractTransfer implements SendProgressIn
         return frameProcessor.process();
     }
 
-    SendFrameContext moveToNextFrame() {
-        // TODO Auto-generated method stub
-        return null;
+    /**
+     * @return Returns next frame or null when no frame is prepared.
+     */
+    synchronized SendFrameContext moveToNextFrame() {
+        if (preparedFrames.isEmpty()) {
+            return null;
+        }
+        currFrameCtx = preparedFrames.removeLast();
+        if (!frameWorker.prepareFrame()) {
+            frameWorker = new DwnldFrameWorker(this, frameBuilder);
+            frameWorker.prepareFrame();
+            executor.addTask(frameWorker);
+        }
+        return currFrameCtx;
     }
 
     /**
      * @return Returns true when frame was added. If false transfer is not able to accept new frames.
      */
-    public boolean addPreparedFrame(SendFrameContext frameCtx) {
-        // TODO Auto-generated method stub
-        return false;
+    synchronized boolean addPreparedFrame(SendFrameContext frameCtx) {
+        if (status.getState().isTerminal()) {
+            return false; // terminated transfer
+        }
+        // integrity checks
+        Validate.isTrue(status.getState() == TransferState.STARTED);
+        Validate.isTrue(preparedFrames.size() <= MAX_PREPARED_FRAMES);
+        if (preparedFrames.isEmpty()) {
+            Validate.isTrue(status.getLastFrameSeqNum() + 1 == frameCtx.getSeqNum());
+        } else {
+            Validate.isTrue(preparedFrames.getFirst().getSeqNum() + 1 == frameCtx.getSeqNum());
+        }
+        // add prepared frame
+        preparedFrames.addFirst(frameCtx);
+        return true;
     }
 
     @Override
     protected void clearResources() {
         // stop frame worker
-        frameWorker.terminate();
+        if (frameWorker != null) {
+            frameWorker.terminate();
+            frameWorker = null;
+        }
     }
 }

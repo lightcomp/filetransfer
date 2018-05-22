@@ -231,6 +231,7 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
             }
         }
         if (ec != null) {
+            // timeouted transfer
             onTransferFailed(ec);
         }
         clearResources();
@@ -271,7 +272,6 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
             // exception is only logged
             new ErrorContext("Fail callback of data handler cause exception", this).setCause(t).log(logger);
         }
-        clearResources();
     }
 
     /**

@@ -17,7 +17,7 @@ import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.lightcomp.ft.common.Checksum;
+import com.lightcomp.ft.common.Checksum.Algorithm;
 import com.lightcomp.ft.common.ChecksumByteChannel;
 import com.lightcomp.ft.common.ChecksumGenerator;
 import com.lightcomp.ft.exception.TransferException;
@@ -35,7 +35,7 @@ class FileWriter {
 
     private final ChecksumGenerator chksmGenerator;
 
-    public FileWriter(Path file, long size, Checksum.Algorithm checksumAlg) {
+    public FileWriter(Path file, long size, Algorithm checksumAlg) {
         this.file = file;
         this.size = size;
         this.chksmGenerator = ChecksumGenerator.create(checksumAlg);
