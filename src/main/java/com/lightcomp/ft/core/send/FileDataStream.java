@@ -30,7 +30,7 @@ public class FileDataStream implements BlockStream {
 
     private ReadableByteChannel channel;
 
-    private long position;
+    private long streamPos;
 
     public FileDataStream(SourceFile srcFile, long offset, long size, Checksum checksum, FileDataProgress progress,
             Path srcPath) {
@@ -40,7 +40,6 @@ public class FileDataStream implements BlockStream {
         this.checksum = checksum;
         this.progress = progress;
         this.srcPath = srcPath;
-        this.position = offset;
     }
 
     @Override
@@ -57,11 +56,12 @@ public class FileDataStream implements BlockStream {
         if (len == 0) {
             return 0;
         }
-        if (position == size) {
+        // check if stream ended
+        if (size == streamPos) {
             return -1;
         }
-        // adjust length by remaining bytes
-        len = (int) Math.min(size - position, len);
+        // adjust length by stream remaining bytes
+        len = (int) Math.min(size - streamPos, len);
         // read data from source file
         ByteBuffer bb = ByteBuffer.wrap(b, off, len);
         if (channel.read(bb) < len) {
@@ -69,12 +69,12 @@ public class FileDataStream implements BlockStream {
             logger.error(message);
             throw new IOException(message);
         }
-        // update checksum generator if present
-        checksum.update(position, b, off, len);
         // increment position
-        position += len;
-        // report progress
-        progress.update(position);
+        streamPos += len;
+        // update generator and progress
+        long pos = offset + streamPos;
+        checksum.update(pos, b, off, len);
+        progress.update(pos);
         return len;
     }
 

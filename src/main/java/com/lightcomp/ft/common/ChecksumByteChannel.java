@@ -37,10 +37,10 @@ public class ChecksumByteChannel implements WritableByteChannel {
         ByteBuffer dsrc = src.duplicate();
         // write to original channel
         int n = wbch.write(src);
-        // update checksum
-        updateChecksum(dsrc, n);
         // increment position
         position += n;
+        // update checksum
+        updateChecksum(dsrc, n);
         return n;
     }
 

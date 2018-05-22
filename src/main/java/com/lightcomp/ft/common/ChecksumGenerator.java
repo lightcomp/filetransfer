@@ -34,8 +34,7 @@ public class ChecksumGenerator implements Checksum {
     }
 
     @Override
-    public synchronized void update(long pos, byte[] b, int off, int len) {
-        long newPos = pos += len;
+    public synchronized void update(long newPos, byte[] b, int off, int len) {
         // when result generated just check boundaries
         if (result != null) {
             Validate.isTrue(newPos <= numProcessed);

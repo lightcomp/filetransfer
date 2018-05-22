@@ -26,8 +26,8 @@ public interface Checksum {
     Algorithm getAlgorithm();
     
     /**
-     * @param pos
-     *            the current position in data (len not included)
+     * @param newPos
+     *            the new position in data - length of the byte array included
      * @param b
      *            the byte array to update the checksum with
      * @param off
@@ -35,7 +35,7 @@ public interface Checksum {
      * @param len
      *            the number of bytes to use for the update
      */
-    void update(long pos, byte[] b, int off, int len);
+    void update(long newPos, byte[] b, int off, int len);
 
     /**
      * Generates checksum from current value. After call checksum is no more updatable.

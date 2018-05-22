@@ -20,7 +20,7 @@ public class ChecksumHolder implements Checksum {
     }
 
     @Override
-    public void update(long pos, byte[] b, int off, int len) {
+    public void update(long newPos, byte[] b, int off, int len) {
         // NOP
     }
 

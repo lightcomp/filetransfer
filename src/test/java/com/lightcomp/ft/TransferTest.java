@@ -235,8 +235,8 @@ public class TransferTest {
         // test storage status after server stopped
         com.lightcomp.ft.server.TransferStatus sts = ss.getTransferStatus(ur.getLastTransferId());
         Assert.assertTrue(sts.getState() == com.lightcomp.ft.server.TransferState.FINISHED);
-        Assert.assertTrue(sts.getTransferedSize() == 100 * 1024 + 5);
-        Assert.assertTrue(sts.getLastFrameSeqNum() == 2);
+        Assert.assertTrue(sts.getTransferedSize() == 15);
+        Assert.assertTrue(sts.getLastFrameSeqNum() == 3);
     }
 
     @Test
