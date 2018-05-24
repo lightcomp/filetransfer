@@ -26,8 +26,6 @@ public class FrameBuilder {
 
     private int currSeqNum;
 
-    private boolean lastFrameBuilt;
-
     public FrameBuilder(Iterator<SourceItem> itemIt, SendProgressInfo progressInfo, SendConfig config) {
         dirStack.add(DirContext.createRoot(itemIt));
         this.progressInfo = progressInfo;
@@ -39,7 +37,7 @@ public class FrameBuilder {
     }
 
     public SendFrameContext build() throws TransferException {
-        Validate.isTrue(!lastFrameBuilt);
+        Validate.isTrue(dirStack.size() > 0, "Last frame already built");
 
         currSeqNum++;
         SendFrameContextImpl frameCtx = new SendFrameContextImpl(currSeqNum, config);
@@ -80,7 +78,6 @@ public class FrameBuilder {
             }
         }
         frameCtx.setLast(true);
-        lastFrameBuilt = true;
     }
 
     /**

@@ -10,20 +10,20 @@ import com.lightcomp.ft.server.TransferHandler;
 import com.lightcomp.ft.server.UploadHandler;
 import com.lightcomp.ft.xsd.v1.GenericDataType;
 
-public abstract class TransferHandlerImpl implements TransferHandler {
+public abstract class UploadTransferHandler implements TransferHandler {
 
     private final Path transferDir;
 
     private String lastTransferId;
 
-    public TransferHandlerImpl(Path transferDir) {
+    public UploadTransferHandler(Path transferDir) {
         this.transferDir = transferDir;
     }
 
     @Override
     public synchronized TransferDataHandler onTransferBegin(String transferId, GenericDataType request) {
         // TODO: download impl
-        
+
         lastTransferId = transferId;
         Path uploadDir = transferDir.resolve(transferId);
         // prepare transfer directory
@@ -32,12 +32,12 @@ public abstract class TransferHandlerImpl implements TransferHandler {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-        return createUploadAcceptor(transferId, uploadDir, request);
+        return createUpload(transferId, uploadDir, request);
     }
 
     public synchronized String getLastTransferId() {
         return lastTransferId;
     }
 
-    protected abstract UploadHandler createUploadAcceptor(String transferId, Path uploadDir, GenericDataType request);
+    protected abstract UploadHandler createUpload(String transferId, Path uploadDir, GenericDataType request);
 }

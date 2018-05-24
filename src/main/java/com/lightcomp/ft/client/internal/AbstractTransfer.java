@@ -244,18 +244,17 @@ public abstract class AbstractTransfer implements Runnable, Transfer, OperationH
     }
 
     protected void transferFailed(OperationStatus os) {
-        switch (os.getType()) {
-            case SUCCESS:
-                throw new IllegalStateException();
-            case CANCEL:
-                if (cancelIfRequested()) {
-                    return;
-                }
-            default:
-                new TransferExceptionBuilder(os.getFailureMessage(), this).addParams(os.getFailureParams())
-                        .setCause(os.getFailureCause()).log(logger);
-                transferFailed(os.getFailureCause(), os.getFailureType());
+        Type type = os.getType();
+        Validate.isTrue(type != Type.SUCCESS);
+        // try cancel transfer
+        if (type == Type.CANCEL && cancelIfRequested()) {
+            return;
         }
+        // log message detail
+        new TransferExceptionBuilder(os.getFailureMessage(), this).addParams(os.getFailureParams())
+                .setCause(os.getFailureCause()).log(logger);
+        // fail transfer
+        transferFailed(os.getFailureCause(), os.getFailureType());
     }
 
     private void transferFailed(Throwable cause) {

@@ -15,21 +15,27 @@ public class DwnldFrameWorker implements Runnable {
 
     private State state = State.RUNNING;
 
-    private int frameCounter;
+    private int frameCount;
 
-    public DwnldFrameWorker(DwnldTransfer transfer, FrameBuilder frameBuilder) {
+    /**
+     * @param frameCount
+     *            number of prepared frames which is transfer able to accept
+     */
+    public DwnldFrameWorker(DwnldTransfer transfer, FrameBuilder frameBuilder, int frameCount) {
         this.transfer = transfer;
         this.frameBuilder = frameBuilder;
+        this.frameCount = frameCount;
     }
 
     /**
-     * Adds request for next frame to be prepared.
+     * Adds request for next frame to be prepared. Number of prepared frames which is transfer able to
+     * accept will be increased.
      * 
      * @return Returns false when worker is finished.
      */
     public synchronized boolean prepareFrame() {
         if (state == State.RUNNING) {
-            frameCounter++;
+            frameCount++;
             return true;
         }
         if (state == State.FINISHED) {
@@ -61,16 +67,16 @@ public class DwnldFrameWorker implements Runnable {
                     state = State.TERMINATED;
                     return; // worker is stopping
                 }
-                if (frameCounter <= 0) {
+                if (frameCount <= 0) {
                     state = State.FINISHED;
                     return; // no more frames
                 }
-                frameCounter--;
+                frameCount--;
             }
             try {
                 SendFrameContext frameCtx = frameBuilder.build();
-                if (!transfer.addPreparedFrame(frameCtx)) {
-                    break; // rejected frame
+                if (!transfer.framePrepared(frameCtx)) {
+                    break; // worker terminated
                 }
             } catch (Throwable t) {
                 ErrorContext ec = new ErrorContext("Failed to build download frame", transfer)

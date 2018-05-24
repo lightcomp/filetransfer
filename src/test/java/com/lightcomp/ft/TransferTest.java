@@ -43,6 +43,7 @@ import com.lightcomp.ft.core.blocks.DirBeginBlockImpl;
 import com.lightcomp.ft.core.blocks.DirEndBlockImpl;
 import com.lightcomp.ft.core.send.SendFrameContextImpl;
 import com.lightcomp.ft.core.send.items.SourceItem;
+import com.lightcomp.ft.server.DownloadHandler;
 import com.lightcomp.ft.server.Server;
 import com.lightcomp.ft.server.ServerConfig;
 import com.lightcomp.ft.server.UploadHandler;
@@ -113,9 +114,9 @@ public class TransferTest {
 
     @Test
     public void testFolderUpload() throws TimeoutException {
-        TransferHandlerImpl ur = new TransferHandlerImpl(tempDir) {
+        UploadTransferHandler ur = new UploadTransferHandler(tempDir) {
             @Override
-            protected UploadHandler createUploadAcceptor(String transferId, Path uploadDir, GenericDataType request) {
+            protected UploadHandler createUpload(String transferId, Path uploadDir, GenericDataType request) {
                 return new UploadHandlerImpl(transferId, null, request.getId(), uploadDir, server, waiter,
                         com.lightcomp.ft.server.TransferState.FINISHING);
             }
@@ -158,9 +159,9 @@ public class TransferTest {
 
     @Test
     public void testInactiveTransfer() throws TimeoutException {
-        TransferHandlerImpl ur = new TransferHandlerImpl(tempDir) {
+        UploadTransferHandler ur = new UploadTransferHandler(tempDir) {
             @Override
-            protected UploadHandler createUploadAcceptor(String transferId, Path uploadDir, GenericDataType request) {
+            protected UploadHandler createUpload(String transferId, Path uploadDir, GenericDataType request) {
                 return new UploadHandlerImpl(transferId, null, request.getId(), uploadDir, server, waiter,
                         com.lightcomp.ft.server.TransferState.FAILED);
             }
@@ -198,16 +199,16 @@ public class TransferTest {
 
     @Test
     public void testMaxFrameSizeUpload() throws TimeoutException {
-        TransferHandlerImpl ur = new TransferHandlerImpl(tempDir) {
+        UploadTransferHandler ur = new UploadTransferHandler(tempDir) {
             @Override
-            protected UploadHandler createUploadAcceptor(String transferId, Path uploadDir, GenericDataType request) {
+            protected UploadHandler createUpload(String transferId, Path uploadDir, GenericDataType request) {
                 return new UploadHandlerImpl(transferId, null, request.getId(), uploadDir, server, waiter,
                         com.lightcomp.ft.server.TransferState.FINISHING);
             }
         };
         StatusStorageImpl ss = new StatusStorageImpl();
         ServerConfig scfg = new ServerConfig(ur, ss);
-        scfg.setInactiveTimeout(6000);
+        scfg.setInactiveTimeout(60);
 
         String addr = publishEndpoint(scfg);
 
@@ -241,9 +242,9 @@ public class TransferTest {
 
     @Test
     public void testMaxFrameBlocksUpload() throws TimeoutException {
-        TransferHandlerImpl ur = new TransferHandlerImpl(tempDir) {
+        UploadTransferHandler ur = new UploadTransferHandler(tempDir) {
             @Override
-            protected UploadHandler createUploadAcceptor(String transferId, Path uploadDir, GenericDataType request) {
+            protected UploadHandlerImpl createUpload(String transferId, Path uploadDir, GenericDataType request) {
                 return new UploadHandlerImpl(transferId, null, request.getId(), uploadDir, server, waiter,
                         com.lightcomp.ft.server.TransferState.FINISHING);
             }
@@ -280,9 +281,9 @@ public class TransferTest {
 
     @Test
     public void testInvalidChecksum() throws TimeoutException {
-        TransferHandlerImpl ur = new TransferHandlerImpl(tempDir) {
+        UploadTransferHandler ur = new UploadTransferHandler(tempDir) {
             @Override
-            protected UploadHandler createUploadAcceptor(String transferId, Path uploadDir, GenericDataType request) {
+            protected UploadHandler createUpload(String transferId, Path uploadDir, GenericDataType request) {
                 return new UploadHandlerImpl(transferId, null, request.getId(), uploadDir, server, waiter,
                         com.lightcomp.ft.server.TransferState.FAILED);
             }
@@ -320,9 +321,9 @@ public class TransferTest {
     public void testMixedContentUpload() throws TimeoutException {
         int blockMax = 5;
 
-        TransferHandlerImpl ur = new TransferHandlerImpl(tempDir) {
+        UploadTransferHandler ur = new UploadTransferHandler(tempDir) {
             @Override
-            protected UploadHandler createUploadAcceptor(String transferId, Path uploadDir, GenericDataType request) {
+            protected UploadHandler createUpload(String transferId, Path uploadDir, GenericDataType request) {
                 return new UploadHandlerImpl(transferId, null, request.getId(), uploadDir, server, waiter,
                         com.lightcomp.ft.server.TransferState.FINISHING);
             }
@@ -360,9 +361,9 @@ public class TransferTest {
 
     @Test
     public void testInvalidFrameUpload() throws TimeoutException {
-        TransferHandlerImpl ur = new TransferHandlerImpl(tempDir) {
+        UploadTransferHandler ur = new UploadTransferHandler(tempDir) {
             @Override
-            protected UploadHandler createUploadAcceptor(String transferId, Path uploadDir, GenericDataType request) {
+            protected UploadHandler createUpload(String transferId, Path uploadDir, GenericDataType request) {
                 return new UploadHandlerImpl(transferId, null, request.getId(), uploadDir, server, waiter,
                         com.lightcomp.ft.server.TransferState.FAILED);
             }
@@ -416,9 +417,9 @@ public class TransferTest {
 
     @Test
     public void testUploadRequestResponse() throws TimeoutException, ParserConfigurationException {
-        TransferHandlerImpl ur = new TransferHandlerImpl(tempDir) {
+        UploadTransferHandler ur = new UploadTransferHandler(tempDir) {
             @Override
-            protected UploadHandler createUploadAcceptor(String transferId, Path uploadDir, GenericDataType request) {
+            protected UploadHandler createUpload(String transferId, Path uploadDir, GenericDataType request) {
                 return new UploadHandlerImpl(transferId, request, request.getId(), uploadDir, server, waiter,
                         com.lightcomp.ft.server.TransferState.FINISHING);
             }
@@ -471,6 +472,93 @@ public class TransferTest {
         Assert.assertTrue(sts.getResponse().getId().equals("id"));
         Assert.assertTrue(sts.getResponse().getBinData()[0] == 3);
         Assert.assertTrue(sts.getResponse().getXmlData().getAnies().get(0).getTagName().equals("el"));
+    }
+
+    @Test
+    public void testFolderDownload() throws TimeoutException, IOException {
+        List<SourceItem> items = Collections.singletonList(new MemoryDir("test"));
+
+        DwnldTransferHandler dth = new DwnldTransferHandler() {
+            @Override
+            protected DownloadHandler createDownload(String transferId, GenericDataType request) {
+                return new DwnldHandlerImpl(transferId, null, request.getId(), items, server, waiter,
+                        com.lightcomp.ft.server.TransferState.FINISHING);
+            }
+        };
+        StatusStorageImpl ss = new StatusStorageImpl();
+        ServerConfig scfg = new ServerConfig(dth, ss);
+        scfg.setInactiveTimeout(60);
+
+        String addr = publishEndpoint(scfg);
+
+        ClientConfig ccfg = new ClientConfig(addr);
+        ccfg.setRecoveryDelay(2);
+        // ccfg.setSoapLogging(true);
+        client = FileTransfer.createClient(ccfg);
+
+        client.start();
+
+        DwnldRequestImpl request = new DwnldRequestImpl(createReqData("req"), tempDir, waiter, TransferState.FINISHED);
+
+        Transfer transfer = client.download(request);
+
+        waiter.await(TEST_TIMEOUT, 2);
+
+        TransferStatus cts = transfer.getStatus();
+        Assert.assertTrue(cts.getState() == TransferState.FINISHED);
+        Assert.assertTrue(cts.getTransferedSize() == 0);
+
+        // store will have status after server stop
+        Assert.assertTrue(ss.getTransferStatus(dth.getLastTransferId()) == null);
+
+        server.stop();
+
+        // test storage status after server stopped
+        com.lightcomp.ft.server.TransferStatus sts = ss.getTransferStatus(dth.getLastTransferId());
+        Assert.assertTrue(sts.getState() == com.lightcomp.ft.server.TransferState.FINISHED);
+        Assert.assertTrue(sts.getTransferedSize() == 0);
+        Assert.assertTrue(sts.getLastFrameSeqNum() == 1);
+    }
+
+    @Test
+    public void testMixedContentDownload() throws TimeoutException {
+        int blockMax = 5;
+        Pair<Collection<SourceItem>, Integer> pair = createMixedContent(3, blockMax);
+
+        DwnldTransferHandler dth = new DwnldTransferHandler() {
+            @Override
+            protected DownloadHandler createDownload(String transferId, GenericDataType request) {
+                return new DwnldHandlerImpl(transferId, null, request.getId(), pair.getLeft(), server, waiter,
+                        com.lightcomp.ft.server.TransferState.FINISHING);
+            }
+        };
+        StatusStorageImpl ss = new StatusStorageImpl();
+        ServerConfig scfg = new ServerConfig(dth, ss);
+        scfg.setInactiveTimeout(60);
+        scfg.setMaxFrameBlocks(blockMax);
+        
+        String addr = publishEndpoint(scfg);
+
+        ClientConfig ccfg = new ClientConfig(addr);
+        ccfg.setRecoveryDelay(2);
+        // ccfg.setSoapLogging(true);
+        client = FileTransfer.createClient(ccfg);
+
+        client.start();
+
+        DwnldRequestImpl request = new DwnldRequestImpl(createReqData("req"), tempDir, waiter, TransferState.FINISHED);
+
+        client.download(request);
+
+        waiter.await(TEST_TIMEOUT, 2);
+
+        server.stop();
+
+        // test storage status after server stopped
+        int blockCount = pair.getRight() / blockMax * 2;
+        com.lightcomp.ft.server.TransferStatus sts = ss.getTransferStatus(dth.getLastTransferId());
+        Assert.assertTrue(sts.getLastFrameSeqNum() == blockCount);
+        Assert.assertTrue(sts.getTransferedSize() == 0);
     }
 
     public static GenericDataType createReqData(String id) {

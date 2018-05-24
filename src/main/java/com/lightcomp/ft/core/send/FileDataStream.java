@@ -72,9 +72,9 @@ public class FileDataStream implements BlockStream {
         // increment position
         streamPos += len;
         // update generator and progress
-        long pos = offset + streamPos;
-        checksum.update(pos, b, off, len);
-        progress.update(pos);
+        long newPos = offset + streamPos;
+        checksum.update(newPos, b, off, len);
+        progress.update(newPos);
         return len;
     }
 

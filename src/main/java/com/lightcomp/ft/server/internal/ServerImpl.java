@@ -82,7 +82,7 @@ public class ServerImpl implements Server, TransferManager {
 
         state = State.RUNNING;
         // start server thread
-        Thread serverThread = new Thread(this::run, "FileTransfer_Server");
+        Thread serverThread = new Thread(this::run, "FileTransferServer");
         serverThread.start();
         // start shared executor
         executor.start();
@@ -121,7 +121,7 @@ public class ServerImpl implements Server, TransferManager {
     }
 
     @Override
-    public TransferStatus getCurrentStatus(String transferId) {
+    public TransferStatus getTransferStatus(String transferId) {
         synchronized (this) {
             Validate.isTrue(state == State.RUNNING || state == State.STOPPING);
             // get status from current transfer
@@ -130,7 +130,7 @@ public class ServerImpl implements Server, TransferManager {
                 return transfer.getStatus();
             }
         }
-        // get status from storage or return null
+        // transfer not found -> get status from storage
         return statusStorage.getTransferStatus(transferId);
     }
 
@@ -140,44 +140,23 @@ public class ServerImpl implements Server, TransferManager {
     public Transfer getTransfer(String transferId) throws FileTransferException {
         synchronized (this) {
             checkServerState();
-            checkNewTransfer(transferId);
+            // check if requested transfer is creating
+            if (newTransferIds.contains(transferId)) {
+                throw new ErrorContext("Transfer is busy").addParam("transferId", transferId).setCode(ErrorCode.BUSY)
+                        .createEx();
+            }
             // get current transfer
             AbstractTransfer transfer = transferIdMap.get(transferId);
             if (transfer != null) {
                 return transfer;
             }
         }
-        // transfer not found -> check storage for reason
+        // transfer not found -> get status from storage
         TransferStatus ts = statusStorage.getTransferStatus(transferId);
         if (ts != null) {
-            throw new ErrorContext("Transfer is terminated").addParam("finalState", ts.getState())
-                    .addParam("transferId", transferId).createEx();
+            return new TerminatedTransfer(transferId, ts);
         }
         throw new ErrorContext("Transfer not found").addParam("transferId", transferId).createEx();
-    }
-
-    @Override
-    public TransferStatus getConfirmedStatus(String transferId) throws FileTransferException {
-        synchronized (this) {
-            checkServerState();
-            checkNewTransfer(transferId);
-            // get status from current transfer
-            AbstractTransfer transfer = transferIdMap.get(transferId);
-            if (transfer != null) {
-                TransferStatusImpl ts = transfer.getStatus();
-                // confirmed status must respect busy state
-                if (ts.isBusy()) {
-                    throw new ErrorContext("Transfer is busy", transfer).setCode(ErrorCode.BUSY).createEx();
-                }
-                return ts;
-            }
-        }
-        // get status from storage or throw exception
-        TransferStatus ts = statusStorage.getTransferStatus(transferId);
-        if (ts == null) {
-            throw new ErrorContext("Transfer status not found").addParam("transferId", transferId).createEx();
-        }
-        return ts;
     }
 
     @Override
@@ -216,6 +195,7 @@ public class ServerImpl implements Server, TransferManager {
             DownloadHandler dh = (DownloadHandler) dataHandler;
             transfer = new DwnldTransfer(transferId, dh, config, executor);
         }
+        // initialize transfer during async creation
         transfer.init();
         // publish initialized transfer
         synchronized (this) {
@@ -248,17 +228,6 @@ public class ServerImpl implements Server, TransferManager {
     private void checkServerState() throws FileTransferException {
         if (state != State.RUNNING) {
             throw new ErrorContext("Server is not running").createEx();
-        }
-    }
-
-    /**
-     * When transfer is not yet created then busy exception is thrown. Caller must ensure
-     * synchronization.
-     */
-    private void checkNewTransfer(String transferId) throws FileTransferException {
-        if (newTransferIds.contains(transferId)) {
-            throw new ErrorContext("Transfer is busy").addParam("transferId", transferId).setCode(ErrorCode.BUSY)
-                    .createEx();
         }
     }
 

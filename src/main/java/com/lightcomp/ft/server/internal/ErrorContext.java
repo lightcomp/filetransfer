@@ -85,7 +85,7 @@ public class ErrorContext {
             if (cause instanceof TransferException) {
                 Map<String, Object> causeMap = ((TransferException) cause).getParams();
                 if (causeMap != null) {
-                    causeMap.forEach((n, v) -> cpyMap.putIfAbsent("cause." + n, v));
+                    causeMap.forEach((n, v) -> cpyMap.putIfAbsent("detail." + n, v));
                 }
             }
         }

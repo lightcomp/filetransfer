@@ -10,11 +10,11 @@ public class FileDataProgress {
         this.progressInfo = progressInfo;
     }
 
-    public synchronized void update(long position) {
-        if (position <= numProcessed) {
+    public synchronized void update(long newPos) {
+        if (newPos <= numProcessed) {
             return;
         }
-        long size = position - numProcessed;
+        long size = newPos - numProcessed;
         numProcessed += size;
         progressInfo.onDataSend(size);
     }

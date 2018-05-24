@@ -20,7 +20,6 @@ import com.lightcomp.ft.server.TransferState;
 import com.lightcomp.ft.server.TransferStatus;
 import com.lightcomp.ft.server.UploadHandler;
 import com.lightcomp.ft.wsdl.v1.FileTransferException;
-import com.lightcomp.ft.xsd.v1.ErrorCode;
 import com.lightcomp.ft.xsd.v1.Frame;
 
 public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo {
@@ -68,18 +67,7 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
         if (lastFrameReceived && status.getState() == TransferState.STARTED) {
             return true;
         }
-        // call super
-        return super.isBusy();
-    }
-
-    @Override
-    protected ErrorContext prepareFinish() {
-        // check if busy processing last frame
-        if (lastFrameReceived && status.getState() == TransferState.STARTED) {
-            return new ErrorContext("Finish is not prepared", this).setCode(ErrorCode.BUSY);
-        }
-        // call super
-        return super.prepareFinish();
+        return false;
     }
 
     @Override
@@ -137,10 +125,6 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
      * @return Returns error context if transfer failed.
      */
     private ErrorContext prepareReceive(Frame frame) {
-        // check if is busy receiving frame
-        if (receivingFrame) {
-            return new ErrorContext("Another frame is being received", this).setCode(ErrorCode.BUSY);
-        }
         // check started state
         if (status.getState() != TransferState.STARTED) {
             return new ErrorContext("Unable to receive frame in current state", this).addParam("currentState",
@@ -186,9 +170,9 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
     }
 
     /**
-     * @return Returns true when frame was added. If false transfer is not able to accept new frames.
+     * @return Returns false when worker is no longer needed.
      */
-    boolean addProcessedFrame(int seqNum, boolean last) {
+    boolean frameProcessed(int seqNum, boolean last) {
         TransferStatus ts;
         synchronized (this) {
             if (status.getState().isTerminal()) {

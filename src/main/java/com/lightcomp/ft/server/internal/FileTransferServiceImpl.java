@@ -49,8 +49,8 @@ public class FileTransferServiceImpl implements FileTransferService {
 
     @Override
     public TransferStatus status(TransferStatusRequest statusRequest) throws FileTransferException {
-        com.lightcomp.ft.server.TransferStatus ts = manager.getConfirmedStatus(statusRequest.getTransferId());
-        return convertServerStatus(ts);
+        Transfer transfer = manager.getTransfer(statusRequest.getTransferId());
+        return convertServerStatus(transfer.getConfirmedStatus());
     }
 
     @Override
@@ -65,9 +65,10 @@ public class FileTransferServiceImpl implements FileTransferService {
         // convert state
         switch (serverStatus.getState()) {
             case CREATED:
+            case FINISHING:
+                throw new IllegalStateException();
             case STARTED:
             case TRANSFERED:
-            case FINISHING:
                 ts.setState(FileTransferState.ACTIVE);
                 break;
             case FINISHED:

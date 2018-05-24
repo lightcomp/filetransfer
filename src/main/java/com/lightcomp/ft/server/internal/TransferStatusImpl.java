@@ -25,8 +25,6 @@ public class TransferStatusImpl implements TransferStatus {
 
     private ErrorDesc errorDesc;
 
-    private boolean busy;
-
     public TransferStatusImpl() {
         state = TransferState.CREATED;
         lastActivity = LocalDateTime.now();
@@ -43,7 +41,6 @@ public class TransferStatusImpl implements TransferStatus {
         lastFrameSeqNum = src.lastFrameSeqNum;
         response = src.response;
         errorDesc = src.errorDesc;
-        busy = src.busy;
     }
 
     @Override
@@ -81,10 +78,6 @@ public class TransferStatusImpl implements TransferStatus {
         return errorDesc;
     }
 
-    public boolean isBusy() {
-        return busy;
-    }
-
     /* modify methods */
 
     public void addTransferedData(long size) {
@@ -116,10 +109,6 @@ public class TransferStatusImpl implements TransferStatus {
         updateActivity();
     }
 
-    public void setBusy(boolean busy) {
-        this.busy = busy;
-    }
-
     public TransferStatusImpl copy() {
         return new TransferStatusImpl(this);
     }
@@ -134,7 +123,7 @@ public class TransferStatusImpl implements TransferStatus {
     @Override
     public String toString() {
         return "TransferStatusImpl [state=" + state + ", lastActivity=" + lastActivity + ", startTime=" + startTime
-                + ", transferedSize=" + transferedSize + ", lastFrameSeqNum=" + lastFrameSeqNum + ", response=" + response
-                + ", errorDesc=" + errorDesc + ", busy=" + busy + "]";
+                + ", transferedSize=" + transferedSize + ", lastFrameSeqNum=" + lastFrameSeqNum + ", response="
+                + response + ", errorDesc=" + errorDesc + "]";
     }
 }

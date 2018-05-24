@@ -35,5 +35,5 @@ public interface Server {
     /**
      * @return Returns current transfer status or null when not found.
      */
-    TransferStatus getCurrentStatus(String transferId);
+    TransferStatus getTransferStatus(String transferId);
 }

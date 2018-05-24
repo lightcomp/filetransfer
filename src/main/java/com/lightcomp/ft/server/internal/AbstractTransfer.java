@@ -50,17 +50,8 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
         return handler.getRequestId();
     }
 
-    /**
-     * Returns current status, method must return status impl to allow read busy state.
-     */
-    public synchronized TransferStatusImpl getStatus() {
-        TransferStatusImpl ts = status.copy();
-        // terminal state can be reported immediately
-        if (!status.getState().isTerminal()) {
-            // busy is set only to this copy because only this method reveals status impl
-            ts.setBusy(isBusy());
-        }
-        return ts;
+    public synchronized TransferStatus getStatus() {
+        return status.copy();
     }
 
     /**
@@ -77,25 +68,36 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
         handler.onTransferProgress(ts);
     }
 
-    /**
-     * Transfer busy state. <i>Impl note: specialization should override this method.</i>
-     */
-    public synchronized boolean isBusy() {
-        return status.getState() == TransferState.FINISHING;
+    @Override
+    public synchronized TransferStatus getConfirmedStatus() throws FileTransferException {
+        TransferState ts = status.getState();
+        // terminal state can be reported immediately
+        if (ts.isTerminal()) {
+            return status.copy();
+        }
+        // check if busy
+        if (ts == TransferState.FINISHING || isBusy()) {
+            throw new ErrorContext("Transfer is busy", this).setCode(ErrorCode.BUSY).createEx();
+        }
+        return status.copy();
     }
+
+    protected abstract boolean isBusy();
 
     @Override
     public GenericDataType finish() throws FileTransferException {
         ErrorContext ec = null;
         synchronized (this) {
             checkActiveTransfer();
-            ec = prepareFinish();
-            // fail transfer if fatal error
-            if (ec != null && ec.isFatal()) {
+            // check transfered state
+            if (status.getState() != TransferState.TRANSFERED) {
+                ec = new ErrorContext("Not all frames were transfered", this);
                 // state must be changed in same sync block
                 status.changeStateToFailed(ec.getDesc());
                 // notify canceling threads
                 notifyAll();
+            } else {
+                status.changeState(TransferState.FINISHING);
             }
         }
         // onTransferFailed must be called outside of sync block
@@ -106,21 +108,6 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
             throw ec.createEx();
         }
         return finishInternal();
-    }
-
-    /**
-     * Prepares finish. Method is called in synchronized block.
-     * 
-     * @return Returns error context if transfer failed.
-     */
-    protected ErrorContext prepareFinish() {
-        // check transfered frame
-        if (status.getState() != TransferState.TRANSFERED) {
-            return new ErrorContext("Unable to finish transfer in current state", this).addParam("currentState",
-                    status.getState());
-        }
-        status.changeState(TransferState.FINISHING);
-        return null;
     }
 
     private GenericDataType finishInternal() throws FileTransferException {
@@ -275,14 +262,14 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
     }
 
     /**
-     * Check if transfer is active (STARTED and TRANSFERED state), must be synchronized by caller.
+     * After check transfer can be only in STARTED or TRANSFERED state and not busy.
      */
     protected void checkActiveTransfer() throws FileTransferException {
         switch (status.getState()) {
             case CREATED:
-                throw new IllegalStateException(); // just to be sure
+                throw new IllegalStateException();
             case FINISHING:
-                throw new ErrorContext("Transfer is finishing", this).setCode(ErrorCode.BUSY).createEx();
+                throw new ErrorContext("Transfer is busy", this).setCode(ErrorCode.BUSY).createEx();
             case FINISHED:
                 throw new ErrorContext("Transfer finished", this).createEx();
             case CANCELED:
@@ -290,8 +277,11 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
             case FAILED:
                 throw ErrorContext.createEx(status.getErrorDesc(), ErrorCode.FATAL);
             default:
-                return; // active transfer
+                if (isBusy()) {
+                    throw new ErrorContext("Transfer is busy", this).setCode(ErrorCode.BUSY).createEx();
+                }
         }
+        // active transfer
     }
 
     /**

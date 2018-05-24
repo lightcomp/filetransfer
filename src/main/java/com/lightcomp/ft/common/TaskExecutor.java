@@ -47,7 +47,7 @@ public class TaskExecutor {
 
         state = State.RUNNING;
         Thread managerThread = new Thread(this::runManager,
-                "TaskExecutorManager_" + threadNamePostfix + "_" + System.identityHashCode(this));
+                "TaskExecutorManager-" + threadNamePostfix + "-" + System.identityHashCode(this));
         managerThread.start();
     }
 

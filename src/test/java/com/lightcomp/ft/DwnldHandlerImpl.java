@@ -1,22 +1,24 @@
 package com.lightcomp.ft;
 
-import java.nio.file.Path;
+import java.util.Collection;
+import java.util.Iterator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.lightcomp.ft.core.send.items.SourceItem;
+import com.lightcomp.ft.server.DownloadHandler;
 import com.lightcomp.ft.server.ErrorDesc;
 import com.lightcomp.ft.server.Server;
 import com.lightcomp.ft.server.TransferState;
 import com.lightcomp.ft.server.TransferStatus;
-import com.lightcomp.ft.server.UploadHandler;
 import com.lightcomp.ft.xsd.v1.GenericDataType;
 
 import net.jodah.concurrentunit.Waiter;
 
-public class UploadHandlerImpl implements UploadHandler {
+public class DwnldHandlerImpl implements DownloadHandler {
 
-    private final Logger logger = LoggerFactory.getLogger(UploadHandlerImpl.class);
+    private final Logger logger = LoggerFactory.getLogger(DwnldHandlerImpl.class);
 
     private final String transferId;
 
@@ -24,7 +26,7 @@ public class UploadHandlerImpl implements UploadHandler {
 
     private final String requestId;
 
-    private final Path uploadDir;
+    private final Collection<SourceItem> items;
 
     private final Server server;
 
@@ -34,12 +36,12 @@ public class UploadHandlerImpl implements UploadHandler {
 
     private TransferState progressState;
 
-    public UploadHandlerImpl(String transferId, GenericDataType response, String requestId, Path uploadDir, Server server,
-            Waiter waiter, TransferState terminalState) {
+    public DwnldHandlerImpl(String transferId, GenericDataType response, String requestId, Collection<SourceItem> items,
+            Server server, Waiter waiter, TransferState terminalState) {
         this.transferId = transferId;
         this.response = response;
         this.requestId = requestId;
-        this.uploadDir = uploadDir;
+        this.items = items;
         this.server = server;
         this.waiter = waiter;
         this.terminalState = terminalState;
@@ -47,7 +49,7 @@ public class UploadHandlerImpl implements UploadHandler {
 
     @Override
     public Mode getMode() {
-        return Mode.UPLOAD;
+        return Mode.DOWNLOAD;
     }
 
     @Override
@@ -56,8 +58,8 @@ public class UploadHandlerImpl implements UploadHandler {
     }
 
     @Override
-    public Path getUploadDir() {
-        return uploadDir;
+    public Iterator<SourceItem> getItemIterator() {
+        return items.iterator();
     }
 
     @Override
@@ -82,7 +84,7 @@ public class UploadHandlerImpl implements UploadHandler {
     @Override
     public GenericDataType onTransferSuccess() {
         logger.info("Server transfer succeeded, transferId={}", transferId);
-        
+
         TransferStatus ts = server.getTransferStatus(transferId);
         waiter.assertEquals(TransferState.FINISHING, ts.getState());
 
@@ -97,7 +99,7 @@ public class UploadHandlerImpl implements UploadHandler {
     @Override
     public void onTransferCanceled() {
         logger.info("Server transfer canceled, transferId={}", transferId);
-        
+
         TransferStatus ts = server.getTransferStatus(transferId);
         waiter.assertEquals(TransferState.CANCELED, ts.getState());
 
@@ -111,7 +113,7 @@ public class UploadHandlerImpl implements UploadHandler {
     @Override
     public void onTransferFailed(ErrorDesc errorDesc) {
         logger.info("Server transfer failed, transferId={}, desc: {}", transferId, errorDesc);
-        
+
         TransferStatus ts = server.getTransferStatus(transferId);
         waiter.assertEquals(TransferState.FAILED, ts.getState());
 
