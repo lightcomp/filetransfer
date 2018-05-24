@@ -57,8 +57,8 @@ public class ClientImpl implements Client {
 
     @Override
     public synchronized void stop() {
-        service = null;
         transferExecutor.stop();
+        service = null;
     }
 
     private static FileTransferService createService(ClientConfig config) {

@@ -16,11 +16,14 @@ import com.lightcomp.ft.server.Server;
 import com.lightcomp.ft.server.ServerConfig;
 
 /**
+ * input params:<br>
+ * 1) server URL<br>
+ * 2) work directory<br>
+ * <br>
  * request.type: UPLOAD<br>
- *      - request.id used as upload directory (fails if already exists)<br>
+ * - request.id used as upload directory (fails if already exists)<br>
  * request.type: DOWNLOAD<br>
- *      - request.id used as source directory (fails if does not exist)<br>
- *
+ * - request.id used as source directory (fails if does not exist)<br>
  */
 public class FileTransferServer {
 
@@ -28,10 +31,10 @@ public class FileTransferServer {
 
     public static void main(String[] args) throws IOException {
         // BasicConfigurator.configure();
-        logger.debug("Starting FileTransferServer {} {}", args[0], args[1]);
+        logger.debug("Starting FileTransferServer, params: {} {}", args[0], args[1]);
 
-        Path transferDir = Paths.get(args[1]);
-        TransferHandlerImpl handler = new TransferHandlerImpl(transferDir);
+        Path workDir = Paths.get(args[1]);
+        TransferHandlerImpl handler = new TransferHandlerImpl(workDir);
         StatusStorageImpl statusStorage = new StatusStorageImpl();
         ServerConfig cfg = new ServerConfig(handler, statusStorage);
 
@@ -40,9 +43,9 @@ public class FileTransferServer {
 
         Server server = FileTransfer.createServer(cfg);
         server.start();
-        
+
         Endpoint endpoint = Endpoint.publish(args[0], server.getImplementor());
-        
+
         System.out.println("Press any key to exit ...");
         try {
             System.in.read();
