@@ -59,12 +59,16 @@ public class RecvOperation extends AbstractOperation {
         if (frame == null) {
             return new OperationStatus(Type.FAIL).setFailureMessage("Server returned invalid frame");
         }
+        if (frame.getSeqNum() != seqNum) {
+            return new OperationStatus(Type.FAIL).setFailureMessage("Server returned invalid frame")
+                    .addFailureParam("requestedSeqNum", seqNum).addFailureParam("recievedSeqNum", frame.getSeqNum());
+        }
         return super.operationFinished();
     }
 
     @Override
     protected OperationStatus recoveryFailed(Type type, Throwable ex, ExceptionType exType) {
-        return super.recoveryFailed(type, ex, exType).setFailureMessage("Failed to receive frame").addFailureParam("seqNum",
-                seqNum);
+        return super.recoveryFailed(type, ex, exType).setFailureMessage("Failed to receive frame")
+                .addFailureParam("seqNum", seqNum);
     }
 }

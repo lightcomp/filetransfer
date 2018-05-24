@@ -72,7 +72,7 @@ public class UploadFrameWorker implements Runnable {
             try {
                 rfp.process();
                 if (!transfer.frameProcessed(rfp.getSeqNum(), rfp.isLast())) {
-                    break; // worker terminated
+                    break; // worker not needed
                 }
             } catch (Throwable t) {
                 ErrorContext ec = new ErrorContext("Frame processor failed", transfer)

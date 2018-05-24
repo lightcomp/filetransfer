@@ -58,7 +58,18 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
     }
 
     @Override
-    public synchronized boolean isBusy() {
+    public void onDataReceived(long size) {
+        TransferStatus ts;
+        synchronized (this) {
+            status.addTransferedData(size);
+            // copy status in synch block
+            ts = status.copy();
+        }
+        handler.onTransferProgress(ts);
+    }
+
+    @Override
+    protected synchronized boolean isBusy() {
         // check if already receiving frame
         if (receivingFrame) {
             return true;
@@ -68,17 +79,6 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
             return true;
         }
         return false;
-    }
-
-    @Override
-    public void onDataReceived(long size) {
-        TransferStatus ts;
-        synchronized (this) {
-            status.addTransferedData(size);
-            // copy status in synch block
-            ts = status.copy();
-        }
-        handler.onTransferProgress(ts);
     }
 
     @Override

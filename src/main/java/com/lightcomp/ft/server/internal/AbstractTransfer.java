@@ -181,9 +181,10 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
             // if terminal job done
             if (!status.getState().isTerminal()) {
                 status.changeState(TransferState.CANCELED);
-                canceled = true;
                 // notify canceling threads
                 notifyAll();
+                // set flag for handler
+                canceled = true;
             }
         }
         if (canceled) {

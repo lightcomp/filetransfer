@@ -6,7 +6,7 @@ import com.lightcomp.ft.core.send.SendFrameContext;
 public class DwnldFrameWorker implements Runnable {
 
     private enum State {
-        RUNNING, STOPPING, TERMINATED, FINISHED
+        RUNNING, STOPPING, TERMINATED
     }
 
     private final DwnldTransfer transfer;
@@ -31,21 +31,18 @@ public class DwnldFrameWorker implements Runnable {
      * Adds request for next frame to be prepared. Number of prepared frames which is transfer able to
      * accept will be increased.
      * 
-     * @return Returns false when worker is finished.
+     * @return Returns false when worker is terminated.
      */
     public synchronized boolean prepareFrame() {
         if (state == State.RUNNING) {
             frameCount++;
             return true;
         }
-        if (state == State.FINISHED) {
-            return false;
-        }
-        throw new IllegalStateException("Worker is terminated");
+        return false;
     }
 
     public synchronized void terminate() {
-        if (state == State.TERMINATED || state == State.FINISHED) {
+        if (state == State.TERMINATED) {
             return;
         }
         state = State.STOPPING;
@@ -63,20 +60,16 @@ public class DwnldFrameWorker implements Runnable {
     public void run() {
         while (true) {
             synchronized (this) {
-                if (state != State.RUNNING) {
+                if (state != State.RUNNING || frameCount <= 0) {
                     state = State.TERMINATED;
-                    return; // worker is stopping
-                }
-                if (frameCount <= 0) {
-                    state = State.FINISHED;
-                    return; // no more frames
+                    return; // terminated worker
                 }
                 frameCount--;
             }
             try {
                 SendFrameContext frameCtx = frameBuilder.build();
                 if (!transfer.framePrepared(frameCtx)) {
-                    break; // worker terminated
+                    break; // worker not needed
                 }
             } catch (Throwable t) {
                 ErrorContext ec = new ErrorContext("Failed to build download frame", transfer)
