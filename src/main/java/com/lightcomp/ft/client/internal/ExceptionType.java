@@ -1,8 +1,11 @@
 package com.lightcomp.ft.client.internal;
 
+import java.io.IOException;
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
+
+import javax.xml.bind.MarshalException;
 
 import org.apache.cxf.transport.http.HTTPException;
 
@@ -26,7 +29,7 @@ public enum ExceptionType {
             }
             if (t instanceof UnknownHostException) {
                 return ExceptionType.CONNECTION; // host not found
-            }
+            }            
             if (t instanceof FileTransferException) {
                 ErrorDescription desc = ((FileTransferException) t).getFaultInfo();
                 if (desc != null) {
@@ -38,6 +41,18 @@ public enum ExceptionType {
                         return ExceptionType.BUSY; // server busy
                     }
                 }
+            }
+            // SOAPFaultException and MarshallException
+            // happen during disconnect and MTOM transfer
+            if(t instanceof MarshalException) {
+            	MarshalException me = (MarshalException)t;
+            	Throwable linkedException = me.getLinkedException();
+            	if(linkedException!=null) {
+            		if(linkedException instanceof IOException) {
+            			// probably fail to read/write using MTOM
+            			return ExceptionType.CONNECTION;
+            		}
+            	}
             }
             // inspect next cause
             t = t.getCause();
