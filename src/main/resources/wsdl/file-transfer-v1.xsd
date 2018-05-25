@@ -316,7 +316,6 @@ If you would like to use MTOM you have to add the xmime:expectedContentTypes="ap
 		</xs:annotation>
 		<xs:sequence>
 			<xs:element name="resp" type="ft:GenericDataType" minOccurs="0" maxOccurs="1"/>
-			<xs:element name="FrameSeqNum" type="ft:FrameSeqNum" minOccurs="1" maxOccurs="1"/>
 		</xs:sequence>
 		<xs:attribute name="lastFrameSeqNum" use="required" type="ft:FrameSeqNum">
 			<xs:annotation>
