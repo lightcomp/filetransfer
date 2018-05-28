@@ -24,7 +24,7 @@ import com.lightcomp.ft.xsd.v1.Frame;
 
 public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo {
 
-    public static final int FRAME_CAPACITY = 3;
+    public static final int FRAME_CAPACITY = 10;
     
     private static final Logger logger = LoggerFactory.getLogger(UploadTransfer.class);
 

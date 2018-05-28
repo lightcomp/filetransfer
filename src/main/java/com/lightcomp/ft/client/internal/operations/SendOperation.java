@@ -1,7 +1,7 @@
-package com.lightcomp.ft.client.operations;
+package com.lightcomp.ft.client.internal.operations;
 
 import com.lightcomp.ft.client.internal.ExceptionType;
-import com.lightcomp.ft.client.operations.OperationStatus.Type;
+import com.lightcomp.ft.client.internal.operations.OperationStatus.Type;
 import com.lightcomp.ft.core.send.SendFrameContext;
 import com.lightcomp.ft.wsdl.v1.FileTransferException;
 import com.lightcomp.ft.wsdl.v1.FileTransferService;

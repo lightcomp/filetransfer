@@ -1,4 +1,4 @@
-package com.lightcomp.ft.client.operations;
+package com.lightcomp.ft.client.internal.operations;
 
 public interface OperationHandler {
 

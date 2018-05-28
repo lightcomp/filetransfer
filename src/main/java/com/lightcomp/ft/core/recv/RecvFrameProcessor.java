@@ -66,7 +66,8 @@ public class RecvFrameProcessor {
         Validate.isTrue(dataFile == null);
         // create temporary file
         try {
-            dataFile = Files.createTempFile(workDir, "FTRecvFrame"+Integer.toString(seqNum)+"-", null);
+            String prefix = "FTRecvFrame-" + Integer.toString(seqNum) + "-";
+            dataFile = Files.createTempFile(workDir, prefix, null);
         } catch (IOException e) {
             throw new TransferExceptionBuilder("Failed to create temporary file for frame data").setCause(e).build();
         }
@@ -81,7 +82,8 @@ public class RecvFrameProcessor {
             }
         } catch (IOException e) {
             deleteData();
-            throw new TransferExceptionBuilder("Failed to transfer frame data").addParam("seqNum", seqNum).setCause(e).build();
+            throw new TransferExceptionBuilder("Failed to transfer frame data").addParam("seqNum", seqNum).setCause(e)
+                    .build();
         }
     }
 
@@ -141,8 +143,9 @@ public class RecvFrameProcessor {
         if (last) {
             Path currDir = recvCtx.getCurrentDir();
             if (currDir != null) {
-                throw new TransferExceptionBuilder("Directory inconsistency, after last frame the directory still remains open")
-                        .addParam("remainingDir", currDir).build();
+                throw new TransferExceptionBuilder(
+                        "Directory inconsistency, after last frame the directory still remains open")
+                                .addParam("remainingDir", currDir).build();
             }
             Path currFile = recvCtx.getCurrentFile();
             if (currFile != null) {

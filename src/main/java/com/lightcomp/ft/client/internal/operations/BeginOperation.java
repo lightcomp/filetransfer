@@ -1,9 +1,9 @@
-package com.lightcomp.ft.client.operations;
+package com.lightcomp.ft.client.internal.operations;
 
 import org.apache.commons.lang3.StringUtils;
 
 import com.lightcomp.ft.client.internal.ExceptionType;
-import com.lightcomp.ft.client.operations.OperationStatus.Type;
+import com.lightcomp.ft.client.internal.operations.OperationStatus.Type;
 import com.lightcomp.ft.wsdl.v1.FileTransferException;
 import com.lightcomp.ft.wsdl.v1.FileTransferService;
 import com.lightcomp.ft.xsd.v1.BeginResponse;
