@@ -32,12 +32,11 @@ import com.lightcomp.ft.client.Transfer;
 import com.lightcomp.ft.client.TransferState;
 import com.lightcomp.ft.client.TransferStatus;
 import com.lightcomp.ft.client.UploadRequest;
-import com.lightcomp.ft.client.internal.AbstractTransfer;
 import com.lightcomp.ft.client.internal.ClientImpl;
 import com.lightcomp.ft.client.internal.UploadTransfer;
 import com.lightcomp.ft.client.internal.operations.OperationStatus;
-import com.lightcomp.ft.client.internal.operations.SendOperation;
 import com.lightcomp.ft.client.internal.operations.OperationStatus.Type;
+import com.lightcomp.ft.client.internal.operations.SendOperation;
 import com.lightcomp.ft.common.PathUtils;
 import com.lightcomp.ft.core.blocks.DirBeginBlockImpl;
 import com.lightcomp.ft.core.blocks.DirEndBlockImpl;
@@ -342,7 +341,7 @@ public class TransferTest {
 
         client.start();
 
-        Pair<Collection<SourceItem>, Integer> pair = createMixedContent(3, blockMax);
+        Pair<Collection<SourceItem>, Integer> pair = createMixedContentWithoutData(3, blockMax);
         UploadRequestImpl request = new UploadRequestImpl(createReqData("req"), pair.getLeft(), waiter,
                 TransferState.FINISHED);
 
@@ -381,7 +380,7 @@ public class TransferTest {
         client = new ClientImpl(ccfg) {
             @Override
             public Transfer upload(UploadRequest request) {
-                AbstractTransfer transfer = new UploadTransfer(request, config, service) {
+                UploadTransfer transfer = new UploadTransfer(request, config, service) {
                     @Override
                     protected boolean transferFrames() {
                         SendFrameContextImpl frameCtx = new SendFrameContextImpl(1, config);
@@ -523,7 +522,7 @@ public class TransferTest {
     @Test
     public void testMixedContentDownload() throws TimeoutException {
         int blockMax = 5;
-        Pair<Collection<SourceItem>, Integer> pair = createMixedContent(3, blockMax);
+        Pair<Collection<SourceItem>, Integer> pair = createMixedContentWithoutData(3, blockMax);
 
         DwnldTransferHandler dth = new DwnldTransferHandler() {
             @Override
@@ -536,7 +535,7 @@ public class TransferTest {
         ServerConfig scfg = new ServerConfig(dth, ss);
         scfg.setInactiveTimeout(60);
         scfg.setMaxFrameBlocks(blockMax);
-        
+
         String addr = publishEndpoint(scfg);
 
         ClientConfig ccfg = new ClientConfig(addr);
@@ -567,7 +566,7 @@ public class TransferTest {
         return gd;
     }
 
-    public static Pair<Collection<SourceItem>, Integer> createMixedContent(int depth, int size) {
+    public static Pair<Collection<SourceItem>, Integer> createMixedContentWithoutData(int depth, int size) {
         List<SourceItem> items = new ArrayList<>(size);
         int count = size;
         for (int i = 1; i <= size; i++) {
@@ -576,7 +575,7 @@ public class TransferTest {
                 MemoryDir dir = new MemoryDir(cnt);
                 items.add(dir);
                 if (depth > 0) {
-                    Pair<Collection<SourceItem>, Integer> pair = createMixedContent(depth - 1, size);
+                    Pair<Collection<SourceItem>, Integer> pair = createMixedContentWithoutData(depth - 1, size);
                     dir.addChildren(pair.getLeft());
                     count += pair.getRight();
                 }

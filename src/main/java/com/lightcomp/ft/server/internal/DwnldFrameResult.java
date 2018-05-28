@@ -2,7 +2,6 @@ package com.lightcomp.ft.server.internal;
 
 import com.lightcomp.ft.core.send.SendFrameContext;
 import com.lightcomp.ft.server.TransferStatus;
-import com.lightcomp.ft.xsd.v1.Frame;
 
 public class DwnldFrameResult {
 
@@ -37,11 +36,11 @@ public class DwnldFrameResult {
     public ErrorContext getError() {
         return error;
     }
-    
-    public Frame getFrame() {
-        return frameCtx.createFrame();
+
+    public SendFrameContext getFrameCtx() {
+        return frameCtx;
     }
-    
+
     public TransferStatus getStatus() {
         return status;
     }

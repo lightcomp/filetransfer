@@ -26,18 +26,23 @@ public class FrameBuilder {
 
     private int currSeqNum;
 
-    public FrameBuilder(Iterator<SourceItem> itemIt, SendProgressInfo progressInfo, SendConfig config) {
-        dirStack.add(DirContext.createRoot(itemIt));
+    public FrameBuilder(SendProgressInfo progressInfo, SendConfig config) {
         this.progressInfo = progressInfo;
         this.config = config;
     }
 
-    public Object getCurrentSeqNum() {
+    public int getCurrentSeqNum() {
         return currSeqNum;
     }
 
+    public void init(Iterator<SourceItem> itemIt) {
+        Validate.isTrue(currSeqNum == 0);
+
+        dirStack.add(DirContext.createRoot(itemIt));
+    }
+
     public SendFrameContext build() throws TransferException {
-        Validate.isTrue(dirStack.size() > 0, "Last frame already built");
+        Validate.isTrue(dirStack.size() > 0); // initialization not called or last frame built
 
         currSeqNum++;
         SendFrameContextImpl frameCtx = new SendFrameContextImpl(currSeqNum, config);

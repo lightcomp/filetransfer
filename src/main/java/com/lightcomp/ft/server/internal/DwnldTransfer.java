@@ -5,6 +5,7 @@ import java.util.LinkedList;
 import org.apache.commons.lang3.Validate;
 
 import com.lightcomp.ft.common.TaskExecutor;
+import com.lightcomp.ft.core.send.DataSendFailureCallback;
 import com.lightcomp.ft.core.send.FrameBuilder;
 import com.lightcomp.ft.core.send.SendFrameContext;
 import com.lightcomp.ft.core.send.SendProgressInfo;
@@ -18,7 +19,7 @@ import com.lightcomp.ft.xsd.v1.ErrorCode;
 import com.lightcomp.ft.xsd.v1.Frame;
 import com.lightcomp.ft.xsd.v1.GenericDataType;
 
-public class DwnldTransfer extends AbstractTransfer implements SendProgressInfo {
+public class DwnldTransfer extends AbstractTransfer implements SendProgressInfo, DataSendFailureCallback {
 
     public static final int FRAME_CAPACITY = 3;
 
@@ -35,7 +36,8 @@ public class DwnldTransfer extends AbstractTransfer implements SendProgressInfo 
 
     protected DwnldTransfer(String transferId, DownloadHandler handler, ServerConfig config, TaskExecutor executor) {
         super(transferId, handler, config, executor);
-        frameBuilder = new FrameBuilder(handler.getItemIterator(), this, config);
+        frameBuilder = new FrameBuilder(this, config);
+        frameBuilder.init(handler.getItemIterator());
     }
 
     @Override
@@ -45,7 +47,13 @@ public class DwnldTransfer extends AbstractTransfer implements SendProgressInfo 
     }
 
     @Override
-    public void onDataSend(long size) {
+    public void onDataSendFailed(Throwable t) {
+        ErrorContext ec = new ErrorContext("Failed to send frame data", this).setCause(t);
+        transferFailed(ec);
+    }
+
+    @Override
+    public void onFileDataSend(long size) {
         TransferStatus ts;
         synchronized (this) {
             status.addTransferedData(size);
@@ -123,7 +131,7 @@ public class DwnldTransfer extends AbstractTransfer implements SendProgressInfo 
         if (result.isStatusChanged()) {
             handler.onTransferProgress(result.getStatus());
         }
-        return result.getFrame();
+        return result.getFrameCtx().prepareFrame(this);
     }
 
     /**

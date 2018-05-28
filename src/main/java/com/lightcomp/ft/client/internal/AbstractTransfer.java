@@ -257,7 +257,7 @@ public abstract class AbstractTransfer implements Runnable, Transfer, OperationH
         transferFailed(os.getFailureCause(), os.getFailureType());
     }
 
-    private void transferFailed(Throwable cause) {
+    protected void transferFailed(Throwable cause) {
         new TransferExceptionBuilder("Transfer failed", this).setCause(cause).log(logger);
         ExceptionType type = ExceptionType.resolve(cause);
         transferFailed(cause, type);

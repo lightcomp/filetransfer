@@ -7,12 +7,15 @@ import java.util.Collection;
 
 import javax.activation.DataSource;
 
-public class FrameDataSource implements DataSource {
+public class FrameInDataSource implements DataSource {
 
-    private final Collection<BlockStreamProvider> streamProviders;
+    private final Collection<BlockStreamProvider> bsProviders;
 
-    public FrameDataSource(Collection<BlockStreamProvider> streamProviders) {
-        this.streamProviders = streamProviders;
+    private final DataSendFailureCallback failureCallback;
+
+    public FrameInDataSource(Collection<BlockStreamProvider> bsProviders, DataSendFailureCallback failureCallback) {
+        this.bsProviders = bsProviders;
+        this.failureCallback = failureCallback;
     }
 
     @Override
@@ -22,7 +25,7 @@ public class FrameDataSource implements DataSource {
 
     @Override
     public InputStream getInputStream() throws IOException {
-        return new FrameInputStream(streamProviders);
+        return new FrameInStream(bsProviders, failureCallback);
     }
 
     @Override

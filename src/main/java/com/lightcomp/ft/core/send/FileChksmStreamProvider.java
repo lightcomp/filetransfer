@@ -4,13 +4,13 @@ import java.nio.file.Path;
 
 import com.lightcomp.ft.common.Checksum;
 
-public class FileChecksumStreamProvider implements BlockStreamProvider {
+public class FileChksmStreamProvider implements BlockStreamProvider {
 
     private final Checksum checksum;
 
     private final Path srcPath;
 
-    public FileChecksumStreamProvider(Checksum checksum, Path srcPath) {
+    public FileChksmStreamProvider(Checksum checksum, Path srcPath) {
         this.checksum = checksum;
         this.srcPath = srcPath;
     }
@@ -22,6 +22,6 @@ public class FileChecksumStreamProvider implements BlockStreamProvider {
 
     @Override
     public BlockStream create() {
-        return new FileChecksumStream(checksum, srcPath);
+        return new FileChksmStream(checksum, srcPath);
     }
 }

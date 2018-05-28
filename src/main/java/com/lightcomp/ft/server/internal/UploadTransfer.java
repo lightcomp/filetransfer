@@ -58,7 +58,7 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
     }
 
     @Override
-    public void onDataReceived(long size) {
+    public void onFileDataReceived(long size) {
         TransferStatus ts;
         synchronized (this) {
             status.addTransferedData(size);
