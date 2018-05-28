@@ -66,7 +66,7 @@ public class RecvFrameProcessor {
         Validate.isTrue(dataFile == null);
         // create temporary file
         try {
-            dataFile = Files.createTempFile(workDir, Integer.toString(seqNum), null);
+            dataFile = Files.createTempFile(workDir, "FTRecvFrame"+Integer.toString(seqNum)+"-", null);
         } catch (IOException e) {
             throw new TransferExceptionBuilder("Failed to create temporary file for frame data").setCause(e).build();
         }
