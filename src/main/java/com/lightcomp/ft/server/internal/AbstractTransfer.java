@@ -100,7 +100,7 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
                 status.changeState(TransferState.FINISHING);
             }
         }
-        // onTransferFailed must be called outside of sync block
+        // handle any error outside of sync block
         if (ec != null) {
             if (ec.isFatal()) {
                 onTransferFailed(ec);
@@ -219,7 +219,6 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
             }
         }
         if (ec != null) {
-            // timeouted transfer
             onTransferFailed(ec);
         }
         clearResources();
@@ -231,31 +230,31 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
     /**
      * Handles transfer failure. If transfer is already terminated error is logged.
      */
-    protected void transferFailed(ErrorContext ec) {
+    protected void transferFailed(ErrorContext errorCtx) {
         boolean terminated = false;
         synchronized (this) {
             if (status.getState().isTerminal()) {
                 terminated = true;
             } else {
-                status.changeStateToFailed(ec.getDesc());
+                status.changeStateToFailed(errorCtx.getDesc());
                 // notify canceling threads
                 notifyAll();
             }
         }
         if (terminated) {
-            ec.log(logger, "Terminated trasfer thrown exception");
+            errorCtx.log(logger, "Terminated trasfer thrown exception");
         } else {
-            onTransferFailed(ec);
+            onTransferFailed(errorCtx);
         }
     }
 
     /**
-     * Logs error and notifies data handler about failure. Method should't be synchronized.
+     * Logs error and notifies data handler about failure. Method must not be synchronized.
      */
-    protected void onTransferFailed(ErrorContext ec) {
-        ec.log(logger);
+    protected void onTransferFailed(ErrorContext errorCtx) {
+        errorCtx.log(logger);
         try {
-            handler.onTransferFailed(ec.getDesc());
+            handler.onTransferFailed(errorCtx.getDesc());
         } catch (Throwable t) {
             // exception is only logged
             new ErrorContext("Fail callback of data handler cause exception", this).setCause(t).log(logger);
@@ -263,7 +262,8 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
     }
 
     /**
-     * After check transfer can be only in STARTED or TRANSFERED state and not busy.
+     * If passed the check transfer cannot be busy and can only be in STARTED or TRANSFERED state.
+     * Caller must ensure synchronization.
      */
     protected void checkActiveTransfer() throws FileTransferException {
         switch (status.getState()) {
@@ -286,7 +286,7 @@ public abstract class AbstractTransfer implements Transfer, TransferInfo {
     }
 
     /**
-     * Method waits while transfer finishing, must be synchronized by caller.
+     * Method waits while transfer is finishing. Caller must ensure synchronization.
      */
     private void waitWhileFinishing() {
         while (status.getState() == TransferState.FINISHING) {

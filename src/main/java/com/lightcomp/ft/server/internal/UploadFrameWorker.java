@@ -22,10 +22,14 @@ public class UploadFrameWorker implements Runnable {
         this.transfer = transfer;
     }
 
+    public synchronized int getFrameCount() {
+        return frameQueue.size();
+    }
+
     /**
      * Adds frame processor to worker queue.
      * 
-     * @return Returns false when worker is finished.
+     * @return Returns false when worker is finished and can't accept more frames.
      */
     public synchronized boolean addFrame(RecvFrameProcessor rfp) {
         Validate.notNull(rfp);
@@ -60,8 +64,7 @@ public class UploadFrameWorker implements Runnable {
             RecvFrameProcessor rfp;
             synchronized (this) {
                 if (state != State.RUNNING) {
-                    state = State.TERMINATED;
-                    return; // worker is stopping
+                    break; // stopping worker
                 }
                 if (frameQueue.isEmpty()) {
                     state = State.FINISHED;
@@ -71,19 +74,21 @@ public class UploadFrameWorker implements Runnable {
             }
             try {
                 rfp.process();
-                if (!transfer.frameProcessed(rfp.getSeqNum(), rfp.isLast())) {
-                    break; // worker not needed
+                if (!transfer.frameProcessed(rfp)) {
+                    break; // terminated worker
                 }
             } catch (Throwable t) {
                 ErrorContext ec = new ErrorContext("Frame processor failed", transfer)
                         .addParam("seqNum", rfp.getSeqNum()).setCause(t);
-                transfer.transferFailed(ec);
+                transfer.frameProcessingFailed(ec);
                 break; // processor failed
             }
         }
         synchronized (this) {
             state = State.TERMINATED;
             frameQueue.clear();
+            // notify terminating threads
+            notifyAll();
         }
     }
 }

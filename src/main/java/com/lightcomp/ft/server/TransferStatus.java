@@ -15,7 +15,8 @@ public interface TransferStatus {
     TransferState getState();
 
     /**
-     * Last time of any transfer activity.
+     * Last time of any transfer activity, used mainly for inactivity check. Does not necessary
+     * represent last network activity.
      */
     LocalDateTime getLastActivity();
 
@@ -30,9 +31,14 @@ public interface TransferStatus {
     long getTransferedSize();
 
     /**
+     * Sequential number of last transfered frame.
+     */
+    int getTransferedSeqNum();
+
+    /**
      * Sequential number of last processed frame.
      */
-    int getLastFrameSeqNum();
+    int getProcessedSeqNum();
 
     /**
      * Server response after transfer is finished.

@@ -4,7 +4,7 @@ import com.lightcomp.ft.core.send.SendFrameContext;
 import com.lightcomp.ft.server.TransferStatus;
 import com.lightcomp.ft.xsd.v1.Frame;
 
-public class DwnldFrameResponse {
+public class DwnldFrameResult {
 
     private final ErrorContext error;
 
@@ -12,37 +12,37 @@ public class DwnldFrameResponse {
 
     private final TransferStatus status;
 
-    public DwnldFrameResponse(ErrorContext error) {
+    public DwnldFrameResult(ErrorContext error) {
         this.error = error;
         this.frameCtx = null;
         this.status = null;
     }
 
-    public DwnldFrameResponse(SendFrameContext frameCtx) {
+    public DwnldFrameResult(SendFrameContext frameCtx) {
         this.frameCtx = frameCtx;
         this.error = null;
         this.status = null;
     }
 
-    public DwnldFrameResponse(SendFrameContext frameCtx, TransferStatus status) {
+    public DwnldFrameResult(SendFrameContext frameCtx, TransferStatus status) {
         this.frameCtx = frameCtx;
         this.status = status;
         this.error = null;
     }
 
-    public boolean isFrameChanged() {
+    public boolean isStatusChanged() {
         return status != null;
     }
 
     public ErrorContext getError() {
         return error;
     }
-
-    public TransferStatus getStatus() {
-        return status;
-    }
-
+    
     public Frame getFrame() {
         return frameCtx.createFrame();
+    }
+    
+    public TransferStatus getStatus() {
+        return status;
     }
 }

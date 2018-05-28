@@ -24,6 +24,8 @@ import com.lightcomp.ft.xsd.v1.Frame;
 
 public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo {
 
+    public static final int FRAME_CAPACITY = 3;
+    
     private static final Logger logger = LoggerFactory.getLogger(UploadTransfer.class);
 
     private final RecvContextImpl recvCtx;
@@ -31,8 +33,6 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
     private UploadFrameWorker frameWorker;
 
     private Path tempDir;
-
-    private int lastSeqNum;
 
     private boolean receivingFrame;
 
@@ -74,6 +74,10 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
         if (receivingFrame) {
             return true;
         }
+        // cannot processes more frames
+        if (frameWorker != null && frameWorker.getFrameCount() >= FRAME_CAPACITY) {
+            return true;
+        }
         // check if processing last frame
         if (lastFrameReceived && status.getState() == TransferState.STARTED) {
             return true;
@@ -91,24 +95,29 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
     @Override
     public void recvFrame(Frame frame) throws FileTransferException {
         ErrorContext ec = null;
+        TransferStatus ts = null;
         synchronized (this) {
             checkActiveTransfer();
             ec = prepareReceive(frame);
-            // fail transfer if fatal error
-            if (ec != null && ec.isFatal()) {
-                // state must be changed in same sync block
+            if (ec == null) {
+                // copy status in synch block
+                ts = status.copy();
+            } else if (ec.isFatal()) {
+                // fail transfer if fatal error - must be in same sync block
                 status.changeStateToFailed(ec.getDesc());
                 // notify canceling threads
                 notifyAll();
             }
         }
-        // onTransferFailed must be called outside of sync block
+        // handle any error outside of sync block
         if (ec != null) {
             if (ec.isFatal()) {
                 onTransferFailed(ec);
             }
             throw ec.createEx();
         }
+        // report transfer progress
+        handler.onTransferProgress(ts);
         // receive is blocked by flag but not synchronized
         try {
             receiveInternal(frame);
@@ -135,19 +144,21 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
             return new ErrorContext("Server already received last frame", this);
         }
         // check last frame number
-        int seqNum = frame.getSeqNum();
-        if (seqNum != lastSeqNum + 1) {
+        int nextSeqNum = status.getTransferedSeqNum() + 1;
+        if (nextSeqNum != frame.getSeqNum()) {
             return new ErrorContext("Failed to receive frame, invalid frame number", this)
-                    .addParam("expectedSeqNum", lastSeqNum + 1).addParam("receivedSeqNum", seqNum);
+                    .addParam("expectedSeqNum", nextSeqNum).addParam("receivedSeqNum", frame.getSeqNum());
         }
+        // update last frame
+        status.incrementTransferedSeqNum();
+        // update internal fields
         lastFrameReceived = Boolean.TRUE.equals(frame.isLast());
         receivingFrame = true;
-        lastSeqNum = seqNum;
         return null;
     }
 
     /**
-     * Transfers frame data and starts async frame processing.
+     * Transfers frame data and starts async frame processing. Caller must ensure synchronization.
      */
     private void receiveInternal(Frame frame) throws FileTransferException {
         RecvFrameProcessor rfp = RecvFrameProcessor.create(recvCtx, frame);
@@ -161,36 +172,45 @@ public class UploadTransfer extends AbstractTransfer implements RecvProgressInfo
             throw ec.createEx();
         }
         // start async processor
-        if (frameWorker != null && frameWorker.addFrame(rfp)) {
-            return;
+        if (frameWorker == null || !frameWorker.addFrame(rfp)) {
+            // worker does not exist or is finished
+            frameWorker = new UploadFrameWorker(this);
+            frameWorker.addFrame(rfp);
+            executor.addTask(frameWorker);
         }
-        frameWorker = new UploadFrameWorker(this);
-        frameWorker.addFrame(rfp);
-        executor.addTask(frameWorker);
     }
 
     /**
-     * @return Returns false when worker is no longer needed.
+     * Handles processed frame.
+     * 
+     * @return False when worker must terminate. True when worker can continue.
      */
-    boolean frameProcessed(int seqNum, boolean last) {
+    boolean frameProcessed(RecvFrameProcessor rfp) {
         TransferStatus ts;
         synchronized (this) {
+            // terminate this worker if transfer is terminated
             if (status.getState().isTerminal()) {
-                return false; // terminated transfer
+                return false;
             }
             // integrity checks
             Validate.isTrue(status.getState() == TransferState.STARTED);
-            Validate.isTrue(status.getLastFrameSeqNum() + 1 == seqNum);
-            // update status
-            status.incrementFrameSeqNum();
-            if (last) {
+            Validate.isTrue(status.getProcessedSeqNum() + 1 == rfp.getSeqNum());
+            // if last frame change state and reset worker
+            if (rfp.isLast()) {
                 status.changeState(TransferState.TRANSFERED);
+                frameWorker = null;
             }
+            // update progress
+            status.incrementProcessedSeqNum();
             // copy status in synch block
             ts = status.copy();
         }
         handler.onTransferProgress(ts);
-        return true;
+        return !rfp.isLast();
+    }
+
+    void frameProcessingFailed(ErrorContext errorCtx) {
+        transferFailed(errorCtx);
     }
 
     @Override

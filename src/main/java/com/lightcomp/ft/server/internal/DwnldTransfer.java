@@ -41,9 +41,7 @@ public class DwnldTransfer extends AbstractTransfer implements SendProgressInfo 
     @Override
     public void init() throws TransferException {
         super.init();
-        // start async worker
-        frameWorker = new DwnldFrameWorker(this, frameBuilder, FRAME_CAPACITY);
-        executor.addTask(frameWorker);
+        prepareWorker();
     }
 
     @Override
@@ -75,8 +73,8 @@ public class DwnldTransfer extends AbstractTransfer implements SendProgressInfo 
     private void preFinish() {
         TransferStatus ts;
         synchronized (this) {
-            // check if last frame sent
-            if (status.getLastFrameSeqNum() != lastFrameSeqNum) {
+            // check if last frame transfered
+            if (status.getTransferedSeqNum() != lastFrameSeqNum) {
                 return;
             }
             // check started state
@@ -100,12 +98,12 @@ public class DwnldTransfer extends AbstractTransfer implements SendProgressInfo 
 
     @Override
     public Frame sendFrame(int seqNum) throws FileTransferException {
-        DwnldFrameResponse resp;
+        DwnldFrameResult result;
         synchronized (this) {
             checkActiveTransfer();
-            resp = prepareFrame(seqNum);
+            result = sendInternal(seqNum);
             // fail transfer if fatal error
-            ErrorContext ec = resp.getError();
+            ErrorContext ec = result.getError();
             if (ec != null && ec.isFatal()) {
                 // state must be changed in same sync block
                 status.changeStateToFailed(ec.getDesc());
@@ -114,7 +112,7 @@ public class DwnldTransfer extends AbstractTransfer implements SendProgressInfo 
             }
         }
         // handle any error outside of sync block
-        ErrorContext ec = resp.getError();
+        ErrorContext ec = result.getError();
         if (ec != null) {
             if (ec.isFatal()) {
                 onTransferFailed(ec);
@@ -122,106 +120,135 @@ public class DwnldTransfer extends AbstractTransfer implements SendProgressInfo 
             throw ec.createEx();
         }
         // report progress when frame changed
-        if (resp.isFrameChanged()) {
-            handler.onTransferProgress(resp.getStatus());
+        if (result.isStatusChanged()) {
+            handler.onTransferProgress(result.getStatus());
         }
-        return resp.getFrame();
+        return result.getFrame();
     }
 
     /**
      * Caller must ensure synchronization.
      */
-    private DwnldFrameResponse prepareFrame(int seqNum) {
+    private DwnldFrameResult sendInternal(int seqNum) {
         // checks started state
         if (status.getState() != TransferState.STARTED) {
             ErrorContext ec = new ErrorContext("Unable to send frame in current state", this).addParam("currentState",
                     status.getState());
-            return new DwnldFrameResponse(ec);
+            return new DwnldFrameResult(ec);
         }
-        int sentSeqNum = status.getLastFrameSeqNum();
-        // return if current requested
-        if (sentSeqNum == seqNum) {
+        int trSeqNum = status.getTransferedSeqNum();
+        // return if current frame
+        if (trSeqNum == seqNum) {
             Validate.isTrue(currFrame.getSeqNum() == seqNum);
-            return new DwnldFrameResponse(currFrame);
+            return new DwnldFrameResult(currFrame);
         }
-        // check number of next frame
-        if (sentSeqNum != seqNum - 1) {
+        // checks number of next frame
+        if (trSeqNum != seqNum - 1) {
             ErrorContext ec = new ErrorContext("Failed to send frame, invalid frame number", this)
                     .addParam("lastSeqNum", currFrame.getSeqNum()).addParam("receivedSeqNum", seqNum);
-            return new DwnldFrameResponse(ec);
+            return new DwnldFrameResult(ec);
         }
-        // return if requested first time
-        if (sentSeqNum == 0) {
+        // return if first request
+        if (trSeqNum == 0) {
             Validate.isTrue(currFrame.getSeqNum() == 1);
-            // update transfer status
-            status.incrementFrameSeqNum();
-            // return current with copy of changed status
-            return new DwnldFrameResponse(currFrame, status.copy());
+            status.incrementTransferedSeqNum();
+            return new DwnldFrameResult(currFrame, status.copy());
         }
         // check if current is not last
         if (currFrame.isLast()) {
             ErrorContext ec = new ErrorContext("Requested frame exceeds last frame of transfer", this);
-            return new DwnldFrameResponse(ec);
+            return new DwnldFrameResult(ec);
         }
         // prepare next frame
         return moveToNextFrame(seqNum);
     }
 
     /**
-     * Caller must ensure synchronization.
+     * Changes current frame, can be null when new frame is not prepared yet. Caller must ensure
+     * synchronization.
      */
-    private DwnldFrameResponse moveToNextFrame(int seqNum) {
-        // next can be already set as current by worker
+    private DwnldFrameResult moveToNextFrame(int seqNum) {
+        // next can be already set to current by worker
         if (currFrame.getSeqNum() != seqNum) {
-            // replace old current with next from queue
+            // reset old current
             currFrame = null;
+            // if queue is empty wait for worker
             if (frameQueue.isEmpty()) {
                 ErrorContext ec = new ErrorContext("Transfer is busy", this).setCode(ErrorCode.BUSY);
-                return new DwnldFrameResponse(ec);
+                return new DwnldFrameResult(ec);
             }
+            // set current from queue
             currFrame = frameQueue.removeFirst();
-            // notifies worker about frame removal
-            prepareNextFrame();
+            prepareWorker();
         }
-        // update transfer status
-        status.incrementFrameSeqNum();
+        // update last frame
+        status.incrementTransferedSeqNum();
         // return current frame with copy of changed status
-        return new DwnldFrameResponse(currFrame, status.copy());
+        return new DwnldFrameResult(currFrame, status.copy());
     }
 
-    private void prepareNextFrame() {
-        boolean terminatedWoker = !frameWorker.prepareFrame();
-        if (lastFrameSeqNum > 0) {
-            // worker already prepared last frame a should be terminated
-            Validate.isTrue(terminatedWoker);
-            return;
-        }
-        if (terminatedWoker) {
-            int frameCount = FRAME_CAPACITY - frameQueue.size();
-            frameWorker = new DwnldFrameWorker(this, frameBuilder, frameCount);
+    /**
+     * Checks current worker and prepares new one if needed. Caller must ensure synchronization.
+     */
+    private void prepareWorker() {
+        Validate.isTrue(!status.getState().isTerminal());
+        // create new worker when needed
+        if (frameWorker == null && lastFrameSeqNum < 0) {
+            frameWorker = new DwnldFrameWorker(this, frameBuilder);
             executor.addTask(frameWorker);
         }
     }
 
     /**
-     * @return Returns false when worker is no longer needed.
+     * Handles processed frame.
+     * 
+     * @return False when worker must terminate. True when worker can continue.
      */
-    synchronized boolean framePrepared(SendFrameContext frameCtx) {
-        if (status.getState().isTerminal()) {
-            return false; // terminated transfer
+    boolean frameProcessed(SendFrameContext frameCtx) {
+        boolean canWorkerContinue;
+        TransferStatus ts;
+        synchronized (this) {
+            // terminate this worker if transfer is terminated
+            if (status.getState().isTerminal()) {
+                return false;
+            }
+            canWorkerContinue = frameProcessedInternal(frameCtx);
+            // update progress
+            status.incrementProcessedSeqNum();
+            // copy status in synch block
+            ts = status.copy();
         }
-        // integrity checks
+        handler.onTransferProgress(ts);
+        return canWorkerContinue;
+    }
+
+    void frameProcessingFailed(ErrorContext errorCtx) {
+        transferFailed(errorCtx);
+    }
+
+    /**
+     * Handles processed frame. Caller must ensure synchronization.
+     * 
+     * @return False when worker must terminate. True when worker can continue.
+     */
+    private boolean frameProcessedInternal(SendFrameContext frameCtx) {
         Validate.isTrue(status.getState() == TransferState.STARTED);
-        Validate.isTrue(frameQueue.size() <= FRAME_CAPACITY);
-        // add prepared frame
+        // add processed frame
         if (currFrame == null) {
             currFrame = frameCtx;
         } else {
+            Validate.isTrue(frameQueue.size() < FRAME_CAPACITY);
             frameQueue.addLast(frameCtx);
         }
-        // worker not needed when frame is last
+        // terminate worker when frame is last
         if (frameCtx.isLast()) {
             lastFrameSeqNum = frameCtx.getSeqNum();
+            frameWorker = null;
+            return false;
+        }
+        // terminate worker when queue is full
+        if (frameQueue.size() >= FRAME_CAPACITY) {
+            frameWorker = null;
             return false;
         }
         return true;

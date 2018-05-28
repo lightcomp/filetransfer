@@ -15,30 +15,9 @@ public class DwnldFrameWorker implements Runnable {
 
     private State state = State.RUNNING;
 
-    private int frameCount;
-
-    /**
-     * @param frameCount
-     *            number of prepared frames which is transfer able to accept
-     */
-    public DwnldFrameWorker(DwnldTransfer transfer, FrameBuilder frameBuilder, int frameCount) {
+    public DwnldFrameWorker(DwnldTransfer transfer, FrameBuilder frameBuilder) {
         this.transfer = transfer;
         this.frameBuilder = frameBuilder;
-        this.frameCount = frameCount;
-    }
-
-    /**
-     * Adds request for next frame to be prepared. Number of prepared frames which is transfer able to
-     * accept will be increased.
-     * 
-     * @return Returns false when worker is terminated.
-     */
-    public synchronized boolean prepareFrame() {
-        if (state == State.RUNNING) {
-            frameCount++;
-            return true;
-        }
-        return false;
     }
 
     public synchronized void terminate() {
@@ -60,26 +39,26 @@ public class DwnldFrameWorker implements Runnable {
     public void run() {
         while (true) {
             synchronized (this) {
-                if (state != State.RUNNING || frameCount <= 0) {
-                    state = State.TERMINATED;
-                    return; // terminated worker
+                if (state != State.RUNNING) {
+                    break; // stopping worker
                 }
-                frameCount--;
             }
             try {
                 SendFrameContext frameCtx = frameBuilder.build();
-                if (!transfer.framePrepared(frameCtx)) {
-                    break; // worker not needed
+                if (!transfer.frameProcessed(frameCtx)) {
+                    break; // worker terminated
                 }
             } catch (Throwable t) {
                 ErrorContext ec = new ErrorContext("Failed to build download frame", transfer)
                         .addParam("seqNum", frameBuilder.getCurrentSeqNum()).setCause(t);
-                transfer.transferFailed(ec);
+                transfer.frameProcessingFailed(ec);
                 break; // builder failed
             }
         }
         synchronized (this) {
             state = State.TERMINATED;
+            // notify terminating threads
+            notifyAll();
         }
     }
 }

@@ -154,7 +154,7 @@ public class TransferTest {
         com.lightcomp.ft.server.TransferStatus sts = ss.getTransferStatus(ur.getLastTransferId());
         Assert.assertTrue(sts.getState() == com.lightcomp.ft.server.TransferState.FINISHED);
         Assert.assertTrue(sts.getTransferedSize() == 0);
-        Assert.assertTrue(sts.getLastFrameSeqNum() == 1);
+        Assert.assertTrue(sts.getTransferedSeqNum() == 1);
     }
 
     @Test
@@ -237,7 +237,7 @@ public class TransferTest {
         com.lightcomp.ft.server.TransferStatus sts = ss.getTransferStatus(ur.getLastTransferId());
         Assert.assertTrue(sts.getState() == com.lightcomp.ft.server.TransferState.FINISHED);
         Assert.assertTrue(sts.getTransferedSize() == 15);
-        Assert.assertTrue(sts.getLastFrameSeqNum() == 3);
+        Assert.assertTrue(sts.getTransferedSeqNum() == 3);
     }
 
     @Test
@@ -276,7 +276,7 @@ public class TransferTest {
         com.lightcomp.ft.server.TransferStatus sts = ss.getTransferStatus(ur.getLastTransferId());
         Assert.assertTrue(sts.getState() == com.lightcomp.ft.server.TransferState.FINISHED);
         Assert.assertTrue(sts.getTransferedSize() == 0);
-        Assert.assertTrue(sts.getLastFrameSeqNum() == 2);
+        Assert.assertTrue(sts.getTransferedSeqNum() == 2);
     }
 
     @Test
@@ -355,7 +355,7 @@ public class TransferTest {
         // test storage status after server stopped
         int blockCount = pair.getRight() / blockMax * 2;
         com.lightcomp.ft.server.TransferStatus sts = ss.getTransferStatus(ur.getLastTransferId());
-        Assert.assertTrue(sts.getLastFrameSeqNum() == blockCount);
+        Assert.assertTrue(sts.getTransferedSeqNum() == blockCount);
         Assert.assertTrue(sts.getTransferedSize() == 0);
     }
 
@@ -517,7 +517,7 @@ public class TransferTest {
         com.lightcomp.ft.server.TransferStatus sts = ss.getTransferStatus(dth.getLastTransferId());
         Assert.assertTrue(sts.getState() == com.lightcomp.ft.server.TransferState.FINISHED);
         Assert.assertTrue(sts.getTransferedSize() == 0);
-        Assert.assertTrue(sts.getLastFrameSeqNum() == 1);
+        Assert.assertTrue(sts.getTransferedSeqNum() == 1);
     }
 
     @Test
@@ -557,7 +557,7 @@ public class TransferTest {
         // test storage status after server stopped
         int blockCount = pair.getRight() / blockMax * 2;
         com.lightcomp.ft.server.TransferStatus sts = ss.getTransferStatus(dth.getLastTransferId());
-        Assert.assertTrue(sts.getLastFrameSeqNum() == blockCount);
+        Assert.assertTrue(sts.getTransferedSeqNum() == blockCount);
         Assert.assertTrue(sts.getTransferedSize() == 0);
     }
 

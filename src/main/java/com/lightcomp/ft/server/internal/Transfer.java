@@ -16,7 +16,7 @@ public interface Transfer {
     void abort() throws FileTransferException;
 
     /**
-     * Confirmed status represent transfer when is not processing any task (not busy).
+     * Confirmed status can be returned when transfer is not processing any task (not busy).
      */
     TransferStatus getConfirmedStatus() throws FileTransferException;
 }

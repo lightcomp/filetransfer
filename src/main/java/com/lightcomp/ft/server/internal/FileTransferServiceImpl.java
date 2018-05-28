@@ -1,5 +1,6 @@
 package com.lightcomp.ft.server.internal;
 
+import com.lightcomp.ft.server.TransferState;
 import com.lightcomp.ft.wsdl.v1.FileTransferException;
 import com.lightcomp.ft.wsdl.v1.FileTransferService;
 import com.lightcomp.ft.xsd.v1.AbortRequest;
@@ -50,7 +51,13 @@ public class FileTransferServiceImpl implements FileTransferService {
     @Override
     public TransferStatus status(TransferStatusRequest statusRequest) throws FileTransferException {
         Transfer transfer = manager.getTransfer(statusRequest.getTransferId());
-        return convertServerStatus(transfer.getConfirmedStatus());
+
+        com.lightcomp.ft.server.TransferStatus cs = transfer.getConfirmedStatus();
+        TransferStatus ts = new TransferStatus();
+        ts.setLastFrameSeqNum(cs.getTransferedSeqNum());
+        ts.setResp(cs.getResponse());
+        ts.setState(convertState(cs.getState()));
+        return ts;
     }
 
     @Override
@@ -59,26 +66,18 @@ public class FileTransferServiceImpl implements FileTransferService {
         transfer.abort();
     }
 
-    public static TransferStatus convertServerStatus(com.lightcomp.ft.server.TransferStatus serverStatus) {
-        TransferStatus ts = new TransferStatus();
-        ts.setLastFrameSeqNum(serverStatus.getLastFrameSeqNum());
-        // convert state
-        switch (serverStatus.getState()) {
-            case CREATED:
-            case FINISHING:
-                throw new IllegalStateException();
+    private static FileTransferState convertState(TransferState state) {
+        switch (state) {
             case STARTED:
             case TRANSFERED:
-                ts.setState(FileTransferState.ACTIVE);
-                break;
+                return FileTransferState.ACTIVE;
             case FINISHED:
-                ts.setState(FileTransferState.FINISHED);
-                break;
+                return FileTransferState.FINISHED;
             case CANCELED:
             case FAILED:
-                ts.setState(FileTransferState.FAILED);
-                break;
+                return FileTransferState.FAILED;
+            default:
+                throw new IllegalStateException();
         }
-        return ts;
     }
 }

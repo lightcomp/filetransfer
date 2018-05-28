@@ -19,7 +19,9 @@ public class TransferStatusImpl implements TransferStatus {
 
     private long transferedSize;
 
-    private int lastFrameSeqNum;
+    private int transferedSeqNum;
+
+    private int processedSeqNum;
 
     private GenericDataType response;
 
@@ -38,7 +40,8 @@ public class TransferStatusImpl implements TransferStatus {
         lastActivity = src.lastActivity;
         startTime = src.startTime;
         transferedSize = src.transferedSize;
-        lastFrameSeqNum = src.lastFrameSeqNum;
+        transferedSeqNum = src.transferedSeqNum;
+        processedSeqNum = src.processedSeqNum;
         response = src.response;
         errorDesc = src.errorDesc;
     }
@@ -64,8 +67,13 @@ public class TransferStatusImpl implements TransferStatus {
     }
 
     @Override
-    public int getLastFrameSeqNum() {
-        return lastFrameSeqNum;
+    public int getTransferedSeqNum() {
+        return transferedSeqNum;
+    }
+
+    @Override
+    public int getProcessedSeqNum() {
+        return processedSeqNum;
     }
 
     @Override
@@ -82,13 +90,17 @@ public class TransferStatusImpl implements TransferStatus {
 
     public void addTransferedData(long size) {
         Validate.isTrue(size >= 0);
-
         transferedSize += size;
         updateActivity();
     }
 
-    public void incrementFrameSeqNum() {
-        lastFrameSeqNum++;
+    public void incrementTransferedSeqNum() {
+        transferedSeqNum++;
+        updateActivity();
+    }
+
+    public void incrementProcessedSeqNum() {
+        processedSeqNum++;
         updateActivity();
     }
 
@@ -103,9 +115,7 @@ public class TransferStatusImpl implements TransferStatus {
     }
 
     public void changeState(TransferState nextState) {
-        Validate.notNull(nextState);
-
-        state = nextState;
+        state = Validate.notNull(nextState);
         updateActivity();
     }
 
@@ -123,7 +133,7 @@ public class TransferStatusImpl implements TransferStatus {
     @Override
     public String toString() {
         return "TransferStatusImpl [state=" + state + ", lastActivity=" + lastActivity + ", startTime=" + startTime
-                + ", transferedSize=" + transferedSize + ", lastFrameSeqNum=" + lastFrameSeqNum + ", response="
-                + response + ", errorDesc=" + errorDesc + "]";
+                + ", transferedSize=" + transferedSize + ", transferedSeqNum=" + transferedSeqNum + ", processedSeqNum="
+                + processedSeqNum + ", response=" + response + ", errorDesc=" + errorDesc + "]";
     }
 }
