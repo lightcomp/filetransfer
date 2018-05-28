@@ -5,19 +5,22 @@ import java.io.InputStream;
 import java.util.Collection;
 import java.util.Iterator;
 
-public class FrameInputStream extends InputStream {
+public class FrameInStream extends InputStream {
 
-    private final Iterator<BlockStreamProvider> streamProviderIt;
+    private final Iterator<BlockStreamProvider> bsProviderIt;
 
-    private BlockStream currStream;
+    private final DataSendFailureCallback failureCallback;
+
+    private BlockStream currBlockStream;
 
     private long available;
 
     private boolean closed;
 
-    public FrameInputStream(Collection<BlockStreamProvider> streamProviders) {
-        this.streamProviderIt = streamProviders.iterator();
-        this.available = streamProviders.stream().mapToLong(BlockStreamProvider::getStreamSize).sum();
+    public FrameInStream(Collection<BlockStreamProvider> bsProviders, DataSendFailureCallback failureCallback) {
+        this.bsProviderIt = bsProviders.iterator();
+        this.failureCallback = failureCallback;
+        this.available = bsProviders.stream().mapToLong(BlockStreamProvider::getStreamSize).sum();
     }
 
     @Override
@@ -38,6 +41,21 @@ public class FrameInputStream extends InputStream {
         if (off < 0 || len < 0 || len > b.length - off) {
             throw new IndexOutOfBoundsException();
         }
+        int read;
+        try {
+            read = readInternal(b, off, len);
+        } catch (Throwable t) {
+            failureCallback.onDataSendFailed(t);
+            throw t;
+        }
+        // update available if not end of stream (-1)
+        if (read > 0) {
+            available -= read;
+        }
+        return read;
+    }
+
+    private int readInternal(byte[] b, int off, int len) throws IOException {
         int read = 0;
         while (true) {
             // check if buffer is full
@@ -45,28 +63,25 @@ public class FrameInputStream extends InputStream {
                 break;
             }
             // prepare current block data
-            if (currStream == null) {
-                if (!streamProviderIt.hasNext()) {
+            if (currBlockStream == null) {
+                if (!bsProviderIt.hasNext()) {
                     // no more blocks
                     if (read == 0) {
                         read = -1;
                     }
                     break;
                 }
-                currStream = streamProviderIt.next().create();
-                currStream.open();
+                currBlockStream = bsProviderIt.next().create();
+                currBlockStream.open();
             }
             // read block data
-            int num = currStream.read(b, off + read, len - read);
+            int num = currBlockStream.read(b, off + read, len - read);
             if (num < 0) {
-                currStream.close();
-                currStream = null;
+                currBlockStream.close();
+                currBlockStream = null;
                 continue;
             }
             read += num;
-        }
-        if (read > 0) {
-            available -= read;
         }
         return read;
     }
@@ -85,9 +100,9 @@ public class FrameInputStream extends InputStream {
     @Override
     public void close() throws IOException {
         closed = true;
-        if (currStream != null) {
-            currStream.close();
-            currStream = null;
+        if (currBlockStream != null) {
+            currBlockStream.close();
+            currBlockStream = null;
         }
     }
 }

@@ -49,7 +49,7 @@ public abstract class AbstractOperation {
         return operationFinished();
     }
 
-    protected abstract void send() throws FileTransferException;
+    protected abstract void send() throws Throwable;
 
     protected boolean isRecoverable(ExceptionType type) {
         return type == ExceptionType.BUSY || type == ExceptionType.CONNECTION;

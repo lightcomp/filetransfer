@@ -10,9 +10,9 @@ import org.slf4j.LoggerFactory;
 
 import com.lightcomp.ft.common.Checksum;
 
-public class FileChecksumStream implements BlockStream {
+public class FileChksmStream implements BlockStream {
 
-    private static final Logger logger = LoggerFactory.getLogger(FileChecksumStream.class);
+    private static final Logger logger = LoggerFactory.getLogger(FileChksmStream.class);
 
     private final Checksum checksum;
 
@@ -22,7 +22,7 @@ public class FileChecksumStream implements BlockStream {
 
     private int remaining;
 
-    public FileChecksumStream(Checksum checksum, Path srcPath) {
+    public FileChksmStream(Checksum checksum, Path srcPath) {
         this.checksum = checksum;
         this.srcPath = srcPath;
         this.remaining = checksum.getAlgorithm().getByteLen();

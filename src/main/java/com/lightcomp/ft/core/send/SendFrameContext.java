@@ -8,5 +8,5 @@ public interface SendFrameContext {
 
     boolean isLast();
 
-    Frame createFrame();
+    Frame prepareFrame(DataSendFailureCallback callback);
 }

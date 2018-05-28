@@ -4,8 +4,8 @@ import com.lightcomp.ft.client.ClientConfig;
 import com.lightcomp.ft.client.TransferStatus;
 import com.lightcomp.ft.client.UploadRequest;
 import com.lightcomp.ft.client.internal.operations.OperationStatus;
-import com.lightcomp.ft.client.internal.operations.SendOperation;
 import com.lightcomp.ft.client.internal.operations.OperationStatus.Type;
+import com.lightcomp.ft.client.internal.operations.SendOperation;
 import com.lightcomp.ft.core.send.FrameBuilder;
 import com.lightcomp.ft.core.send.SendFrameContext;
 import com.lightcomp.ft.core.send.SendProgressInfo;
@@ -22,7 +22,7 @@ public class UploadTransfer extends AbstractTransfer implements SendProgressInfo
     }
 
     @Override
-    public void onDataSend(long size) {
+    public void onFileDataSend(long size) {
         TransferStatus ts;
         synchronized (this) {
             // update current state
@@ -35,7 +35,8 @@ public class UploadTransfer extends AbstractTransfer implements SendProgressInfo
 
     @Override
     protected boolean transferFrames() throws TransferException {
-        FrameBuilder frameBuilder = new FrameBuilder(request.getItemIterator(), this, config);
+        FrameBuilder frameBuilder = new FrameBuilder(this, config);
+        frameBuilder.init(request.getItemIterator());
         // send all frames
         while (true) {
             if (cancelIfRequested()) {

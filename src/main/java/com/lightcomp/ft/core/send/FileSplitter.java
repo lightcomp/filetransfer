@@ -81,7 +81,7 @@ class FileSplitter {
         FileEndBlockImpl b = new FileEndBlockImpl();
         b.setLm(srcFile.getLastModified());
 
-        FileChecksumStreamProvider fchsp = new FileChecksumStreamProvider(checksum, srcPath);
+        FileChksmStreamProvider fchsp = new FileChksmStreamProvider(checksum, srcPath);
 
         frameCtx.addBlock(b, fchsp);
         offset += size;

@@ -108,7 +108,7 @@ public class RecvContextImpl implements RecvContext {
     @Override
     public void writeFileData(long offset, long length) throws TransferException {
         openWritter.write(inputChannel, offset, length);
-        progressInfo.onDataReceived(length);
+        progressInfo.onFileDataReceived(length);
     }
 
     @Override

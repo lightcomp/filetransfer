@@ -37,7 +37,7 @@ public class DownloadTransfer extends AbstractTransfer implements RecvProgressIn
     }
 
     @Override
-    public void onDataReceived(long size) {
+    public void onFileDataReceived(long size) {
         TransferStatus ts;
         synchronized (this) {
             // update current state

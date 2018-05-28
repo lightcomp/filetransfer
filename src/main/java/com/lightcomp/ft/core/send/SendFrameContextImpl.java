@@ -19,7 +19,7 @@ public class SendFrameContextImpl implements SendFrameContext {
 
     private final List<FrameBlock> blocks = new ArrayList<>();
 
-    private final List<BlockStreamProvider> streamProviders = new ArrayList<>();
+    private final List<BlockStreamProvider> bsProviders = new ArrayList<>();
 
     private final int seqNum;
 
@@ -67,19 +67,19 @@ public class SendFrameContextImpl implements SendFrameContext {
         blocks.add(block);
     }
 
-    public void addBlock(FrameBlock block, BlockStreamProvider streamProvider) {
-        long newSize = dataSize + streamProvider.getStreamSize();
+    public void addBlock(FrameBlock block, BlockStreamProvider bsProvider) {
+        long newSize = dataSize + bsProvider.getStreamSize();
         Validate.isTrue(newSize <= maxFrameSize);
         addBlock(block);
         if (logger.isDebugEnabled()) {
-            logger.debug("Adding data for block: {}", streamProvider);
+            logger.debug("Adding data for block: {}", bsProvider);
         }
-        streamProviders.add(streamProvider);
+        bsProviders.add(bsProvider);
         dataSize = newSize;
     }
 
     @Override
-    public Frame createFrame() {
+    public Frame prepareFrame(DataSendFailureCallback failureCallback) {
         // create frame
         Frame frame = new Frame();
         frame.setSeqNum(seqNum);
@@ -92,7 +92,7 @@ public class SendFrameContextImpl implements SendFrameContext {
         frame.setBlocks(fbs);
 
         // set MTOM data source
-        FrameDataSource ds = new FrameDataSource(streamProviders);
+        FrameInDataSource ds = new FrameInDataSource(bsProviders, failureCallback);
         frame.setData(new DataHandler(ds));
 
         return frame;

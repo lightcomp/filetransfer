@@ -16,6 +16,6 @@ public class FileDataProgress {
         }
         long size = newPos - numProcessed;
         numProcessed += size;
-        progressInfo.onDataSend(size);
+        progressInfo.onFileDataSend(size);
     }
 }
