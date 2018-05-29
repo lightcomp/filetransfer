@@ -2,6 +2,7 @@ package com.lightcomp.ft.client.internal;
 
 import java.io.IOException;
 import java.net.ConnectException;
+import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 
@@ -48,6 +49,19 @@ public enum ExceptionType {
                 return ExceptionType.CONNECTION; // probably fail to read/write using MTOM
             }
             return null; // cause unknown
+        }
+        if (cause instanceof SocketException) {
+        	// general socket exception
+        	// e.g.: Caused by: java.net.SocketException: Connection reset
+        	// at java.net.SocketInputStream.read(SocketInputStream.java:210)
+        	// at java.net.SocketInputStream.read(SocketInputStream.java:141)
+        	// at java.io.BufferedInputStream.fill(BufferedInputStream.java:246)
+        	// at java.io.BufferedInputStream.read1(BufferedInputStream.java:286)
+        	// at java.io.BufferedInputStream.read(BufferedInputStream.java:345)
+        	// at sun.net.www.http.HttpClient.parseHTTPHeader(HttpClient.java:704)
+        	// at sun.net.www.http.HttpClient.parseHTTP(HttpClient.java:647)
+        	// ....
+        	return ExceptionType.CONNECTION;
         }
         if (cause instanceof SocketTimeoutException) {
             return ExceptionType.CONNECTION; // timed out
