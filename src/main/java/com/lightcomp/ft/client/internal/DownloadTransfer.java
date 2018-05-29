@@ -11,9 +11,9 @@ import org.slf4j.LoggerFactory;
 import com.lightcomp.ft.client.ClientConfig;
 import com.lightcomp.ft.client.DownloadRequest;
 import com.lightcomp.ft.client.TransferStatus;
-import com.lightcomp.ft.client.internal.operations.OperationStatus;
-import com.lightcomp.ft.client.internal.operations.RecvOperation;
-import com.lightcomp.ft.client.internal.operations.OperationStatus.Type;
+import com.lightcomp.ft.client.internal.operations.OperationResult;
+import com.lightcomp.ft.client.internal.operations.ReceiveOperation;
+import com.lightcomp.ft.client.internal.operations.ReceiveResult;
 import com.lightcomp.ft.common.PathUtils;
 import com.lightcomp.ft.core.recv.RecvContext;
 import com.lightcomp.ft.core.recv.RecvContextImpl;
@@ -66,14 +66,14 @@ public class DownloadTransfer extends AbstractTransfer implements RecvProgressIn
                 return false;
             }
             // receive frame
-            RecvOperation ro = new RecvOperation(this, service, currSeqNum);
-            OperationStatus ros = ro.execute();
-            if (ros.getType() != Type.SUCCESS) {
-                transferFailed(ros);
+            ReceiveOperation ro = new ReceiveOperation(this, service, currSeqNum);
+            ReceiveResult rs = ro.execute();
+            if (rs.getType() != OperationResult.Type.SUCCESS) {
+                transferFailed(rs);
                 return false;
             }
             // process frame
-            RecvFrameProcessor rfp = RecvFrameProcessor.create(recvCtx, ro.getFrame());
+            RecvFrameProcessor rfp = RecvFrameProcessor.create(recvCtx, rs.getFrame());
             rfp.prepareData(tempDir);
             rfp.process();
             // add processed frame num

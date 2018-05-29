@@ -8,6 +8,4 @@ public interface OperationHandler {
      * @return true when operation can be recovered
      */
     boolean prepareRecovery();
-
-    void recoverySucceeded();
 }

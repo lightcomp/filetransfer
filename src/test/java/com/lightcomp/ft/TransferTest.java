@@ -34,8 +34,8 @@ import com.lightcomp.ft.client.TransferStatus;
 import com.lightcomp.ft.client.UploadRequest;
 import com.lightcomp.ft.client.internal.ClientImpl;
 import com.lightcomp.ft.client.internal.UploadTransfer;
-import com.lightcomp.ft.client.internal.operations.OperationStatus;
-import com.lightcomp.ft.client.internal.operations.OperationStatus.Type;
+import com.lightcomp.ft.client.internal.operations.OperationResult;
+import com.lightcomp.ft.client.internal.operations.OperationResult.Type;
 import com.lightcomp.ft.client.internal.operations.SendOperation;
 import com.lightcomp.ft.common.PathUtils;
 import com.lightcomp.ft.core.blocks.DirBeginBlockImpl;
@@ -391,7 +391,7 @@ public class TransferTest {
                         frameCtx.addBlock(new DirEndBlockImpl());
                         frameCtx.setLast(true);
                         SendOperation so = new SendOperation(this, service, frameCtx);
-                        OperationStatus sos = so.execute();
+                        OperationResult sos = so.execute();
                         if (sos.getType() != Type.SUCCESS) {
                             transferFailed(sos);
                             return false;
@@ -559,6 +559,64 @@ public class TransferTest {
         Assert.assertTrue(sts.getTransferedSeqNum() == blockCount);
         Assert.assertTrue(sts.getTransferedSize() == 0);
     }
+
+   /* @Test
+    public void testInvalidSeqNumDownload() {
+        Collection<SourceItem> items = Collections.emptyList();
+
+        DwnldTransferHandler handler = new DwnldTransferHandler() {
+            @Override
+            protected DownloadHandler createDownload(String transferId, GenericDataType request) {
+                return new DwnldHandlerImpl(transferId, null, request.getId(), items, server, waiter,
+                        com.lightcomp.ft.server.TransferState.FAILED);
+            }
+        };
+        StatusStorageImpl ss = new StatusStorageImpl();
+        ServerConfig scfg = new ServerConfig(handler, ss);
+        scfg.setInactiveTimeout(60);
+
+        String addr = publishEndpoint(scfg);
+
+        ClientConfig ccfg = new ClientConfig(addr);
+        ccfg.setRecoveryDelay(2);
+        // ccfg.setSoapLogging(true);
+
+        client = new ClientImpl(ccfg) {
+            @Override
+            public Transfer upload(UploadRequest request) {
+                UploadTransfer transfer = new UploadTransfer(request, config, service) {
+                    @Override
+                    protected boolean transferFrames() {
+                        SendFrameContextImpl frameCtx = new SendFrameContextImpl(1, config);
+                        DirBegin db = new DirBeginBlockImpl();
+                        db.setN("test");
+                        frameCtx.addBlock(db);
+                        frameCtx.addBlock(db); // unclosed child directory -> failure
+                        frameCtx.addBlock(new DirEndBlockImpl());
+                        frameCtx.setLast(true);
+                        SendOperation so = new SendOperation(this, service, frameCtx);
+                        OperationStatus sos = so.execute();
+                        if (sos.getType() != Type.SUCCESS) {
+                            transferFailed(sos);
+                            return false;
+                        }
+                        return true;
+                    }
+                };
+                transferExecutor.addTask(transfer);
+                return transfer;
+            }
+        };
+
+        client.start();
+
+        UploadRequestImpl request = new UploadRequestImpl(createReqData("req"), Collections.emptyList(), waiter,
+                TransferState.FAILED);
+
+        client.upload(request);
+
+        waiter.await(TEST_TIMEOUT, 2);
+    }*/
 
     public static GenericDataType createReqData(String id) {
         GenericDataType gd = new GenericDataType();

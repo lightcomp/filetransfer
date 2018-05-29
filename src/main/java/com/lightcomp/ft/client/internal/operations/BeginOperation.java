@@ -3,54 +3,47 @@ package com.lightcomp.ft.client.internal.operations;
 import org.apache.commons.lang3.StringUtils;
 
 import com.lightcomp.ft.client.internal.ExceptionType;
-import com.lightcomp.ft.client.internal.operations.OperationStatus.Type;
+import com.lightcomp.ft.client.internal.operations.OperationResult.Type;
 import com.lightcomp.ft.wsdl.v1.FileTransferException;
 import com.lightcomp.ft.wsdl.v1.FileTransferService;
 import com.lightcomp.ft.xsd.v1.BeginResponse;
 import com.lightcomp.ft.xsd.v1.GenericDataType;
-import com.lightcomp.ft.xsd.v1.TransferStatus;
 
-public class BeginOperation extends AbstractOperation {
+public class BeginOperation {
+
+    private final FileTransferService service;
 
     private final GenericDataType request;
 
-    private String transferId;
-
-    public BeginOperation(OperationHandler handler, FileTransferService service, GenericDataType request) {
-        super(handler, service);
+    public BeginOperation(FileTransferService service, GenericDataType request) {
+        this.service = service;
         this.request = request;
     }
 
-    public String getTransferId() {
-        return transferId;
-    }
-
-    @Override
-    protected void send() throws FileTransferException {
-        BeginResponse br = service.begin(request);
-        transferId = br.getTransferId();
-    }
-
-    @Override
-    protected boolean isRecoverable(ExceptionType type) {
-        return false;
-    }
-
-    @Override
-    protected OperationStatus resolveServerStatus(TransferStatus status) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    protected OperationStatus operationFinished() {
-        if (StringUtils.isEmpty(transferId)) {
-            return new OperationStatus(Type.FAIL).setFailureMessage("Server returned empty transfer id");
+    public BeginResult execute() {
+        try {
+            return send();
+        } catch (Throwable t) {
+            return operationFailed(t);
         }
-        return super.operationFinished();
     }
 
-    @Override
-    protected OperationStatus recoveryFailed(Type type, Throwable ex, ExceptionType exType) {
-        return super.recoveryFailed(type, ex, exType).setFailureMessage("Failed to begin transfer");
+    private BeginResult send() throws FileTransferException {
+        BeginResponse br = service.begin(request);
+        return createResult(br.getTransferId());
+    }
+
+    private BeginResult createResult(String transferId) {
+        if (StringUtils.isEmpty(transferId)) {
+            ErrorDesc ed = new ErrorDesc("Server returned empty transfer id");
+            return new BeginResult(Type.FAIL, ed);
+        }
+        return new BeginResult(Type.SUCCESS, transferId);
+    }
+
+    private BeginResult operationFailed(Throwable t) {
+        ExceptionType type = ExceptionType.resolve(t);
+        ErrorDesc ed = new ErrorDesc("Failed to begin transfer").setCause(t).setCauseType(type);
+        return new BeginResult(Type.FAIL, ed);
     }
 }

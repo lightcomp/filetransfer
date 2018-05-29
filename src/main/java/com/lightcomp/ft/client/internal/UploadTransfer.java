@@ -3,8 +3,8 @@ package com.lightcomp.ft.client.internal;
 import com.lightcomp.ft.client.ClientConfig;
 import com.lightcomp.ft.client.TransferStatus;
 import com.lightcomp.ft.client.UploadRequest;
-import com.lightcomp.ft.client.internal.operations.OperationStatus;
-import com.lightcomp.ft.client.internal.operations.OperationStatus.Type;
+import com.lightcomp.ft.client.internal.operations.OperationResult;
+import com.lightcomp.ft.client.internal.operations.OperationResult.Type;
 import com.lightcomp.ft.client.internal.operations.SendOperation;
 import com.lightcomp.ft.core.send.FrameBuilder;
 import com.lightcomp.ft.core.send.SendFrameContext;
@@ -46,9 +46,9 @@ public class UploadTransfer extends AbstractTransfer implements SendProgressInfo
             SendFrameContext frameCtx = frameBuilder.build();
             // send frame
             SendOperation so = new SendOperation(this, service, frameCtx);
-            OperationStatus sos = so.execute();
-            if (sos.getType() != Type.SUCCESS) {
-                transferFailed(sos);
+            OperationResult or = so.execute();
+            if (or.getType() != Type.SUCCESS) {
+                transferFailed(or);
                 return false;
             }
             // add processed frame num

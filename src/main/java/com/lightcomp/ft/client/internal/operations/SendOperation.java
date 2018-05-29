@@ -1,7 +1,7 @@
 package com.lightcomp.ft.client.internal.operations;
 
 import com.lightcomp.ft.client.internal.ExceptionType;
-import com.lightcomp.ft.client.internal.operations.OperationStatus.Type;
+import com.lightcomp.ft.client.internal.operations.OperationResult.Type;
 import com.lightcomp.ft.core.send.DataSendFailureCallback;
 import com.lightcomp.ft.core.send.SendFrameContext;
 import com.lightcomp.ft.wsdl.v1.FileTransferService;
@@ -10,11 +10,13 @@ import com.lightcomp.ft.xsd.v1.Frame;
 import com.lightcomp.ft.xsd.v1.SendRequest;
 import com.lightcomp.ft.xsd.v1.TransferStatus;
 
-public class SendOperation extends AbstractOperation implements DataSendFailureCallback {
+public class SendOperation extends RecoverableOperation implements DataSendFailureCallback {
 
     private final SendFrameContext frameCtx;
 
     private Throwable dataSendFailureCause;
+
+    private OperationResult result;
 
     public SendOperation(OperationHandler handler, FileTransferService servce, SendFrameContext frameCtx) {
         super(handler, servce);
@@ -27,47 +29,59 @@ public class SendOperation extends AbstractOperation implements DataSendFailureC
     }
 
     @Override
+    public OperationResult execute() {
+        executeInternal();
+        return result;
+    }
+
+    @Override
     protected void send() throws Throwable {
         Frame frame = frameCtx.prepareFrame(this);
         dataSendFailureCause = null;
         // send frame
         SendRequest sr = new SendRequest();
         sr.setFrame(frame);
-        sr.setTransferId(handler.getTransferId());
+        sr.setTransferId(getTransferId());
         service.send(sr);
         // check data send failure - MTOM does not fire exception
         if (dataSendFailureCause != null) {
             throw dataSendFailureCause;
         }
+        result = new OperationResult(Type.SUCCESS);
     }
 
     @Override
-    protected OperationStatus resolveServerStatus(TransferStatus status) {
+    protected boolean prepareResend(TransferStatus status) {
         // check transfer state
         FileTransferState fts = status.getState();
         if (fts != FileTransferState.ACTIVE) {
-            return new OperationStatus(Type.FAIL).setFailureMessage("Failed to send frame, invalid server state")
-                    .addFailureParam("serverState", fts);
+            ErrorDesc ed = new ErrorDesc("Failed to send frame, invalid server state").addParam("serverState", fts);
+            result = new OperationResult(Type.FAIL, ed);
+            return false;
         }
         // check frame seq number
-        int lastSeqNum = status.getLastFrameSeqNum();
         int seqNum = frameCtx.getSeqNum();
+        int serverSeqNum = status.getLastFrameSeqNum();
         // test if succeeded
-        if (seqNum == lastSeqNum) {
-            return new OperationStatus(Type.SUCCESS);
+        if (seqNum == serverSeqNum) {
+            result = new OperationResult(Type.SUCCESS);
+            return false;
         }
         // test if match with previous frame
-        if (seqNum == lastSeqNum + 1) {
-            return null; // next try
+        if (seqNum == serverSeqNum + 1) {
+            return true;
         }
         // incorrect frame number
-        return new OperationStatus(Type.FAIL).setFailureMessage("Cannot recover last send frame")
-                .addFailureParam("seqNum", seqNum).addFailureParam("serverSeqNum", lastSeqNum);
+        ErrorDesc ed = new ErrorDesc("Cannot recover last send frame").addParam("seqNum", seqNum)
+                .addParam("serverSeqNum", serverSeqNum);
+        result = new OperationResult(Type.FAIL, ed);
+        return false;
     }
 
     @Override
-    protected OperationStatus recoveryFailed(Type type, Throwable ex, ExceptionType exType) {
-        return super.recoveryFailed(type, ex, exType).setFailureMessage("Failed to send frame")
-                .addFailureParam("seqNum", frameCtx.getSeqNum());
+    protected void recoveryFailed(Type reason, Throwable src, ExceptionType srcType) {
+        ErrorDesc ed = new ErrorDesc("Failed to send frame").setCause(src).setCauseType(srcType).addParam("seqNum",
+                frameCtx.getSeqNum());
+        result = new OperationResult(reason, ed);
     }
 }

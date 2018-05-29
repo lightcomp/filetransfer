@@ -10,10 +10,13 @@ import com.lightcomp.ft.client.TransferRequest;
 import com.lightcomp.ft.client.TransferState;
 import com.lightcomp.ft.client.TransferStatus;
 import com.lightcomp.ft.client.internal.operations.BeginOperation;
+import com.lightcomp.ft.client.internal.operations.BeginResult;
+import com.lightcomp.ft.client.internal.operations.ErrorDesc;
 import com.lightcomp.ft.client.internal.operations.FinishOperation;
+import com.lightcomp.ft.client.internal.operations.FinishResult;
 import com.lightcomp.ft.client.internal.operations.OperationHandler;
-import com.lightcomp.ft.client.internal.operations.OperationStatus;
-import com.lightcomp.ft.client.internal.operations.OperationStatus.Type;
+import com.lightcomp.ft.client.internal.operations.OperationResult;
+import com.lightcomp.ft.client.internal.operations.OperationResult.Type;
 import com.lightcomp.ft.exception.TransferException;
 import com.lightcomp.ft.exception.TransferExceptionBuilder;
 import com.lightcomp.ft.wsdl.v1.FileTransferService;
@@ -77,11 +80,6 @@ public abstract class AbstractTransfer implements Runnable, Transfer, OperationH
         request.onTransferProgress(ts);
         // delay transfer before recovery
         return delayBeforeRecovery();
-    }
-
-    @Override
-    public synchronized void recoverySucceeded() {
-        status.resetRetryCount();
     }
 
     private boolean delayBeforeRecovery() {
@@ -161,6 +159,8 @@ public abstract class AbstractTransfer implements Runnable, Transfer, OperationH
         synchronized (this) {
             Validate.isTrue(status.getLastFrameSeqNum() + 1 == seqNum);
             status.incrementFrameSeqNum();
+            // reset retry count maybe needed
+            status.resetRetryCount();
             // copy status in synch block
             ts = status.copy();
         }
@@ -171,17 +171,19 @@ public abstract class AbstractTransfer implements Runnable, Transfer, OperationH
         if (cancelIfRequested()) {
             return false;
         }
-        BeginOperation bo = new BeginOperation(this, service, request.getData());
-        OperationStatus bos = bo.execute();
-        if (bos.getType() != Type.SUCCESS) {
-            transferFailed(bos);
+        BeginOperation bo = new BeginOperation(service, request.getData());
+        BeginResult br = bo.execute();
+        if (br.getType() != Type.SUCCESS) {
+            transferFailed(br);
             return false;
         }
-        transferId = bo.getTransferId();
+        transferId = br.getTransferId();
         // change state to started
         TransferStatus ts;
         synchronized (this) {
             status.changeState(TransferState.STARTED);
+            // reset retry count maybe needed
+            status.resetRetryCount();
             // copy status in synch block
             ts = status.copy();
         }
@@ -212,18 +214,20 @@ public abstract class AbstractTransfer implements Runnable, Transfer, OperationH
             return false;
         }
         FinishOperation fo = new FinishOperation(this, service);
-        OperationStatus fos = fo.execute();
-        if (fos.getType() != Type.SUCCESS) {
-            transferFailed(fos);
+        FinishResult fr = fo.execute();
+        if (fr.getType() != Type.SUCCESS) {
+            transferFailed(fr);
             return false;
         }
         // change state to finished
         synchronized (this) {
             status.changeState(TransferState.FINISHED);
+            // reset retry count maybe needed
+            status.resetRetryCount();
             // notify canceling threads
             notifyAll();
         }
-        request.onTransferSuccess(fo.getResponse());
+        request.onTransferSuccess(fr.getData());
         return true;
     }
 
@@ -243,21 +247,21 @@ public abstract class AbstractTransfer implements Runnable, Transfer, OperationH
         return true;
     }
 
-    protected void transferFailed(OperationStatus os) {
-        Type type = os.getType();
-        Validate.isTrue(type != Type.SUCCESS);
+    protected void transferFailed(OperationResult or) {
+        Validate.isTrue(or.getType() != Type.SUCCESS);
         // try cancel transfer
-        if (type == Type.CANCEL && cancelIfRequested()) {
+        if (or.getType() == Type.CANCEL && cancelIfRequested()) {
             return;
         }
-        // log message detail
-        new TransferExceptionBuilder(os.getFailureMessage(), this).addParams(os.getFailureParams())
-                .setCause(os.getFailureCause()).log(logger);
+        // log operation detail
+        ErrorDesc ed = or.getErrorDesc();
+        new TransferExceptionBuilder(ed.getMessage(), this).addParams(ed.getParams()).setCause(ed.getCause())
+                .log(logger);
         // fail transfer
-        transferFailed(os.getFailureCause(), os.getFailureType());
+        transferFailed(ed.getCause(), ed.getCauseType());
     }
 
-    protected void transferFailed(Throwable cause) {
+    private void transferFailed(Throwable cause) {
         new TransferExceptionBuilder("Transfer failed", this).setCause(cause).log(logger);
         ExceptionType type = ExceptionType.resolve(cause);
         transferFailed(cause, type);
