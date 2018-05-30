@@ -60,4 +60,28 @@ public class ErrorDescImpl implements ErrorDesc {
         return "ErrorDescImpl [message=" + message + ", detail=" + detail + ", params=" + params + ", stackTrace="
                 + Arrays.toString(stackTrace) + "]";
     }
+
+    /**
+     * Appends error description to string builder separated by comma. Stack trace is not included.
+     */
+    public static void append(StringBuilder sb, ErrorDesc desc) {
+        // append description
+        if (sb.length() > 0) {
+            sb.append(", errorDesc=");
+        }
+        sb.append(desc.getMessage());
+        // append detail
+        String detail = desc.getDetail();
+        if (detail != null) {
+            sb.append(", errorDetail=").append(detail);
+        }
+        // append parameters
+        Map<String, Object> params = desc.getParams();
+        if (params != null && params.size() > 0) {
+            sb.append(", errorParams=[");
+            params.forEach((n, v) -> sb.append(n).append('=').append(v).append(','));
+            // replace last separator with bracket
+            sb.setCharAt(sb.length() - 1, ']');
+        }
+    }
 }

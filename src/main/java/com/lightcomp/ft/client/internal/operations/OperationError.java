@@ -6,7 +6,7 @@ import java.util.Map;
 
 import com.lightcomp.ft.client.internal.ExceptionType;
 
-public class ErrorDesc {
+public class OperationError {
 
     private final Map<String, Object> params = new LinkedHashMap<>();
 
@@ -16,7 +16,7 @@ public class ErrorDesc {
 
     private ExceptionType causeType;
 
-    public ErrorDesc(String message) {
+    public OperationError(String message) {
         this.message = message;
     }
 
@@ -38,17 +38,17 @@ public class ErrorDesc {
 
     /* package visible builder methods */
 
-    ErrorDesc addParam(String name, Object value) {
+    OperationError addParam(String name, Object value) {
         params.put(name, value);
         return this;
     }
 
-    ErrorDesc setCause(Throwable cause) {
+    OperationError setCause(Throwable cause) {
         this.cause = cause;
         return this;
     }
 
-    ErrorDesc setCauseType(ExceptionType causeType) {
+    OperationError setCauseType(ExceptionType causeType) {
         this.causeType = causeType;
         return this;
     }

@@ -37,12 +37,12 @@ public class ReceiveOperation extends RecoverableOperation {
 
     private void prepareResult(Frame frame) {
         if (frame == null) {
-            ErrorDesc ed = new ErrorDesc("Frame was expected but null response received");
-            result = new ReceiveResult(Type.FAIL, ed);
+            OperationError err = new OperationError("Frame was expected but null response received");
+            result = new ReceiveResult(Type.FAIL, err);
         } else if (frame.getSeqNum() != seqNum) {
-            ErrorDesc ed = new ErrorDesc("Server returned invalid frame").addParam("requestedSeqNum", seqNum)
+            OperationError err = new OperationError("Server returned invalid frame").addParam("requestedSeqNum", seqNum)
                     .addParam("receivedSeqNum", frame.getSeqNum());
-            result = new ReceiveResult(Type.FAIL, ed);
+            result = new ReceiveResult(Type.FAIL, err);
         } else {
             result = new ReceiveResult(Type.SUCCESS, frame);
         }
@@ -53,8 +53,8 @@ public class ReceiveOperation extends RecoverableOperation {
         // check transfer state
         FileTransferState fts = status.getState();
         if (fts != FileTransferState.ACTIVE) {
-            ErrorDesc ed = new ErrorDesc("Failed to receive frame, invalid server state").addParam("serverState", fts);
-            result = new ReceiveResult(Type.FAIL, ed);
+            OperationError err = new OperationError("Failed to receive frame, invalid server state").addParam("serverState", fts);
+            result = new ReceiveResult(Type.FAIL, err);
             return false;
         }
         int serverSeqNum = status.getLastFrameSeqNum();
@@ -66,16 +66,16 @@ public class ReceiveOperation extends RecoverableOperation {
         if (seqNum == serverSeqNum + 1) {
             return true;
         }
-        ErrorDesc ed = new ErrorDesc("Cannot recover last received frame").addParam("clientSeqNum", seqNum)
+        OperationError err = new OperationError("Cannot recover last received frame").addParam("clientSeqNum", seqNum)
                 .addParam("serverSeqNum", serverSeqNum);
-        result = new ReceiveResult(Type.FAIL, ed);
+        result = new ReceiveResult(Type.FAIL, err);
         return false;
     }
 
     @Override
     protected void recoveryFailed(Type reason, Throwable src, ExceptionType srcType) {
-        ErrorDesc ed = new ErrorDesc("Failed to receive frame").setCause(src).setCauseType(srcType).addParam("seqNum",
+        OperationError err = new OperationError("Failed to receive frame").setCause(src).setCauseType(srcType).addParam("seqNum",
                 seqNum);
-        result = new ReceiveResult(reason, ed);
+        result = new ReceiveResult(reason, err);
     }
 }

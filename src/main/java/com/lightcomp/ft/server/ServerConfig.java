@@ -15,7 +15,7 @@ import com.lightcomp.ft.core.send.SendConfig;
  */
 public class ServerConfig implements SendConfig {
 
-    private final TransferStatusStorage transferStatusStorage;
+    private final TransferStatusStorage statusStorage;
 
     private final TransferHandler transferHandler;
 
@@ -33,17 +33,17 @@ public class ServerConfig implements SendConfig {
 
     private Algorithm checksumAlg = Algorithm.SHA_512;
 
-    public ServerConfig(TransferHandler transferHandler, TransferStatusStorage transferStatusStorage) {
+    public ServerConfig(TransferHandler transferHandler, TransferStatusStorage statusStorage) {
         this.transferHandler = Validate.notNull(transferHandler);
-        this.transferStatusStorage = Validate.notNull(transferStatusStorage);
+        this.statusStorage = Validate.notNull(statusStorage);
     }
 
     public TransferHandler getTransferHandler() {
         return transferHandler;
     }
 
-    public TransferStatusStorage getTransferStatusStorage() {
-        return transferStatusStorage;
+    public TransferStatusStorage getStatusStorage() {
+        return statusStorage;
     }
 
     public TransferIdGenerator getTransferIdGenerator() {

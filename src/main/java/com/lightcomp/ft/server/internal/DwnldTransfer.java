@@ -19,7 +19,7 @@ import com.lightcomp.ft.xsd.v1.ErrorCode;
 import com.lightcomp.ft.xsd.v1.Frame;
 import com.lightcomp.ft.xsd.v1.GenericDataType;
 
-public class DwnldTransfer extends AbstractTransfer implements SendProgressInfo, DataSendFailureCallback {
+public class DwnldTransfer extends ServerTransfer implements SendProgressInfo, DataSendFailureCallback {
 
     public static final int FRAME_CAPACITY = 3;
 
@@ -42,14 +42,14 @@ public class DwnldTransfer extends AbstractTransfer implements SendProgressInfo,
 
     @Override
     public void init() throws TransferException {
-        super.init();
         prepareWorker();
+        super.init();
     }
 
     @Override
     public void onDataSendFailed(Throwable t) {
-        ErrorContext ec = new ErrorContext("Failed to send frame data", this).setCause(t);
-        transferFailed(ec);
+        ServerError err = new ServerError("Failed to send frame data", this).setCause(t);
+        transferFailed(err);
     }
 
     @Override
@@ -60,16 +60,13 @@ public class DwnldTransfer extends AbstractTransfer implements SendProgressInfo,
             // copy status in synch block
             ts = status.copy();
         }
-        handler.onTransferProgress(ts);
+        // exception is caught by onDataSendFailed(Throwable)
+        onTransferProgress(ts);
     }
 
     @Override
-    public synchronized boolean isBusy() {
-        // check if preparing current frame
-        if (currFrame == null) {
-            return true;
-        }
-        return false;
+    protected boolean isBusyInternal() {
+        return currFrame == null;
     }
 
     @Override
@@ -78,7 +75,7 @@ public class DwnldTransfer extends AbstractTransfer implements SendProgressInfo,
         return super.finish();
     }
 
-    private void preFinish() {
+    private void preFinish() throws FileTransferException {
         TransferStatus ts;
         synchronized (this) {
             // check if last frame transfered
@@ -89,19 +86,17 @@ public class DwnldTransfer extends AbstractTransfer implements SendProgressInfo,
             if (status.getState() != TransferState.STARTED) {
                 return;
             }
-            // change state to transfered
             status.changeState(TransferState.TRANSFERED);
             // copy status in synch block
             ts = status.copy();
         }
-        handler.onTransferProgress(ts);
-    }
-
-    @Override
-    public void recvFrame(Frame frame) throws FileTransferException {
-        ErrorContext eb = new ErrorContext("Transfer cannot receive frame in download mode", this);
-        transferFailed(eb);
-        throw eb.createEx();
+        try {
+            onTransferProgress(ts);
+        } catch (Throwable t) {
+            ServerError err = new ServerError("Progress callback of data handler cause exception", this).setCause(t);
+            transferFailed(err);
+            throw err.createEx();
+        }
     }
 
     @Override
@@ -111,52 +106,54 @@ public class DwnldTransfer extends AbstractTransfer implements SendProgressInfo,
             checkActiveTransfer();
             result = sendInternal(seqNum);
             // fail transfer if fatal error
-            ErrorContext ec = result.getError();
-            if (ec != null && ec.isFatal()) {
-                // state must be changed in same sync block
-                status.changeStateToFailed(ec.getDesc());
+            ServerError err = result.getError();
+            if (err != null && err.isFatal()) {
+                status.changeStateToFailed(err.getDesc());
                 // notify canceling threads
                 notifyAll();
             }
         }
         // handle any error outside of sync block
-        ErrorContext ec = result.getError();
-        if (ec != null) {
-            if (ec.isFatal()) {
-                onTransferFailed(ec);
+        ServerError err = result.getError();
+        if (err != null) {
+            if (err.isFatal()) {
+                transferFailed(err);
             }
-            throw ec.createEx();
+            throw err.createEx();
         }
-        // report progress when frame changed
-        if (result.isStatusChanged()) {
-            handler.onTransferProgress(result.getStatus());
+        // report progress when status changed
+        if (result.getStatus() != null) {
+            try {
+                onTransferProgress(result.getStatus());
+            } catch (Throwable t) {
+                err = new ServerError("Progress callback of data handler cause exception", this).setCause(t);
+                transferFailed(err);
+                throw err.createEx();
+            }
         }
         return result.getFrameCtx().prepareFrame(this);
     }
 
-    /**
-     * Caller must ensure synchronization.
-     */
     private DwnldFrameResult sendInternal(int seqNum) {
         // checks started state
         if (status.getState() != TransferState.STARTED) {
-            ErrorContext ec = new ErrorContext("Unable to send frame in current state", this).addParam("currentState",
+            ServerError err = new ServerError("Unable to send frame in current state", this).addParam("currentState",
                     status.getState());
-            return new DwnldFrameResult(ec);
+            return new DwnldFrameResult(err);
         }
         int trSeqNum = status.getTransferedSeqNum();
-        // return if current frame
+        // return result if current frame
         if (trSeqNum == seqNum) {
             Validate.isTrue(currFrame.getSeqNum() == seqNum);
             return new DwnldFrameResult(currFrame);
         }
         // checks number of next frame
         if (trSeqNum != seqNum - 1) {
-            ErrorContext ec = new ErrorContext("Failed to send frame, invalid frame number", this)
+            ServerError err = new ServerError("Failed to send frame, invalid frame number", this)
                     .addParam("lastSeqNum", currFrame.getSeqNum()).addParam("receivedSeqNum", seqNum);
-            return new DwnldFrameResult(ec);
+            return new DwnldFrameResult(err);
         }
-        // return if first request
+        // return result if first request
         if (trSeqNum == 0) {
             Validate.isTrue(currFrame.getSeqNum() == 1);
             status.incrementTransferedSeqNum();
@@ -164,8 +161,8 @@ public class DwnldTransfer extends AbstractTransfer implements SendProgressInfo,
         }
         // check if current is not last
         if (currFrame.isLast()) {
-            ErrorContext ec = new ErrorContext("Requested frame exceeds last frame of transfer", this);
-            return new DwnldFrameResult(ec);
+            ServerError err = new ServerError("Requested frame exceeds last frame of transfer", this);
+            return new DwnldFrameResult(err);
         }
         // prepare next frame
         return moveToNextFrame(seqNum);
@@ -182,8 +179,8 @@ public class DwnldTransfer extends AbstractTransfer implements SendProgressInfo,
             currFrame = null;
             // if queue is empty wait for worker
             if (frameQueue.isEmpty()) {
-                ErrorContext ec = new ErrorContext("Transfer is busy", this).setCode(ErrorCode.BUSY);
-                return new DwnldFrameResult(ec);
+                ServerError err = new ServerError("Transfer is busy", this).setCode(ErrorCode.BUSY);
+                return new DwnldFrameResult(err);
             }
             // set current from queue
             currFrame = frameQueue.removeFirst();
@@ -210,37 +207,40 @@ public class DwnldTransfer extends AbstractTransfer implements SendProgressInfo,
     /**
      * Handles processed frame.
      * 
-     * @return False when worker must terminate. True when worker can continue.
+     * @return True when worker can process next frame. False when worker must terminate.
      */
     boolean frameProcessed(SendFrameContext frameCtx) {
-        boolean canWorkerContinue;
+        boolean processNext;
         TransferStatus ts;
         synchronized (this) {
             // terminate this worker if transfer is terminated
             if (status.getState().isTerminal()) {
+                frameWorker = null;
                 return false;
             }
-            canWorkerContinue = frameProcessedInternal(frameCtx);
+            processNext = frameProcessedInternal(frameCtx);
             // update progress
             status.incrementProcessedSeqNum();
             // copy status in synch block
             ts = status.copy();
         }
-        handler.onTransferProgress(ts);
-        return canWorkerContinue;
+        // exception is caught by worker
+        onTransferProgress(ts);
+        return processNext;
     }
 
-    void frameProcessingFailed(ErrorContext errorCtx) {
-        transferFailed(errorCtx);
+    void frameProcessingFailed(ServerError err) {
+        transferFailed(err);
+        // terminated transfer -> no need to sync
+        frameWorker = null;
     }
 
     /**
      * Handles processed frame. Caller must ensure synchronization.
      * 
-     * @return False when worker must terminate. True when worker can continue.
+     * @return True when worker can process next frame. False when worker must terminate.
      */
     private boolean frameProcessedInternal(SendFrameContext frameCtx) {
-        Validate.isTrue(status.getState() == TransferState.STARTED);
         // add processed frame
         if (currFrame == null) {
             currFrame = frameCtx;
@@ -263,7 +263,7 @@ public class DwnldTransfer extends AbstractTransfer implements SendProgressInfo,
     }
 
     @Override
-    protected void clearResources() {
+    protected void cleanResources() {
         // stop frame worker
         if (frameWorker != null) {
             frameWorker.terminate();

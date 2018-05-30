@@ -49,9 +49,9 @@ public class DwnldFrameWorker implements Runnable {
                     break; // worker terminated
                 }
             } catch (Throwable t) {
-                ErrorContext ec = new ErrorContext("Failed to build download frame", transfer)
+                ServerError err = new ServerError("Failed to build download frame", transfer)
                         .addParam("seqNum", frameBuilder.getCurrentSeqNum()).setCause(t);
-                transfer.frameProcessingFailed(ec);
+                transfer.frameProcessingFailed(err);
                 break; // builder failed
             }
         }

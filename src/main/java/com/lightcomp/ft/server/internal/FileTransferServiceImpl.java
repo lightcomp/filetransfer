@@ -73,8 +73,9 @@ public class FileTransferServiceImpl implements FileTransferService {
                 return FileTransferState.ACTIVE;
             case FINISHED:
                 return FileTransferState.FINISHED;
-            case CANCELED:
             case FAILED:
+            case CANCELED:
+            case ABORTED:
                 return FileTransferState.FAILED;
             default:
                 throw new IllegalStateException();

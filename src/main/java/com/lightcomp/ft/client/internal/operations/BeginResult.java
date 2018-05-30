@@ -9,8 +9,8 @@ public class BeginResult extends OperationResult {
         this.transferId = transferId;
     }
 
-    public BeginResult(Type type, ErrorDesc errorDesc) {
-        super(type, errorDesc);
+    public BeginResult(Type type, OperationError error) {
+        super(type, error);
         this.transferId = null;
     }
 

@@ -48,7 +48,7 @@ public class UploadTransfer extends AbstractTransfer implements SendProgressInfo
             SendOperation so = new SendOperation(this, service, frameCtx);
             OperationResult or = so.execute();
             if (or.getType() != Type.SUCCESS) {
-                transferFailed(or);
+                operationFailed(or);
                 return false;
             }
             // add processed frame num

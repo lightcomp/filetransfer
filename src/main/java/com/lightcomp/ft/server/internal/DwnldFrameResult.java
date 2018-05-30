@@ -5,22 +5,20 @@ import com.lightcomp.ft.server.TransferStatus;
 
 public class DwnldFrameResult {
 
-    private final ErrorContext error;
+    private final ServerError error;
 
     private final SendFrameContext frameCtx;
 
     private final TransferStatus status;
 
-    public DwnldFrameResult(ErrorContext error) {
+    public DwnldFrameResult(ServerError error) {
         this.error = error;
         this.frameCtx = null;
         this.status = null;
     }
 
     public DwnldFrameResult(SendFrameContext frameCtx) {
-        this.frameCtx = frameCtx;
-        this.error = null;
-        this.status = null;
+        this(frameCtx, null);
     }
 
     public DwnldFrameResult(SendFrameContext frameCtx, TransferStatus status) {
@@ -29,11 +27,7 @@ public class DwnldFrameResult {
         this.error = null;
     }
 
-    public boolean isStatusChanged() {
-        return status != null;
-    }
-
-    public ErrorContext getError() {
+    public ServerError getError() {
         return error;
     }
 

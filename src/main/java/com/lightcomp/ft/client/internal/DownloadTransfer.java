@@ -19,8 +19,8 @@ import com.lightcomp.ft.core.recv.RecvContext;
 import com.lightcomp.ft.core.recv.RecvContextImpl;
 import com.lightcomp.ft.core.recv.RecvFrameProcessor;
 import com.lightcomp.ft.core.recv.RecvProgressInfo;
+import com.lightcomp.ft.exception.TransferExBuilder;
 import com.lightcomp.ft.exception.TransferException;
-import com.lightcomp.ft.exception.TransferExceptionBuilder;
 import com.lightcomp.ft.wsdl.v1.FileTransferService;
 
 public class DownloadTransfer extends AbstractTransfer implements RecvProgressInfo {
@@ -40,18 +40,18 @@ public class DownloadTransfer extends AbstractTransfer implements RecvProgressIn
     public void onFileDataReceived(long size) {
         TransferStatus ts;
         synchronized (this) {
-            // update current state
             status.addTransferedData(size);
             // copy status in synch block
             ts = status.copy();
         }
-        request.onTransferProgress(ts);
+        // any exception is caught in run() and transfer fails
+        onTransferProgress(ts);
     }
 
     @Override
     protected boolean transferFrames() throws TransferException {
         try {
-            createTempDir();
+            prepareTempDir();
             RecvContext recvCtx = new RecvContextImpl(this, downloadDir, config.getChecksumAlg());
             return downloadFrames(recvCtx);
         } finally {
@@ -69,7 +69,7 @@ public class DownloadTransfer extends AbstractTransfer implements RecvProgressIn
             ReceiveOperation ro = new ReceiveOperation(this, service, currSeqNum);
             ReceiveResult rs = ro.execute();
             if (rs.getType() != OperationResult.Type.SUCCESS) {
-                transferFailed(rs);
+                operationFailed(rs);
                 return false;
             }
             // process frame
@@ -87,13 +87,12 @@ public class DownloadTransfer extends AbstractTransfer implements RecvProgressIn
         }
     }
 
-    private void createTempDir() throws TransferException {
+    private void prepareTempDir() throws TransferException {
         Validate.isTrue(tempDir == null);
         try {
             tempDir = Files.createTempDirectory(config.getWorkDir(), transferId);
         } catch (IOException e) {
-            throw new TransferExceptionBuilder("Failed to create temporary download directory", this).setCause(e)
-                    .build();
+            throw new TransferExBuilder("Failed to create temporary download directory", this).setCause(e).build();
         }
     }
 
@@ -102,8 +101,7 @@ public class DownloadTransfer extends AbstractTransfer implements RecvProgressIn
             try {
                 PathUtils.deleteWithChildren(tempDir);
             } catch (IOException e) {
-                new TransferExceptionBuilder("Failed to delete temporary download directory", this).setCause(e)
-                        .log(logger);
+                new TransferExBuilder("Failed to delete temporary download directory", this).setCause(e).log(logger);
             }
         }
     }

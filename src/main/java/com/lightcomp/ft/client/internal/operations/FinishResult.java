@@ -11,8 +11,8 @@ public class FinishResult extends OperationResult {
         this.data = data;
     }
 
-    public FinishResult(Type type, ErrorDesc errorDesc) {
-        super(type, errorDesc);
+    public FinishResult(Type type, OperationError error) {
+        super(type, error);
         this.data = null;
     }
 

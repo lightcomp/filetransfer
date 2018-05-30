@@ -8,11 +8,11 @@ public class OperationResult {
 
     private final Type type;
 
-    private final ErrorDesc errorDesc;
+    private final OperationError error;
 
-    public OperationResult(Type type, ErrorDesc errorDesc) {
+    public OperationResult(Type type, OperationError error) {
         this.type = type;
-        this.errorDesc = errorDesc;
+        this.error = error;
     }
 
     public OperationResult(Type type) {
@@ -23,7 +23,7 @@ public class OperationResult {
         return type;
     }
 
-    public ErrorDesc getErrorDesc() {
-        return errorDesc;
+    public OperationError getError() {
+        return error;
     }
 }

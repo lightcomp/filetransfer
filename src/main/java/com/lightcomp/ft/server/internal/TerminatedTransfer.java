@@ -46,9 +46,9 @@ public class TerminatedTransfer implements Transfer {
     private FileTransferException createTerminatedException() {
         ErrorDesc ed = status.getErrorDesc();
         if (ed != null) {
-            return ErrorContext.createEx(ed, ErrorCode.FATAL);
+            return ServerError.createEx(ed, ErrorCode.FATAL);
         }
-        return new ErrorContext("Transfer is terminated").addParam("transferId", transferId)
+        return new ServerError("Transfer is terminated").addParam("transferId", transferId)
                 .addParam("finalState", status.getState()).createEx();
     }
 }

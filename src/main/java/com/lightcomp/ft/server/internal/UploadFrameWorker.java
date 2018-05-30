@@ -78,9 +78,9 @@ public class UploadFrameWorker implements Runnable {
                     break; // terminated worker
                 }
             } catch (Throwable t) {
-                ErrorContext ec = new ErrorContext("Frame processor failed", transfer)
+                ServerError err = new ServerError("Frame processor failed", transfer)
                         .addParam("seqNum", rfp.getSeqNum()).setCause(t);
-                transfer.frameProcessingFailed(ec);
+                transfer.frameProcessingFailed(err);
                 break; // processor failed
             }
         }

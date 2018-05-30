@@ -11,14 +11,14 @@ import com.lightcomp.ft.client.TransferState;
 import com.lightcomp.ft.client.TransferStatus;
 import com.lightcomp.ft.client.internal.operations.BeginOperation;
 import com.lightcomp.ft.client.internal.operations.BeginResult;
-import com.lightcomp.ft.client.internal.operations.ErrorDesc;
 import com.lightcomp.ft.client.internal.operations.FinishOperation;
 import com.lightcomp.ft.client.internal.operations.FinishResult;
+import com.lightcomp.ft.client.internal.operations.OperationError;
 import com.lightcomp.ft.client.internal.operations.OperationHandler;
 import com.lightcomp.ft.client.internal.operations.OperationResult;
 import com.lightcomp.ft.client.internal.operations.OperationResult.Type;
+import com.lightcomp.ft.exception.TransferExBuilder;
 import com.lightcomp.ft.exception.TransferException;
-import com.lightcomp.ft.exception.TransferExceptionBuilder;
 import com.lightcomp.ft.wsdl.v1.FileTransferService;
 import com.lightcomp.ft.xsd.v1.AbortRequest;
 import com.lightcomp.ft.xsd.v1.GenericDataType;
@@ -29,7 +29,7 @@ public abstract class AbstractTransfer implements Runnable, Transfer, OperationH
 
     protected final TransferStatusImpl status = new TransferStatusImpl();
 
-    protected final TransferRequest request;
+    private final TransferRequest request;
 
     protected final ClientConfig config;
 
@@ -92,6 +92,7 @@ public abstract class AbstractTransfer implements Runnable, Transfer, OperationH
                 return false;
             }
             if (delay > 0) {
+                logger.info("Transfer wating {}s before recovery ...", delay);
                 try {
                     wait(delay * 1000);
                 } catch (InterruptedException e) {
@@ -117,9 +118,9 @@ public abstract class AbstractTransfer implements Runnable, Transfer, OperationH
         while (true) {
             switch (status.getState()) {
                 case FINISHED:
-                    throw new TransferExceptionBuilder("Finished transfer cannot be canceled", this).build();
+                    throw new TransferExBuilder("Finished transfer cannot be canceled", this).build();
                 case FAILED:
-                    throw new TransferExceptionBuilder("Failed transfer cannot be canceled", this).build();
+                    throw new TransferExBuilder("Failed transfer cannot be canceled", this).build();
                 case CANCELED:
                     return;
                 default:
@@ -148,25 +149,20 @@ public abstract class AbstractTransfer implements Runnable, Transfer, OperationH
                 return;
             }
         } catch (Throwable t) {
-            transferFailed(t);
+            new TransferExBuilder("Transfer failed", this).setCause(t).log(logger);
+            ExceptionType type = ExceptionType.resolve(t);
+            transferFailed(type);
         }
     }
 
-    protected abstract boolean transferFrames() throws TransferException;
-
-    protected void frameProcessed(int seqNum) {
-        TransferStatus ts;
-        synchronized (this) {
-            Validate.isTrue(status.getLastFrameSeqNum() + 1 == seqNum);
-            status.incrementFrameSeqNum();
-            // reset retry count maybe needed
-            status.resetRetryCount();
-            // copy status in synch block
-            ts = status.copy();
-        }
-        request.onTransferProgress(ts);
+    /**
+     * Reports progress to request. Any runtime exception from callback is propagated to caller. Method
+     * must not be synchronized.
+     */
+    protected void onTransferProgress(TransferStatus status) {
+        request.onTransferProgress(status);
     }
-
+    
     private boolean begin() {
         if (cancelIfRequested()) {
             return false;
@@ -174,7 +170,7 @@ public abstract class AbstractTransfer implements Runnable, Transfer, OperationH
         BeginOperation bo = new BeginOperation(service, request.getData());
         BeginResult br = bo.execute();
         if (br.getType() != Type.SUCCESS) {
-            transferFailed(br);
+            operationFailed(br);
             return false;
         }
         transferId = br.getTransferId();
@@ -187,7 +183,7 @@ public abstract class AbstractTransfer implements Runnable, Transfer, OperationH
             // copy status in synch block
             ts = status.copy();
         }
-        request.onTransferProgress(ts);
+        onTransferProgress(ts);
         return true;
     }
 
@@ -205,18 +201,42 @@ public abstract class AbstractTransfer implements Runnable, Transfer, OperationH
             // copy status in synch block
             ts = status.copy();
         }
-        request.onTransferProgress(ts);
+        onTransferProgress(ts);
         return true;
     }
 
+    protected abstract boolean transferFrames() throws TransferException;
+
+    protected void frameProcessed(int seqNum) {
+        TransferStatus ts;
+        synchronized (this) {
+            Validate.isTrue(status.getLastFrameSeqNum() + 1 == seqNum);
+            status.incrementFrameSeqNum();
+            // reset retry count maybe needed
+            status.resetRetryCount();
+            // copy status in synch block
+            ts = status.copy();
+        }
+        onTransferProgress(ts);
+    }
+    
     private boolean finish() {
         if (cancelIfRequested()) {
             return false;
         }
+        // change state to finishing
+        TransferStatus ts;
+        synchronized (this) {
+            status.changeState(TransferState.FINISHING);
+            // copy status in synch block
+            ts = status.copy();
+        }
+        onTransferProgress(ts);
+        // send finish to server
         FinishOperation fo = new FinishOperation(this, service);
         FinishResult fr = fo.execute();
         if (fr.getType() != Type.SUCCESS) {
-            transferFailed(fr);
+            operationFailed(fr);
             return false;
         }
         // change state to finished
@@ -240,34 +260,37 @@ public abstract class AbstractTransfer implements Runnable, Transfer, OperationH
             // notify canceling threads
             notifyAll();
         }
+        logger.info("Transfer canceled, transferId={}", transferId);
         // try to abort server transfer
         abortServerTransfer();
-        // report canceled transfer
-        request.onTransferCanceled();
+        // report cancel to request
+        try {
+            request.onTransferCanceled();
+        } catch (Throwable t) {
+            TransferExBuilder teb = new TransferExBuilder("Cancel callback of request cause exception", this)
+                    .setCause(t);
+            teb.log(logger);
+        }
         return true;
     }
 
-    protected void transferFailed(OperationResult or) {
-        Validate.isTrue(or.getType() != Type.SUCCESS);
-        // try cancel transfer
-        if (or.getType() == Type.CANCEL && cancelIfRequested()) {
+    protected void operationFailed(OperationResult result) {
+        OperationResult.Type type = result.getType();
+        Validate.isTrue(type != Type.SUCCESS);
+        // try cancel first
+        if (type == Type.CANCEL && cancelIfRequested()) {
             return;
         }
         // log operation detail
-        ErrorDesc ed = or.getErrorDesc();
-        new TransferExceptionBuilder(ed.getMessage(), this).addParams(ed.getParams()).setCause(ed.getCause())
-                .log(logger);
+        OperationError err = result.getError();
+        TransferExBuilder teb = new TransferExBuilder(err.getMessage(), this).addParams(err.getParams())
+                .setCause(err.getCause());
+        teb.log(logger);
         // fail transfer
-        transferFailed(ed.getCause(), ed.getCauseType());
+        transferFailed(err.getCauseType());
     }
 
-    private void transferFailed(Throwable cause) {
-        new TransferExceptionBuilder("Transfer failed", this).setCause(cause).log(logger);
-        ExceptionType type = ExceptionType.resolve(cause);
-        transferFailed(cause, type);
-    }
-
-    private void transferFailed(Throwable cause, ExceptionType type) {
+    private void transferFailed(ExceptionType type) {
         synchronized (this) {
             status.changeState(TransferState.FAILED);
             // notify canceling threads
@@ -277,7 +300,13 @@ public abstract class AbstractTransfer implements Runnable, Transfer, OperationH
         if (type != ExceptionType.FATAL) {
             abortServerTransfer();
         }
-        request.onTransferFailed();
+        // report fail to request
+        try {
+            request.onTransferFailed();
+        } catch (Throwable t) {
+            TransferExBuilder teb = new TransferExBuilder("Fail callback of request cause exception", this).setCause(t);
+            teb.log(logger);
+        }
     }
 
     private void abortServerTransfer() {
@@ -289,7 +318,8 @@ public abstract class AbstractTransfer implements Runnable, Transfer, OperationH
         try {
             service.abort(ar);
         } catch (Throwable t) {
-            new TransferExceptionBuilder("Unable to abort server transfer", this).setCause(t).log(logger);
+            TransferExBuilder teb = new TransferExBuilder("Unable to abort server transfer", this).setCause(t);
+            teb.log(logger);
         }
     }
 }

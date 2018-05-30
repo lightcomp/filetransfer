@@ -35,15 +35,15 @@ public class BeginOperation {
 
     private BeginResult createResult(String transferId) {
         if (StringUtils.isEmpty(transferId)) {
-            ErrorDesc ed = new ErrorDesc("Server returned empty transfer id");
-            return new BeginResult(Type.FAIL, ed);
+            OperationError err = new OperationError("Server returned empty transfer id");
+            return new BeginResult(Type.FAIL, err);
         }
         return new BeginResult(Type.SUCCESS, transferId);
     }
 
     private BeginResult operationFailed(Throwable t) {
         ExceptionType type = ExceptionType.resolve(t);
-        ErrorDesc ed = new ErrorDesc("Failed to begin transfer").setCause(t).setCauseType(type);
-        return new BeginResult(Type.FAIL, ed);
+        OperationError err = new OperationError("Failed to begin transfer").setCause(t).setCauseType(type);
+        return new BeginResult(Type.FAIL, err);
     }
 }

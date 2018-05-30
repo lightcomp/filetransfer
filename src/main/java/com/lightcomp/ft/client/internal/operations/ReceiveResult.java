@@ -11,8 +11,8 @@ public class ReceiveResult extends OperationResult {
         this.frame = frame;
     }
 
-    public ReceiveResult(Type type, ErrorDesc errorDesc) {
-        super(type, errorDesc);
+    public ReceiveResult(Type type, OperationError error) {
+        super(type, error);
         this.frame = null;
     }
 

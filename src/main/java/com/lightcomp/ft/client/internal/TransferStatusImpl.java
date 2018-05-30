@@ -70,15 +70,15 @@ public class TransferStatusImpl implements TransferStatus {
 
     /* modify methods */
 
-    public void resetRetryCount() {
-        retryCount = 0;
-        updateActivity();
-    }
-
     public void incrementRetryCount() {
         retryCount++;
     }
 
+    public void resetRetryCount() {
+        retryCount = 0;
+        updateActivity();
+    }
+    
     public void addTransferedData(long size) {
         Validate.isTrue(size >= 0);
 

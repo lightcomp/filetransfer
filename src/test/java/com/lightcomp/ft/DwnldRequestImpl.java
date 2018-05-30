@@ -25,7 +25,7 @@ public class DwnldRequestImpl implements DownloadRequest {
 
     private final TransferState terminalState;
 
-    private Transfer transfer;
+    protected Transfer transfer;
 
     private TransferState progressState;
 

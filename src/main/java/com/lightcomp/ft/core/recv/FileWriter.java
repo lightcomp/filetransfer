@@ -21,7 +21,7 @@ import com.lightcomp.ft.common.Checksum.Algorithm;
 import com.lightcomp.ft.common.ChecksumByteChannel;
 import com.lightcomp.ft.common.ChecksumGenerator;
 import com.lightcomp.ft.exception.TransferException;
-import com.lightcomp.ft.exception.TransferExceptionBuilder;
+import com.lightcomp.ft.exception.TransferExBuilder;
 
 class FileWriter {
 
@@ -48,12 +48,12 @@ class FileWriter {
     public void write(ReadableByteChannel rbch, long offset, long length) throws TransferException {
         long writtenSize = chksmGenerator.getNumProcessed();
         if (offset != writtenSize) {
-            throw new TransferExceptionBuilder("File must be written in sequence").addParam("path", file)
+            throw new TransferExBuilder("File must be written in sequence").addParam("path", file)
                     .addParam("writtenSize", writtenSize).addParam("fileOffset", offset).build();
         }
         long newSize = offset + length;
         if (newSize > size) {
-            throw new TransferExceptionBuilder("File data overlaps defined size").addParam("path", file)
+            throw new TransferExBuilder("File data overlaps defined size").addParam("path", file)
                     .addParam("fileSize", size).addParam("newSize", newSize).build();
         }
         if (length == 0) {
@@ -67,7 +67,7 @@ class FileWriter {
                 copyData(rbch, wbch, length);
             }
         } catch (IOException e) {
-            throw new TransferExceptionBuilder("Failed to open file").addParam("path", file).setCause(e).build();
+            throw new TransferExBuilder("Failed to open file").addParam("path", file).setCause(e).build();
         }
     }
 
@@ -75,7 +75,7 @@ class FileWriter {
         // check written size
         long writtenSize = chksmGenerator.getNumProcessed();
         if (size != writtenSize) {
-            throw new TransferExceptionBuilder("Incomplete file cannot be finished").addParam("path", file)
+            throw new TransferExBuilder("Incomplete file cannot be finished").addParam("path", file)
                     .addParam("fileSize", size).addParam("writtenSize", writtenSize).build();
         }
         // validate checksum
@@ -84,14 +84,14 @@ class FileWriter {
             logger.debug("File={}, SHA512={}", file, DatatypeConverter.printHexBinary(genChecksum));
         }
         if (!Arrays.equals(genChecksum, checksum)) {
-            throw new TransferExceptionBuilder("File checksums does not match").addParam("path", file).build();
+            throw new TransferExBuilder("File checksums does not match").addParam("path", file).build();
         }
         // update last modification
         FileTime lm = FileTime.fromMillis(lastModified);
         try {
             Files.setLastModifiedTime(file, lm);
         } catch (IOException e) {
-            throw new TransferExceptionBuilder("Failed to finilsh file").addParam("path", file).setCause(e).build();
+            throw new TransferExBuilder("Failed to finilsh file").addParam("path", file).setCause(e).build();
         }
     }
 
@@ -112,7 +112,7 @@ class FileWriter {
                     break;
                 }
             } catch (Throwable t) {
-                throw new TransferExceptionBuilder("Failed to read file data").addParam("path", file).setCause(t)
+                throw new TransferExBuilder("Failed to read file data").addParam("path", file).setCause(t)
                         .build();
             }
             // flip buffer for write
@@ -124,7 +124,7 @@ class FileWriter {
                 // destination file must be large enough
                 Validate.isTrue(!bb.hasRemaining());
             } catch (Throwable t) {
-                throw new TransferExceptionBuilder("Failed to write file data").addParam("path", file).setCause(t)
+                throw new TransferExBuilder("Failed to write file data").addParam("path", file).setCause(t)
                         .build();
             }
             length -= bb.limit();

@@ -55,8 +55,8 @@ public class SendOperation extends RecoverableOperation implements DataSendFailu
         // check transfer state
         FileTransferState fts = status.getState();
         if (fts != FileTransferState.ACTIVE) {
-            ErrorDesc ed = new ErrorDesc("Failed to send frame, invalid server state").addParam("serverState", fts);
-            result = new OperationResult(Type.FAIL, ed);
+            OperationError err = new OperationError("Failed to send frame, invalid server state").addParam("serverState", fts);
+            result = new OperationResult(Type.FAIL, err);
             return false;
         }
         // check frame seq number
@@ -72,16 +72,16 @@ public class SendOperation extends RecoverableOperation implements DataSendFailu
             return true;
         }
         // incorrect frame number
-        ErrorDesc ed = new ErrorDesc("Cannot recover last send frame").addParam("seqNum", seqNum)
+        OperationError err = new OperationError("Cannot recover last send frame").addParam("seqNum", seqNum)
                 .addParam("serverSeqNum", serverSeqNum);
-        result = new OperationResult(Type.FAIL, ed);
+        result = new OperationResult(Type.FAIL, err);
         return false;
     }
 
     @Override
     protected void recoveryFailed(Type reason, Throwable src, ExceptionType srcType) {
-        ErrorDesc ed = new ErrorDesc("Failed to send frame").setCause(src).setCauseType(srcType).addParam("seqNum",
+        OperationError err = new OperationError("Failed to send frame").setCause(src).setCauseType(srcType).addParam("seqNum",
                 frameCtx.getSeqNum());
-        result = new OperationResult(reason, ed);
+        result = new OperationResult(reason, err);
     }
 }

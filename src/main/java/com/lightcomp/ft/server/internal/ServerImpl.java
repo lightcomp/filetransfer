@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory;
 import com.lightcomp.ft.common.TaskExecutor;
 import com.lightcomp.ft.core.TransferIdGenerator;
 import com.lightcomp.ft.exception.TransferException;
-import com.lightcomp.ft.exception.TransferExceptionBuilder;
+import com.lightcomp.ft.exception.TransferExBuilder;
 import com.lightcomp.ft.server.DownloadHandler;
 import com.lightcomp.ft.server.Server;
 import com.lightcomp.ft.server.ServerConfig;
@@ -41,7 +41,7 @@ public class ServerImpl implements Server, TransferManager {
         INIT, RUNNING, STOPPING, TERMINATED
     }
 
-    private final Map<String, AbstractTransfer> transferIdMap = new HashMap<>();
+    private final Map<String, ServerTransfer> transferIdMap = new HashMap<>();
 
     private final Set<String> newTransferIds = new HashSet<>();
 
@@ -64,7 +64,7 @@ public class ServerImpl implements Server, TransferManager {
         this.executor = new TaskExecutor(config.getThreadPoolSize(), "server");
         this.idGenerator = config.getTransferIdGenerator();
         this.handler = config.getTransferHandler();
-        this.statusStorage = config.getTransferStatusStorage();
+        this.statusStorage = config.getStatusStorage();
         // interval is 1/10 of inactive timeout or at minimum 1s
         this.wakeupInterval = Math.max(config.getInactiveTimeout() * 1000 / 10, 1000);
     }
@@ -109,13 +109,13 @@ public class ServerImpl implements Server, TransferManager {
 
     @Override
     public void cancelTransfer(String transferId) throws TransferException {
-        AbstractTransfer transfer;
+        ServerTransfer transfer;
         synchronized (this) {
             Validate.isTrue(state == State.RUNNING || state == State.STOPPING);
             transfer = transferIdMap.get(transferId);
         }
         if (transfer == null) {
-            throw new TransferExceptionBuilder("Transfer not found").addParam("transferId", transferId).build();
+            throw new TransferExBuilder("Transfer not found").addParam("transferId", transferId).build();
         }
         transfer.cancel();
     }
@@ -125,7 +125,7 @@ public class ServerImpl implements Server, TransferManager {
         synchronized (this) {
             Validate.isTrue(state == State.RUNNING || state == State.STOPPING);
             // get status from current transfer
-            AbstractTransfer transfer = transferIdMap.get(transferId);
+            ServerTransfer transfer = transferIdMap.get(transferId);
             if (transfer != null) {
                 return transfer.getStatus();
             }
@@ -142,11 +142,11 @@ public class ServerImpl implements Server, TransferManager {
             checkServerState();
             // check if requested transfer is creating
             if (newTransferIds.contains(transferId)) {
-                throw new ErrorContext("Transfer is busy").addParam("transferId", transferId).setCode(ErrorCode.BUSY)
+                throw new ServerError("Transfer is busy").addParam("transferId", transferId).setCode(ErrorCode.BUSY)
                         .createEx();
             }
             // get current transfer
-            AbstractTransfer transfer = transferIdMap.get(transferId);
+            ServerTransfer transfer = transferIdMap.get(transferId);
             if (transfer != null) {
                 return transfer;
             }
@@ -156,21 +156,21 @@ public class ServerImpl implements Server, TransferManager {
         if (ts != null) {
             return new TerminatedTransfer(transferId, ts);
         }
-        throw new ErrorContext("Transfer not found").addParam("transferId", transferId).createEx();
+        throw new ServerError("Transfer not found").addParam("transferId", transferId).createEx();
     }
 
     @Override
     public String createTransferAsync(GenericDataType request) throws FileTransferException {
         String transferId = idGenerator.generateId();
         if (StringUtils.isEmpty(transferId)) {
-            throw new ErrorContext("Id generator returned empty transfer id").createEx();
+            throw new ServerError("Id generator returned empty transfer id").createEx();
         }
         synchronized (this) {
             checkServerState();
             // check running transfers and new transfers for duplicate id
             if (transferIdMap.containsKey(transferId) || newTransferIds.contains(transferId)) {
-                throw new ErrorContext("Id generator generated duplicate transfer id")
-                        .addParam("transferId", transferId).createEx();
+                throw new ServerError("Id generator generated duplicate transfer id").addParam("transferId", transferId)
+                        .createEx();
             }
             // add new transfer to lookup
             newTransferIds.add(transferId);
@@ -187,7 +187,7 @@ public class ServerImpl implements Server, TransferManager {
     }
 
     private void createTransfer(String transferId, TransferDataHandler dataHandler) throws TransferException {
-        AbstractTransfer transfer;
+        ServerTransfer transfer;
         if (dataHandler.getMode().equals(Mode.UPLOAD)) {
             UploadHandler uh = (UploadHandler) dataHandler;
             transfer = new UploadTransfer(transferId, uh, config, executor);
@@ -205,12 +205,12 @@ public class ServerImpl implements Server, TransferManager {
     }
 
     private void transferCreationFailed(String transferId, Throwable cause) {
-        ErrorContext ec = new ErrorContext("Failed to create transfer").addParam("transferId", transferId)
+        ServerError err = new ServerError("Failed to create transfer").addParam("transferId", transferId)
                 .setCause(cause);
-        ec.log(logger);
+        err.log(logger);
         // create failed status for storage
         TransferStatusImpl status = new TransferStatusImpl();
-        status.changeStateToFailed(ec.getDesc());
+        status.changeStateToFailed(err.getDesc());
         try {
             statusStorage.saveTransferStatus(transferId, status);
         } catch (Throwable t) {
@@ -227,26 +227,25 @@ public class ServerImpl implements Server, TransferManager {
      */
     private void checkServerState() throws FileTransferException {
         if (state != State.RUNNING) {
-            throw new ErrorContext("Server is not running").createEx();
+            throw new ServerError("Server is not running").createEx();
         }
     }
 
     /* async server methods */
 
     private void run() {
-        List<AbstractTransfer> currentTransfers;
-
+        List<ServerTransfer> currTransfers;
         while (true) {
             synchronized (this) {
                 // copy map values in sync block
-                currentTransfers = new ArrayList<>(transferIdMap.values());
+                currTransfers = new ArrayList<>(transferIdMap.values());
                 // exit loop if not running
                 if (state != State.RUNNING) {
                     break;
                 }
             }
             // terminate all inactive transfer
-            List<String> terminatedTransferIds = terminateInactiveTransfers(currentTransfers);
+            List<String> terminatedTransferIds = terminateInactiveTransfers(currTransfers);
 
             synchronized (this) {
                 // remove all terminated transfers
@@ -259,7 +258,7 @@ public class ServerImpl implements Server, TransferManager {
                 }
             }
         }
-        terminateTransfers(currentTransfers);
+        terminateTransfers(currTransfers);
         synchronized (this) {
             state = State.TERMINATED;
             // notify stopping threads
@@ -269,9 +268,9 @@ public class ServerImpl implements Server, TransferManager {
         }
     }
 
-    private List<String> terminateInactiveTransfers(Collection<AbstractTransfer> currentTransfers) {
+    private List<String> terminateInactiveTransfers(Collection<ServerTransfer> currTransfers) {
         List<String> terminatedTransferIds = new ArrayList<>();
-        for (AbstractTransfer transfer : currentTransfers) {
+        for (ServerTransfer transfer : currTransfers) {
             if (transfer.terminateIfInactive()) {
                 try {
                     statusStorage.saveTransferStatus(transfer.getTransferId(), transfer.getStatus());
@@ -285,8 +284,8 @@ public class ServerImpl implements Server, TransferManager {
         return terminatedTransferIds;
     }
 
-    private void terminateTransfers(Collection<AbstractTransfer> currentTransfers) {
-        for (AbstractTransfer transfer : currentTransfers) {
+    private void terminateTransfers(Collection<ServerTransfer> currTransfers) {
+        for (ServerTransfer transfer : currTransfers) {
             transfer.terminate();
             try {
                 statusStorage.saveTransferStatus(transfer.getTransferId(), transfer.getStatus());

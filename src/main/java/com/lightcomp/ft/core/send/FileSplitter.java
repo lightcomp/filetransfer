@@ -12,7 +12,7 @@ import com.lightcomp.ft.core.blocks.FileDataBlockImpl;
 import com.lightcomp.ft.core.blocks.FileEndBlockImpl;
 import com.lightcomp.ft.core.send.items.SourceFile;
 import com.lightcomp.ft.exception.TransferException;
-import com.lightcomp.ft.exception.TransferExceptionBuilder;
+import com.lightcomp.ft.exception.TransferExBuilder;
 
 class FileSplitter {
 
@@ -116,13 +116,13 @@ class FileSplitter {
         try {
             path = parentPath.resolve(srcFile.getName());
         } catch (InvalidPathException e) {
-            throw new TransferExceptionBuilder("Invalid source file name").addParam("parentPath", parentPath)
+            throw new TransferExBuilder("Invalid source file name").addParam("parentPath", parentPath)
                     .addParam("name", srcFile.getName()).setCause(e).build();
         }
         // validate file size and copy value to be sure nobody will change it
         long size = srcFile.getSize();
         if (size < 0) {
-            throw new TransferExceptionBuilder("Invalid source file size").addParam("path", path).addParam("size", size)
+            throw new TransferExBuilder("Invalid source file size").addParam("path", path).addParam("size", size)
                     .build();
         }
         Checksum checksum = createChecksum(checksumAlg, srcFile.getChecksum(), path);
@@ -134,7 +134,7 @@ class FileSplitter {
             throws TransferException {
         if (checksum != null) {
             if (checksumAlg.getByteLen() != checksum.length) {
-                throw new TransferExceptionBuilder("File checksum has invalid length")
+                throw new TransferExBuilder("File checksum has invalid length")
                         .addParam("algorithm", checksumAlg.getRealName())
                         .addParam("definedLen", checksumAlg.getByteLen()).addParam("chksmLen", checksum.length).build();
             }

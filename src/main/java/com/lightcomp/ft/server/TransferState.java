@@ -17,7 +17,7 @@ public enum TransferState {
      */
     TRANSFERED,
     /**
-     * Data is transfered, transfer waiting for response from acceptor.
+     * Data is transfered, transfer waiting for response from data handler.
      */
     FINISHING,
     /**
@@ -29,9 +29,13 @@ public enum TransferState {
      */
     FAILED,
     /**
-     * Transfer is canceled.
+     * Transfer is canceled by server.
      */
-    CANCELED;
+    CANCELED,
+    /**
+     * Transfer is aborted by client.
+     */
+    ABORTED;
 
     /**
      * @return Returns true for FINISHED, FAILED and CANCELED states.

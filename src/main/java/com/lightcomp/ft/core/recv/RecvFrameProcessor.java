@@ -17,7 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.lightcomp.ft.exception.TransferException;
-import com.lightcomp.ft.exception.TransferExceptionBuilder;
+import com.lightcomp.ft.exception.TransferExBuilder;
 import com.lightcomp.ft.xsd.v1.Frame;
 import com.lightcomp.ft.xsd.v1.FrameBlock;
 
@@ -69,7 +69,7 @@ public class RecvFrameProcessor {
             String prefix = "FTRecvFrame-" + Integer.toString(seqNum) + "-";
             dataFile = Files.createTempFile(workDir, prefix, null);
         } catch (IOException e) {
-            throw new TransferExceptionBuilder("Failed to create temporary file for frame data").setCause(e).build();
+            throw new TransferExBuilder("Failed to create temporary file for frame data").setCause(e).build();
         }
         // copy frame data to file
         try (InputStream is = dataHandler.getInputStream()) {
@@ -77,12 +77,12 @@ public class RecvFrameProcessor {
             // copied length must match with specified data size
             if (length != dataSize) {
                 deleteData();
-                throw new TransferExceptionBuilder("Frame size does not match data length").addParam("seqNum", seqNum)
+                throw new TransferExBuilder("Frame size does not match data length").addParam("seqNum", seqNum)
                         .addParam("frameSize", dataSize).addParam("dataLength", length).build();
             }
         } catch (IOException e) {
             deleteData();
-            throw new TransferExceptionBuilder("Failed to transfer frame data").addParam("seqNum", seqNum).setCause(e)
+            throw new TransferExBuilder("Failed to transfer frame data").addParam("seqNum", seqNum).setCause(e)
                     .build();
         }
     }
@@ -98,7 +98,7 @@ public class RecvFrameProcessor {
                 blockNum++;
             }
         } catch (Throwable t) {
-            throw new TransferExceptionBuilder("Failed to process frame block").addParam("seqNum", seqNum)
+            throw new TransferExBuilder("Failed to process frame block").addParam("seqNum", seqNum)
                     .addParam("blockNum", blockNum).setCause(t).build();
         } finally {
             recvCtx.setInputChannel(null);
@@ -112,7 +112,7 @@ public class RecvFrameProcessor {
         try {
             dch = Files.newByteChannel(dataFile, StandardOpenOption.READ);
         } catch (IOException e) {
-            throw new TransferExceptionBuilder("Failed to open temporary frame data").addParam("seqNum", seqNum)
+            throw new TransferExBuilder("Failed to open temporary frame data").addParam("seqNum", seqNum)
                     .addParam("dataFile", dataFile).setCause(e).build();
         }
         return new ReadableByteChannel() {
@@ -137,19 +137,19 @@ public class RecvFrameProcessor {
 
     private void validate() throws TransferException {
         if (dataSize != dataPos) {
-            throw new TransferExceptionBuilder("Not all data from frame stream processed").addParam("seqNum", seqNum)
+            throw new TransferExBuilder("Not all data from frame stream processed").addParam("seqNum", seqNum)
                     .addParam("dataSize", dataSize).addParam("dataPosition", dataPos).build();
         }
         if (last) {
             Path currDir = recvCtx.getCurrentDir();
             if (currDir != null) {
-                throw new TransferExceptionBuilder(
+                throw new TransferExBuilder(
                         "Directory inconsistency, after last frame the directory still remains open")
                                 .addParam("remainingDir", currDir).build();
             }
             Path currFile = recvCtx.getCurrentFile();
             if (currFile != null) {
-                throw new TransferExceptionBuilder("File inconsistency, after last frame the file still remains open")
+                throw new TransferExBuilder("File inconsistency, after last frame the file still remains open")
                         .addParam("remainingFile", currFile).build();
             }
         }
@@ -159,7 +159,7 @@ public class RecvFrameProcessor {
         try {
             Files.delete(dataFile);
         } catch (Throwable t) {
-            new TransferExceptionBuilder("Failed to delete temporary frame data").addParam("seqNum", seqNum).setCause(t)
+            new TransferExBuilder("Failed to delete temporary frame data").addParam("seqNum", seqNum).setCause(t)
                     .log(logger);
         }
     }

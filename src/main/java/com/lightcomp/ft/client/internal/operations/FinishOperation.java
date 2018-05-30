@@ -41,14 +41,14 @@ public class FinishOperation extends RecoverableOperation {
             result = new FinishResult(Type.SUCCESS, status.getResp());
             return false; // success
         }
-        ErrorDesc ed = new ErrorDesc("Finish operation failed, invalid server state").addParam("serverState", fts);
-        result = new FinishResult(Type.FAIL, ed);
+        OperationError err = new OperationError("Finish operation failed, invalid server state").addParam("serverState", fts);
+        result = new FinishResult(Type.FAIL, err);
         return false; // fail
     }
 
     @Override
     protected void recoveryFailed(Type reason, Throwable src, ExceptionType srcType) {
-        ErrorDesc ed = new ErrorDesc("Finish operation failed").setCause(src).setCauseType(srcType);
-        result = new FinishResult(reason, ed);
+        OperationError err = new OperationError("Finish operation failed").setCause(src).setCauseType(srcType);
+        result = new FinishResult(reason, err);
     }
 }
