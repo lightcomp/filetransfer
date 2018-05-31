@@ -77,6 +77,18 @@
 				</configuration>
 			</plugin>
 			<plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <executions>
+    	    <execution>
+    		<id>attach-sources</id>
+    		<goals>
+    		    <goal>jar</goal>
+    		</goals>
+    	    </execution>
+        </executions>
+			</plugin>
+			<plugin>
 				<groupId>org.apache.cxf</groupId>
 				<artifactId>cxf-codegen-plugin</artifactId>
 				<version>${cxf.version}</version>
@@ -143,5 +155,17 @@
 			<url>http://central.maven.org/maven2/</url>
 		</repository>
 	</repositories>
+
+    <scm>
+        <connection>scm:git:ssh://frnk.lightcomp.cz/opt/git/nda-is.git</connection>
+        <developerConnection>scm:git:ssh://frnk.lightcomp.cz/opt/git/nda-is.git</developerConnection>
+        <tag>HEAD</tag>
+    </scm>
+    <distributionManagement>
+        <repository>
+            <id>LightCompReleaseRepository</id>
+            <url>https://vlas1.lightcomp.cz:8079/releases/repository/nacr-release</url>
+        </repository>
+    </distributionManagement>
 
 </project>
