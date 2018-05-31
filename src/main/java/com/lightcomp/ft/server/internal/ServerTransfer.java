@@ -9,8 +9,8 @@ import org.slf4j.LoggerFactory;
 
 import com.lightcomp.ft.common.TaskExecutor;
 import com.lightcomp.ft.core.TransferInfo;
-import com.lightcomp.ft.exception.TransferException;
 import com.lightcomp.ft.exception.TransferExBuilder;
+import com.lightcomp.ft.exception.TransferException;
 import com.lightcomp.ft.server.ServerConfig;
 import com.lightcomp.ft.server.TransferDataHandler;
 import com.lightcomp.ft.server.TransferState;
@@ -69,15 +69,8 @@ public abstract class ServerTransfer implements Transfer, TransferInfo {
      * Initializes transfer, after that is transfer able to send/receive. In case of fail the server
      * never publishes an uninitialized transfer.
      */
-    public void init() throws TransferException {
-        TransferStatus ts;
-        synchronized (this) {
-            status.changeState(TransferState.STARTED);
-            // copy status in synch block
-            ts = status.copy();
-        }
-        // exception is caught by server creation process
-        onTransferProgress(ts);
+    public synchronized void init() throws TransferException {
+        status.changeState(TransferState.STARTED);
     }
 
     public synchronized TransferStatus getStatus() {
@@ -239,11 +232,6 @@ public abstract class ServerTransfer implements Transfer, TransferInfo {
     }
 
     /**
-     * Cleans up all transfer resources. Method is called before server terminates transfer.
-     */
-    protected abstract void cleanResources();
-
-    /**
      * Method waits while transfer is finishing. Caller must ensure synchronization.
      */
     private void waitWhileFinishing() {
@@ -255,6 +243,11 @@ public abstract class ServerTransfer implements Transfer, TransferInfo {
             }
         }
     }
+    
+    /**
+     * Cleans up all transfer resources. Method is called before server terminates transfer.
+     */
+    protected abstract void cleanResources();
 
     /**
      * Fails transfer and notifies data handler. When transfer is already terminated error is logged.

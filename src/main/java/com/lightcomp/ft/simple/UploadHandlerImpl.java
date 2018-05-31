@@ -47,8 +47,8 @@ public class UploadHandlerImpl implements UploadHandler {
     }
 
     @Override
-    public GenericDataType onTransferSuccess() {
-        logger.info("Server transfer succeeded, transferId={}", transferId);
+    public GenericDataType finishTransfer() {
+        logger.info("Server transfer finished, transferId={}", transferId);
         return response;
     }
 

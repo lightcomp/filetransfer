@@ -34,8 +34,8 @@ public class UploadHandlerImpl implements UploadHandler {
 
     private TransferState progressState;
 
-    public UploadHandlerImpl(String transferId, GenericDataType response, String requestId, Path uploadDir, Server server,
-            Waiter waiter, TransferState terminalState) {
+    public UploadHandlerImpl(String transferId, GenericDataType response, String requestId, Path uploadDir,
+            Server server, Waiter waiter, TransferState terminalState) {
         this.transferId = transferId;
         this.response = response;
         this.requestId = requestId;
@@ -80,14 +80,14 @@ public class UploadHandlerImpl implements UploadHandler {
     }
 
     @Override
-    public GenericDataType onTransferSuccess() {
-        logger.info("Server transfer succeeded, transferId={}", transferId);
-        
+    public GenericDataType finishTransfer() {
+        logger.info("Server transfer finished, transferId={}", transferId);
+
         TransferStatus ts = server.getTransferStatus(transferId);
         waiter.assertEquals(TransferState.FINISHING, ts.getState());
 
         if (terminalState != TransferState.FINISHING) {
-            waiter.fail("Server transfer succeeded");
+            waiter.fail("Server transfer finished");
         } else {
             waiter.resume();
         }
@@ -97,7 +97,7 @@ public class UploadHandlerImpl implements UploadHandler {
     @Override
     public void onTransferCanceled() {
         logger.info("Server transfer canceled, transferId={}", transferId);
-        
+
         TransferStatus ts = server.getTransferStatus(transferId);
         waiter.assertEquals(TransferState.CANCELED, ts.getState());
 
@@ -111,7 +111,7 @@ public class UploadHandlerImpl implements UploadHandler {
     @Override
     public void onTransferFailed(ErrorDesc errorDesc) {
         logger.info("Server transfer failed, transferId={}, desc: {}", transferId, errorDesc);
-        
+
         TransferStatus ts = server.getTransferStatus(transferId);
         waiter.assertEquals(TransferState.FAILED, ts.getState());
 

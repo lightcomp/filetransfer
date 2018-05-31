@@ -15,8 +15,8 @@ import org.slf4j.LoggerFactory;
 
 import com.lightcomp.ft.common.TaskExecutor;
 import com.lightcomp.ft.core.TransferIdGenerator;
-import com.lightcomp.ft.exception.TransferException;
 import com.lightcomp.ft.exception.TransferExBuilder;
+import com.lightcomp.ft.exception.TransferException;
 import com.lightcomp.ft.server.DownloadHandler;
 import com.lightcomp.ft.server.Server;
 import com.lightcomp.ft.server.ServerConfig;
@@ -176,11 +176,12 @@ public class ServerImpl implements Server, TransferManager {
             newTransferIds.add(transferId);
         }
         executor.addTask(() -> {
+            TransferDataHandler dataHandler = null;
             try {
-                TransferDataHandler dataHandler = handler.onTransferBegin(transferId, request);
+                dataHandler = handler.onTransferBegin(transferId, request);
                 createTransfer(transferId, dataHandler);
             } catch (Throwable t) {
-                transferCreationFailed(transferId, t);
+                transferCreationFailed(transferId, dataHandler, t);
             }
         });
         return transferId;
@@ -204,11 +205,11 @@ public class ServerImpl implements Server, TransferManager {
         }
     }
 
-    private void transferCreationFailed(String transferId, Throwable cause) {
+    private void transferCreationFailed(String transferId, TransferDataHandler dataHandler, Throwable cause) {
         ServerError err = new ServerError("Failed to create transfer").addParam("transferId", transferId)
                 .setCause(cause);
         err.log(logger);
-        // create failed status for storage
+        // save failed status to storage
         TransferStatusImpl status = new TransferStatusImpl();
         status.changeStateToFailed(err.getDesc());
         try {
@@ -217,8 +218,19 @@ public class ServerImpl implements Server, TransferManager {
             // log and ignore this exception, no easy recovery
             logger.error("FATAL: failed to store terminated new transfer", t);
         }
+        // remove new transfer after storage save
         synchronized (this) {
             newTransferIds.remove(transferId);
+        }
+        // report fail to data handler if exists
+        if (dataHandler != null) {
+            try {
+                dataHandler.onTransferFailed(err.getDesc());
+            } catch (Throwable t) {
+                err = new ServerError("Fail callback of data handler cause exception")
+                        .addParam("transferId", transferId).setCause(t);
+                err.log(logger);
+            }
         }
     }
 

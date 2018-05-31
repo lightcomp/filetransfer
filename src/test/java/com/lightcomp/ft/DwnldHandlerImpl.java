@@ -82,14 +82,14 @@ public class DwnldHandlerImpl implements DownloadHandler {
     }
 
     @Override
-    public GenericDataType onTransferSuccess() {
-        logger.info("Server transfer succeeded, transferId={}", transferId);
+    public GenericDataType finishTransfer() {
+        logger.info("Server transfer finished, transferId={}", transferId);
 
         TransferStatus ts = server.getTransferStatus(transferId);
         waiter.assertEquals(TransferState.FINISHING, ts.getState());
 
         if (terminalState != TransferState.FINISHING) {
-            waiter.fail("Server transfer succeeded");
+            waiter.fail("Server transfer finished");
         } else {
             waiter.resume();
         }
@@ -101,9 +101,10 @@ public class DwnldHandlerImpl implements DownloadHandler {
         logger.info("Server transfer canceled, transferId={}", transferId);
 
         TransferStatus ts = server.getTransferStatus(transferId);
-        waiter.assertEquals(TransferState.CANCELED, ts.getState());
+        TransferState state = ts.getState();
+        waiter.assertTrue(TransferState.CANCELED == state || TransferState.ABORTED == state);
 
-        if (terminalState != TransferState.CANCELED) {
+        if (terminalState != TransferState.CANCELED && terminalState != TransferState.ABORTED) {
             waiter.fail("Server transfer canceled");
         } else {
             waiter.resume();

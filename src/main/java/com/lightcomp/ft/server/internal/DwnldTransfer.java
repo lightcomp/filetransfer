@@ -41,7 +41,7 @@ public class DwnldTransfer extends ServerTransfer implements SendProgressInfo, D
     }
 
     @Override
-    public void init() throws TransferException {
+    public synchronized void init() throws TransferException {
         prepareWorker();
         super.init();
     }

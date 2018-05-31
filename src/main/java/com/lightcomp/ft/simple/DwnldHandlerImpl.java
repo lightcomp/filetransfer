@@ -62,10 +62,10 @@ public class DwnldHandlerImpl implements DownloadHandler {
     public void onTransferProgress(TransferStatus status) {
         logger.info("Server transfer progressed, transferId={}, detail: {}", transferId, status);
     }
-
+    
     @Override
-    public GenericDataType onTransferSuccess() {
-        logger.info("Server transfer succeeded, transferId={}", transferId);
+    public GenericDataType finishTransfer() {
+        logger.info("Server transfer finished, transferId={}", transferId);
         return response;
     }
 

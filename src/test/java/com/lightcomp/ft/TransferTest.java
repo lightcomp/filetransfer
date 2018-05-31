@@ -621,7 +621,7 @@ public class TransferTest {
             @Override
             protected DownloadHandler createDownload(String transferId, GenericDataType request) {
                 return new DwnldHandlerImpl(transferId, null, request.getId(), items, server, waiter,
-                        com.lightcomp.ft.server.TransferState.CANCELED);
+                        com.lightcomp.ft.server.TransferState.ABORTED);
             }
         };
         ServerConfig scfg = prepareServerConfig(dth);
@@ -652,14 +652,14 @@ public class TransferTest {
     }
 
     @Test
-    public void testServerAbortDownload() throws TimeoutException, TransferException {
+    public void testClientCancelDownload() throws TimeoutException, TransferException {
         List<SourceItem> items = Collections.singletonList(new MemoryDir("test"));
 
         DwnldTransferHandler dth = new DwnldTransferHandler() {
             @Override
             protected DownloadHandler createDownload(String transferId, GenericDataType request) {
                 return new DwnldHandlerImpl(transferId, null, request.getId(), items, server, waiter,
-                        com.lightcomp.ft.server.TransferState.CANCELED);
+                        com.lightcomp.ft.server.TransferState.ABORTED);
             }
         };
         ServerConfig scfg = prepareServerConfig(dth);
@@ -679,6 +679,40 @@ public class TransferTest {
                 }
             }
         };
+
+        client.download(request);
+
+        waiter.await(TEST_TIMEOUT, 2);
+    }
+
+    @Test
+    public void testServerCancelDownload() throws TimeoutException, TransferException {
+        List<SourceItem> items = Collections.singletonList(new MemoryDir("test"));
+
+        DwnldTransferHandler dth = new DwnldTransferHandler() {
+            @Override
+            protected DownloadHandler createDownload(String transferId, GenericDataType request) {
+                return new DwnldHandlerImpl(transferId, null, request.getId(), items, server, waiter,
+                        com.lightcomp.ft.server.TransferState.ABORTED) {
+                    @Override
+                    public void onTransferProgress(com.lightcomp.ft.server.TransferStatus status) {
+                        super.onTransferProgress(status);
+                        try {
+                            server.cancelTransfer(transferId);
+                        } catch (TransferException e) {
+                            waiter.fail(e);
+                        }
+                    }
+                };
+            }
+        };
+        ServerConfig scfg = prepareServerConfig(dth);
+        startServer(scfg);
+
+        ClientConfig ccfg = prepareClientConfig();
+        startClient(ccfg);
+
+        DwnldRequestImpl request = new DwnldRequestImpl(createReqData("req"), tempDir, waiter, TransferState.FAILED);
 
         client.download(request);
 

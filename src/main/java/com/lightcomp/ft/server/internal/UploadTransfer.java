@@ -13,8 +13,8 @@ import com.lightcomp.ft.common.TaskExecutor;
 import com.lightcomp.ft.core.recv.RecvContextImpl;
 import com.lightcomp.ft.core.recv.RecvFrameProcessor;
 import com.lightcomp.ft.core.recv.RecvProgressInfo;
-import com.lightcomp.ft.exception.TransferException;
 import com.lightcomp.ft.exception.TransferExBuilder;
+import com.lightcomp.ft.exception.TransferException;
 import com.lightcomp.ft.server.ServerConfig;
 import com.lightcomp.ft.server.TransferState;
 import com.lightcomp.ft.server.TransferStatus;
@@ -44,7 +44,7 @@ public class UploadTransfer extends ServerTransfer implements RecvProgressInfo {
     }
 
     @Override
-    public void init() throws TransferException {
+    public synchronized void init() throws TransferException {
         // create temporary folder
         try {
             tempDir = Files.createTempDirectory(config.getWorkDir(), transferId);

@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 import com.lightcomp.ft.client.ClientConfig;
 import com.lightcomp.ft.client.DownloadRequest;
 import com.lightcomp.ft.client.TransferStatus;
-import com.lightcomp.ft.client.internal.operations.OperationResult;
+import com.lightcomp.ft.client.internal.operations.OperationResult.Type;
 import com.lightcomp.ft.client.internal.operations.ReceiveOperation;
 import com.lightcomp.ft.client.internal.operations.ReceiveResult;
 import com.lightcomp.ft.common.PathUtils;
@@ -52,38 +52,9 @@ public class DownloadTransfer extends AbstractTransfer implements RecvProgressIn
     protected boolean transferFrames() throws TransferException {
         try {
             prepareTempDir();
-            RecvContext recvCtx = new RecvContextImpl(this, downloadDir, config.getChecksumAlg());
-            return downloadFrames(recvCtx);
+            return transferFramesInternal();
         } finally {
             deleteTempDir();
-        }
-    }
-
-    private boolean downloadFrames(RecvContext recvCtx) throws TransferException {
-        int currSeqNum = 1;
-        while (true) {
-            if (cancelIfRequested()) {
-                return false;
-            }
-            // receive frame
-            ReceiveOperation ro = new ReceiveOperation(this, service, currSeqNum);
-            ReceiveResult rs = ro.execute();
-            if (rs.getType() != OperationResult.Type.SUCCESS) {
-                operationFailed(rs);
-                return false;
-            }
-            // process frame
-            RecvFrameProcessor rfp = RecvFrameProcessor.create(recvCtx, rs.getFrame());
-            rfp.prepareData(tempDir);
-            rfp.process();
-            // add processed frame num
-            frameProcessed(currSeqNum);
-            // exit if last
-            if (rfp.isLast()) {
-                return true;
-            }
-            // increment frame number
-            currSeqNum++;
         }
     }
 
@@ -101,7 +72,38 @@ public class DownloadTransfer extends AbstractTransfer implements RecvProgressIn
             try {
                 PathUtils.deleteWithChildren(tempDir);
             } catch (IOException e) {
-                new TransferExBuilder("Failed to delete temporary download directory", this).setCause(e).log(logger);
+                TransferExBuilder teb = new TransferExBuilder("Failed to delete temporary download directory", this)
+                        .setCause(e);
+                teb.log(logger);
+            }
+        }
+    }
+
+    private boolean transferFramesInternal() throws TransferException {
+        RecvContext recvCtx = new RecvContextImpl(this, downloadDir, config.getChecksumAlg());
+        int currSeqNum = 0;
+        while (true) {
+            if (cancelIfRequested()) {
+                return false;
+            }
+            // increment frame number
+            currSeqNum++;
+            // receive frame
+            ReceiveOperation op = new ReceiveOperation(this, service, currSeqNum);
+            ReceiveResult result = op.execute();
+            if (result.getType() != Type.SUCCESS) {
+                operationFailed(result);
+                return false;
+            }
+            // process frame
+            RecvFrameProcessor rfp = RecvFrameProcessor.create(recvCtx, result.getFrame());
+            rfp.prepareData(tempDir);
+            rfp.process();
+            // add processed frame num
+            frameProcessed(currSeqNum);
+            // exit if last
+            if (rfp.isLast()) {
+                return true;
             }
         }
     }

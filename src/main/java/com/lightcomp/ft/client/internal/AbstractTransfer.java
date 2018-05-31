@@ -39,6 +39,8 @@ public abstract class AbstractTransfer implements Runnable, Transfer, OperationH
 
     private boolean cancelRequested;
 
+    private Thread runningThread;
+
     protected AbstractTransfer(TransferRequest request, ClientConfig config, FileTransferService service) {
         this.request = request;
         this.config = config;
@@ -77,7 +79,7 @@ public abstract class AbstractTransfer implements Runnable, Transfer, OperationH
             // copy status in synch block
             ts = status.copy();
         }
-        request.onTransferProgress(ts);
+        onTransferProgress(ts);
         // delay transfer before recovery
         return delayBeforeRecovery();
     }
@@ -110,7 +112,6 @@ public abstract class AbstractTransfer implements Runnable, Transfer, OperationH
     @Override
     public synchronized void cancel() throws TransferException {
         if (!cancelRequested) {
-            // we can set only flag
             cancelRequested = true;
             // wake up transfer thread
             notifyAll();
@@ -124,6 +125,11 @@ public abstract class AbstractTransfer implements Runnable, Transfer, OperationH
                 case CANCELED:
                     return;
                 default:
+                    // execute immediately if called by callback
+                    if (runningThread == Thread.currentThread()) {
+                        Validate.isTrue(cancelIfRequested());
+                        return;
+                    }
                     // wait until terminated
                     try {
                         wait(100);
@@ -136,6 +142,7 @@ public abstract class AbstractTransfer implements Runnable, Transfer, OperationH
 
     @Override
     public void run() {
+        runningThread = Thread.currentThread();
         try {
             request.onTransferInitialized(this);
             // execute transfer phases
@@ -149,41 +156,28 @@ public abstract class AbstractTransfer implements Runnable, Transfer, OperationH
                 return;
             }
         } catch (Throwable t) {
-            new TransferExBuilder("Transfer failed", this).setCause(t).log(logger);
+            TransferExBuilder teb = new TransferExBuilder("Transfer failed", this).setCause(t);
+            teb.log(logger);
             ExceptionType type = ExceptionType.resolve(t);
             transferFailed(type);
         }
     }
 
-    /**
-     * Reports progress to request. Any runtime exception from callback is propagated to caller. Method
-     * must not be synchronized.
-     */
-    protected void onTransferProgress(TransferStatus status) {
-        request.onTransferProgress(status);
-    }
-    
     private boolean begin() {
         if (cancelIfRequested()) {
             return false;
         }
-        BeginOperation bo = new BeginOperation(service, request.getData());
-        BeginResult br = bo.execute();
-        if (br.getType() != Type.SUCCESS) {
-            operationFailed(br);
+        // send begin to server
+        BeginOperation op = new BeginOperation(service, request.getData());
+        BeginResult result = op.execute();
+        if (result.getType() != Type.SUCCESS) {
+            operationFailed(result);
             return false;
         }
-        transferId = br.getTransferId();
+        // set received transfer id
+        transferId = result.getTransferId();
         // change state to started
-        TransferStatus ts;
-        synchronized (this) {
-            status.changeState(TransferState.STARTED);
-            // reset retry count maybe needed
-            status.resetRetryCount();
-            // copy status in synch block
-            ts = status.copy();
-        }
-        onTransferProgress(ts);
+        changeToActiveState(TransferState.STARTED);
         return true;
     }
 
@@ -195,59 +189,65 @@ public abstract class AbstractTransfer implements Runnable, Transfer, OperationH
             return false;
         }
         // change state to transfered
-        TransferStatus ts;
-        synchronized (this) {
-            status.changeState(TransferState.TRANSFERED);
-            // copy status in synch block
-            ts = status.copy();
-        }
-        onTransferProgress(ts);
+        changeToActiveState(TransferState.TRANSFERED);
         return true;
     }
 
     protected abstract boolean transferFrames() throws TransferException;
+
+    /**
+     * Reports progress to request. Any runtime exception from callback is propagated to caller. Method
+     * must not be synchronized.
+     */
+    protected void onTransferProgress(TransferStatus status) {
+        request.onTransferProgress(status);
+    }
 
     protected void frameProcessed(int seqNum) {
         TransferStatus ts;
         synchronized (this) {
             Validate.isTrue(status.getLastFrameSeqNum() + 1 == seqNum);
             status.incrementFrameSeqNum();
-            // reset retry count maybe needed
+            // always reset retry count
             status.resetRetryCount();
             // copy status in synch block
             ts = status.copy();
         }
         onTransferProgress(ts);
     }
-    
-    private boolean finish() {
-        if (cancelIfRequested()) {
-            return false;
-        }
-        // change state to finishing
+
+    private void changeToActiveState(TransferState state) {
         TransferStatus ts;
         synchronized (this) {
-            status.changeState(TransferState.FINISHING);
+            status.changeState(state);
+            // always reset retry count
+            status.resetRetryCount();
             // copy status in synch block
             ts = status.copy();
         }
         onTransferProgress(ts);
+    }
+
+    private boolean finish() {
+        if (cancelIfRequested()) {
+            return false;
+        }
         // send finish to server
-        FinishOperation fo = new FinishOperation(this, service);
-        FinishResult fr = fo.execute();
-        if (fr.getType() != Type.SUCCESS) {
-            operationFailed(fr);
+        FinishOperation op = new FinishOperation(this, service);
+        FinishResult result = op.execute();
+        if (result.getType() != Type.SUCCESS) {
+            operationFailed(result);
             return false;
         }
         // change state to finished
         synchronized (this) {
             status.changeState(TransferState.FINISHED);
-            // reset retry count maybe needed
+            // always reset retry count
             status.resetRetryCount();
             // notify canceling threads
             notifyAll();
         }
-        request.onTransferSuccess(fr.getData());
+        request.onTransferSuccess(result.getData());
         return true;
     }
 
