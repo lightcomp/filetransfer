@@ -177,7 +177,15 @@ public abstract class AbstractTransfer implements Runnable, Transfer, OperationH
         // set received transfer id
         transferId = result.getTransferId();
         // change state to started
-        changeToActiveState(TransferState.STARTED);
+        TransferStatus ts;
+        synchronized (this) {
+            status.changeState(TransferState.STARTED);
+            // always reset retry count
+            status.resetRetryCount();
+            // copy status in synch block
+            ts = status.copy();
+        }
+        onTransferProgress(ts);
         return true;
     }
 
@@ -188,8 +196,16 @@ public abstract class AbstractTransfer implements Runnable, Transfer, OperationH
         if (!transferFrames()) {
             return false;
         }
-        // change state to transfered
-        changeToActiveState(TransferState.TRANSFERED);
+        // change state to transfered;
+        TransferStatus ts;
+        synchronized (this) {
+            status.changeState(TransferState.TRANSFERED);
+            // always reset retry count
+            status.resetRetryCount();
+            // copy status in synch block
+            ts = status.copy();
+        }
+        onTransferProgress(ts);
         return true;
     }
 
@@ -208,18 +224,6 @@ public abstract class AbstractTransfer implements Runnable, Transfer, OperationH
         synchronized (this) {
             Validate.isTrue(status.getLastFrameSeqNum() + 1 == seqNum);
             status.incrementFrameSeqNum();
-            // always reset retry count
-            status.resetRetryCount();
-            // copy status in synch block
-            ts = status.copy();
-        }
-        onTransferProgress(ts);
-    }
-
-    private void changeToActiveState(TransferState state) {
-        TransferStatus ts;
-        synchronized (this) {
-            status.changeState(state);
             // always reset retry count
             status.resetRetryCount();
             // copy status in synch block
