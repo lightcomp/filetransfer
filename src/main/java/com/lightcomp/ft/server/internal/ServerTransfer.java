@@ -28,7 +28,7 @@ public abstract class ServerTransfer implements Transfer, TransferInfo {
 
     protected final String transferId;
 
-    private final TransferDataHandler handler;
+    protected final TransferDataHandler handler;
 
     protected final ServerConfig config;
 

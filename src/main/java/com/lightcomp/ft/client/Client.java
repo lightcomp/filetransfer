@@ -1,31 +1,45 @@
 package com.lightcomp.ft.client;
 
 /**
- * File transfer client, dispatching requests to server.
+ * File transfer asynchronous client, dispatching requests to server.
  */
 public interface Client {
 
-    /**
-     * Begin async upload.
-     * 
-     * @return Instance of transfer.
-     */
-    Transfer upload(UploadRequest request);
+	/**
+	 * Begin asynchronous upload. Client must be started first.
+	 * 
+	 * @return Instance of transfer.
+	 */
+	Transfer upload(UploadRequest request);
 
-    /**
-     * Begin async download.
-     * 
-     * @return Instance of transfer.
-     */
-    Transfer download(DownloadRequest request);
+	/**
+	 * Begin synchronous upload. Client doesn't have to be started first.
+	 * 
+	 * @return Instance of transfer.
+	 */
+	void uploadSync(UploadRequest request);
+	
+	/**
+	 * Begin asynchronous download. Client must be started first.
+	 * 
+	 * @return Instance of transfer.
+	 */
+	Transfer download(DownloadRequest request);
 
-    /**
-     * Start client.
-     */
-    void start();
+	/**
+	 * Begin synchronous download. Client doesn't have to be started first.
+	 * 
+	 * @return Instance of transfer.
+	 */
+	void downloadSync(DownloadRequest request);
+	
+	/**
+	 * Starts asynchronous request processing.
+	 */
+	void start();
 
-    /**
-     * Stop client.
-     */
-    void stop();
+	/**
+	 * Stops asynchronous request processing.
+	 */
+	void stop();
 }

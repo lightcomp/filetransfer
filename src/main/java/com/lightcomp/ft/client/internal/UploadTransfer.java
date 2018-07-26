@@ -36,7 +36,7 @@ public class UploadTransfer extends AbstractTransfer implements SendProgressInfo
     @Override
     protected boolean transferFrames() throws TransferException {
         FrameBuilder frameBuilder = new FrameBuilder(this, config);
-        frameBuilder.init(request.getItemIterator());
+        frameBuilder.init(request.getRootItemsReader());
         // send all frames
         while (true) {
             if (cancelIfRequested()) {

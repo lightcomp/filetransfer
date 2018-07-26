@@ -39,6 +39,10 @@ public class TaskExecutor {
         this.threadNamePostfix = threadNamePostfix;
     }
 
+	public synchronized boolean isRunning() {
+		return state == State.RUNNING;
+	}
+    
     /**
      * Start async queue processing.
      */

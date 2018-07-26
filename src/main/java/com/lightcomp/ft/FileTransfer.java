@@ -9,13 +9,13 @@ import com.lightcomp.ft.server.internal.ServerImpl;
 
 public class FileTransfer {
 
-    public static Client createClient(ClientConfig config) {
-        Client client = new ClientImpl(config);
-        return client;
-    }
+	public static Client createClient(ClientConfig config) {
+		Client client = new ClientImpl(config);
+		return client;
+	}
 
-    public static Server createServer(ServerConfig config) {
-        ServerImpl server = new ServerImpl(config);
-        return server;
-    }
+	public static Server createServer(ServerConfig config) {
+		ServerImpl server = new ServerImpl(config);
+		return server;
+	}
 }

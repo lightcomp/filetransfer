@@ -2,12 +2,12 @@ package com.lightcomp.ft.core.send;
 
 public class FileDataProgress {
 
-    private final SendProgressInfo progressInfo;
+    private final SendProgressInfo sendProgressInfo;
 
     private long numProcessed;
 
-    public FileDataProgress(SendProgressInfo progressInfo) {
-        this.progressInfo = progressInfo;
+    public FileDataProgress(SendProgressInfo sendProgressInfo) {
+        this.sendProgressInfo = sendProgressInfo;
     }
 
     public synchronized void update(long newPos) {
@@ -16,6 +16,6 @@ public class FileDataProgress {
         }
         long size = newPos - numProcessed;
         numProcessed += size;
-        progressInfo.onFileDataSend(size);
+        sendProgressInfo.onFileDataSend(size);
     }
 }

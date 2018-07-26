@@ -1,17 +1,12 @@
 package com.lightcomp.ft.simple;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Iterator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.lightcomp.ft.core.send.items.SimpleDir;
-import com.lightcomp.ft.core.send.items.SimpleFile;
-import com.lightcomp.ft.core.send.items.SourceItem;
+import com.lightcomp.ft.core.send.items.DirReader;
+import com.lightcomp.ft.core.send.items.SourceItemReader;
 import com.lightcomp.ft.server.DownloadHandler;
 import com.lightcomp.ft.server.ErrorDesc;
 import com.lightcomp.ft.server.TransferStatus;
@@ -42,20 +37,10 @@ public class DwnldHandlerImpl implements DownloadHandler {
     public String getRequestId() {
         return null;
     }
-
+    
     @Override
-    public Iterator<SourceItem> getItemIterator() {
-        try {
-            return Files.list(dataDir).<SourceItem>map(p -> {
-                if (Files.isDirectory(p)) {
-                    return new SimpleDir(p);
-                } else {
-                    return new SimpleFile(p);
-                }
-            }).iterator();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+    public SourceItemReader getRootItemsReader() {
+    	return new DirReader(dataDir);
     }
 
     @Override

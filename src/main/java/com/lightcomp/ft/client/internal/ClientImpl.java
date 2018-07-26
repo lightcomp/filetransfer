@@ -16,73 +16,84 @@ import com.lightcomp.ft.common.TaskExecutor;
 import com.lightcomp.ft.wsdl.v1.FileTransferService;
 
 /**
- * Transfer client impl.
+ * File transfer client implementation.
  */
 public class ClientImpl implements Client {
 
-    protected final TaskExecutor transferExecutor;
+	protected final TaskExecutor executor;
 
-    protected final ClientConfig config;
+	protected final FileTransferService service;
 
-    protected FileTransferService service;
+	protected final ClientConfig config;
 
-    public ClientImpl(ClientConfig config) {
-        this.transferExecutor = new TaskExecutor(config.getThreadPoolSize(), "client");
-        this.config = config;
-    }
+	public ClientImpl(ClientConfig config) {
+		this.executor = new TaskExecutor(config.getThreadPoolSize(), "client");
+		this.service = createService(config);
+		this.config = config;
+	}
 
-    @Override
-    public synchronized Transfer upload(UploadRequest request) {
-        Validate.isTrue(service != null);
+	@Override
+	public synchronized Transfer upload(UploadRequest request) {
+		Validate.isTrue(executor.isRunning());
 
-        AbstractTransfer transfer = new UploadTransfer(request, config, service);
-        transferExecutor.addTask(transfer);
-        return transfer;
-    }
+		AbstractTransfer transfer = new UploadTransfer(request, config, service);
+		executor.addTask(transfer);
+		return transfer;
+	}
 
-    @Override
-    public synchronized Transfer download(DownloadRequest request) {
-        Validate.isTrue(service != null);
+	@Override
+	public void uploadSync(UploadRequest request) {
+		AbstractTransfer transfer = new UploadTransfer(request, config, service);
+		transfer.run();
+	}
 
-        AbstractTransfer transfer = new DownloadTransfer(request, config, service);
-        transferExecutor.addTask(transfer);
-        return transfer;
-    }
+	@Override
+	public synchronized Transfer download(DownloadRequest request) {
+		Validate.isTrue(executor.isRunning());
 
-    @Override
-    public synchronized void start() {
-        service = createService(config);
-        transferExecutor.start();
-    }
+		AbstractTransfer transfer = new DownloadTransfer(request, config, service);
+		executor.addTask(transfer);
+		return transfer;
+	}
 
-    @Override
-    public synchronized void stop() {
-        transferExecutor.stop();
-        service = null;
-    }
+	@Override
+	public void downloadSync(DownloadRequest request) {
+		AbstractTransfer transfer = new DownloadTransfer(request, config, service);
+		transfer.run();
+	}
 
-    private static FileTransferService createService(ClientConfig config) {
-        JaxWsProxyFactoryBean factory = new JaxWsProxyFactoryBean();
-        factory.setAddress(config.getAddress());
+	@Override
+	public synchronized void start() {
+		executor.start();
+	}
 
-        if (config.isSoapLogging()) {
-            factory.getFeatures().add(new LoggingFeature());
-        }
+	@Override
+	public synchronized void stop() {
+		executor.stop();
+	}
 
-        FileTransferService service = factory.create(FileTransferService.class);
-        org.apache.cxf.endpoint.Client client = ClientProxy.getClient(service);
-        HTTPConduit httpConduit = (HTTPConduit) client.getConduit();
+	private static FileTransferService createService(ClientConfig config) {
+		JaxWsProxyFactoryBean factory = new JaxWsProxyFactoryBean();
+		factory.setAddress(config.getAddress());
 
-        configureTimeout(httpConduit, config);
+		if (config.isSoapLogging()) {
+			factory.getFeatures().add(new LoggingFeature());
+		}
 
-        return service;
-    }
+		FileTransferService service = factory.create(FileTransferService.class);
+		org.apache.cxf.endpoint.Client client = ClientProxy.getClient(service);
+		HTTPConduit httpConduit = (HTTPConduit) client.getConduit();
 
-    private static void configureTimeout(HTTPConduit httpConduit, ClientConfig config) {
-        long ms = config.getRequestTimeout() * 1000;
-        HTTPClientPolicy cp = new HTTPClientPolicy();
-        cp.setConnectionTimeout(ms);
-        cp.setReceiveTimeout(ms);
-        httpConduit.setClient(cp);
-    }
+		configureTimeout(httpConduit, config);
+
+		return service;
+	}
+
+	private static void configureTimeout(HTTPConduit httpConduit, ClientConfig config) {
+		long ms = config.getRequestTimeout() * 1000;
+		HTTPClientPolicy cp = new HTTPClientPolicy();
+		cp.setConnectionTimeout(ms);
+		cp.setReceiveTimeout(ms);
+		httpConduit.setClient(cp);
+	}
 }

@@ -9,6 +9,8 @@ import com.lightcomp.ft.xsd.v1.GenericDataType;
  */
 public interface TransferDataHandler {
 
+	public static final GenericDataType EMPTY_RESPONSE = new GenericDataType();
+	
     public enum Mode {
         UPLOAD, DOWNLOAD
     }
