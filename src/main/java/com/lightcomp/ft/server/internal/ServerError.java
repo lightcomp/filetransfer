@@ -86,7 +86,7 @@ public class ServerError {
             if (cause instanceof TransferException) {
                 Map<String, Object> causeParams = ((TransferException) cause).getParams();
                 if (causeParams != null) {
-                    causeParams.forEach((n, v) -> paramsCopy.putIfAbsent("detail." + n, v));
+                    causeParams.forEach((n, v) -> paramsCopy.putIfAbsent("cause." + n, v));
                 }
             }
         }
@@ -99,22 +99,22 @@ public class ServerError {
 
     public void log(Logger logger) {
         StringBuilder sb = new StringBuilder();
-        ErrorDescImpl.append(sb, getDesc());
+        getDesc().appendTo(sb, false);
         logger.error(sb.toString(), cause);
     }
 
     public void log(Logger logger, String leadingMsg) {
         StringBuilder sb = new StringBuilder(leadingMsg);
-        ErrorDescImpl.append(sb, getDesc());
+        getDesc().appendTo(sb, false);
         logger.error(sb.toString(), cause);
     }
 
     /**
-     * Builds exception from error description, stack trace is not used.
+     * Builds exception from error description.
      */
     public static FileTransferException createEx(ErrorDesc errorDesc, ErrorCode errorCode) {
         StringBuilder sb = new StringBuilder();
-        ErrorDescImpl.append(sb, errorDesc);
+        errorDesc.appendTo(sb, true);
 
         ErrorDescription desc = new ErrorDescription();
         desc.setDetail(sb.toString());
