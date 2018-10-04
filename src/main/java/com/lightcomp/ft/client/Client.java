@@ -14,8 +14,6 @@ public interface Client {
 
 	/**
 	 * Begin synchronous upload. Client doesn't have to be started first.
-	 * 
-	 * @return Instance of transfer.
 	 */
 	void uploadSync(UploadRequest request);
 	
@@ -28,8 +26,6 @@ public interface Client {
 
 	/**
 	 * Begin synchronous download. Client doesn't have to be started first.
-	 * 
-	 * @return Instance of transfer.
 	 */
 	void downloadSync(DownloadRequest request);
 	
