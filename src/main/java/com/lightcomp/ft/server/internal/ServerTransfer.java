@@ -24,6 +24,8 @@ public abstract class ServerTransfer implements Transfer, TransferInfo {
 
     private static final Logger logger = LoggerFactory.getLogger(ServerTransfer.class);
 
+    private static final GenericDataType EMPTY_DATA = new GenericDataType();
+
     protected final TransferStatusImpl status = new TransferStatusImpl();
 
     protected final String transferId;
@@ -138,6 +140,10 @@ public abstract class ServerTransfer implements Transfer, TransferInfo {
             status.changeStateToFinished(resp);
             // notify canceling threads
             notifyAll();
+        }
+        // always return generic-data (cannot be null)
+        if (resp == null) {
+            resp = EMPTY_DATA;
         }
         return resp;
     }

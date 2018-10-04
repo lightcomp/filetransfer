@@ -18,6 +18,7 @@ import com.lightcomp.ft.core.TransferIdGenerator;
 import com.lightcomp.ft.exception.TransferExBuilder;
 import com.lightcomp.ft.exception.TransferException;
 import com.lightcomp.ft.server.DownloadHandler;
+import com.lightcomp.ft.server.EndpointFactory;
 import com.lightcomp.ft.server.Server;
 import com.lightcomp.ft.server.ServerConfig;
 import com.lightcomp.ft.server.TransferDataHandler;
@@ -72,8 +73,8 @@ public class ServerImpl implements Server, TransferManager {
     /* server methods */
 
     @Override
-    public Object getImplementor() {
-        return new FileTransferServiceImpl(this);
+    public EndpointFactory getEndpointFactory() {
+    	return new EndpointFactory(this);
     }
 
     @Override

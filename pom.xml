@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<!-- <parent><groupId>com.simpligility.maven</groupId><artifactId>progressive-organization-pom</artifactId><version>6.0.0</version></parent> -->
@@ -13,7 +14,7 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<java.version>1.8</java.version>
-		<cxf.version>3.2.2</cxf.version>
+		<cxf.version>3.2.6</cxf.version>
 	</properties>
 
 	<dependencies>
@@ -100,14 +101,11 @@
 							<wsdlOptions>
 								<wsdlOption>
 									<wsdl>src/main/resources/wsdl/file-transfer-v1.wsdl</wsdl>
-									<bindingFiles>
-										<bindingFile>src/main/resources/wsdl/file-transfer-v1-bindings.xml</bindingFile>
-									</bindingFiles>
+									<bindingFile>src/main/resources/wsdl/file-transfer-v1-bindings.xml</bindingFile>
+									<wsdlLocation>classpath:/wsdl/file-transfer-v1.wsdl</wsdlLocation>
 									<extraargs>
 										<extraarg>-xjc-Xinheritance</extraarg>
 										<extraarg>-verbose</extraarg>
-										<extraarg>-wsdlLocation</extraarg>
-										<wsdlurl />
 									</extraargs>
 								</wsdlOption>
 							</wsdlOptions>

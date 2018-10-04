@@ -1,5 +1,7 @@
 package com.lightcomp.ft.client.internal;
 
+import javax.xml.ws.soap.SOAPBinding;
+
 import org.apache.commons.lang3.Validate;
 import org.apache.cxf.ext.logging.LoggingFeature;
 import org.apache.cxf.frontend.ClientProxy;
@@ -20,80 +22,79 @@ import com.lightcomp.ft.wsdl.v1.FileTransferService;
  */
 public class ClientImpl implements Client {
 
-	protected final TaskExecutor executor;
+    protected final TaskExecutor executor;
 
-	protected final FileTransferService service;
+    protected final FileTransferService service;
 
-	protected final ClientConfig config;
+    protected final ClientConfig config;
 
-	public ClientImpl(ClientConfig config) {
-		this.executor = new TaskExecutor(config.getThreadPoolSize(), "client");
-		this.service = createService(config);
-		this.config = config;
-	}
+    public ClientImpl(ClientConfig config) {
+        this.executor = new TaskExecutor(config.getThreadPoolSize(), "client");
+        this.service = createService(config);
+        this.config = config;
+    }
 
-	@Override
-	public synchronized Transfer upload(UploadRequest request) {
-		Validate.isTrue(executor.isRunning());
+    @Override
+    public synchronized Transfer upload(UploadRequest request) {
+        Validate.isTrue(executor.isRunning());
 
-		AbstractTransfer transfer = new UploadTransfer(request, config, service);
-		executor.addTask(transfer);
-		return transfer;
-	}
+        AbstractTransfer transfer = new UploadTransfer(request, config, service);
+        executor.addTask(transfer);
+        return transfer;
+    }
 
-	@Override
-	public void uploadSync(UploadRequest request) {
-		AbstractTransfer transfer = new UploadTransfer(request, config, service);
-		transfer.run();
-	}
+    @Override
+    public void uploadSync(UploadRequest request) {
+        AbstractTransfer transfer = new UploadTransfer(request, config, service);
+        transfer.run();
+    }
 
-	@Override
-	public synchronized Transfer download(DownloadRequest request) {
-		Validate.isTrue(executor.isRunning());
+    @Override
+    public synchronized Transfer download(DownloadRequest request) {
+        Validate.isTrue(executor.isRunning());
 
-		AbstractTransfer transfer = new DownloadTransfer(request, config, service);
-		executor.addTask(transfer);
-		return transfer;
-	}
+        AbstractTransfer transfer = new DownloadTransfer(request, config, service);
+        executor.addTask(transfer);
+        return transfer;
+    }
 
-	@Override
-	public void downloadSync(DownloadRequest request) {
-		AbstractTransfer transfer = new DownloadTransfer(request, config, service);
-		transfer.run();
-	}
+    @Override
+    public void downloadSync(DownloadRequest request) {
+        AbstractTransfer transfer = new DownloadTransfer(request, config, service);
+        transfer.run();
+    }
 
-	@Override
-	public synchronized void start() {
-		executor.start();
-	}
+    @Override
+    public synchronized void start() {
+        executor.start();
+    }
 
-	@Override
-	public synchronized void stop() {
-		executor.stop();
-	}
+    @Override
+    public synchronized void stop() {
+        executor.stop();
+    }
 
-	private static FileTransferService createService(ClientConfig config) {
-		JaxWsProxyFactoryBean factory = new JaxWsProxyFactoryBean();
-		factory.setAddress(config.getAddress());
+    private static FileTransferService createService(ClientConfig config) {
+        JaxWsProxyFactoryBean fb = new JaxWsProxyFactoryBean();
+        fb.setAddress(config.getAddress());
+        // enable logging if needed
+        if (config.isSoapLogging()) {
+            fb.getFeatures().add(new LoggingFeature());
+        }
+        // set SOAP 1.2 with MTOM
+        fb.setBindingId(SOAPBinding.SOAP12HTTP_MTOM_BINDING);
+        // create HTTP policy with timeouts
+        long ms = config.getRequestTimeout() * 1000;
+        HTTPClientPolicy cp = new HTTPClientPolicy();
+        cp.setConnectionTimeout(ms);
+        cp.setReceiveTimeout(ms);
+        // create service 
+        FileTransferService service = fb.create(FileTransferService.class);
+        // set HTTP policy
+        org.apache.cxf.endpoint.Client client = ClientProxy.getClient(service);
+        HTTPConduit httpConduit = (HTTPConduit) client.getConduit();
+        httpConduit.setClient(cp);
 
-		if (config.isSoapLogging()) {
-			factory.getFeatures().add(new LoggingFeature());
-		}
-
-		FileTransferService service = factory.create(FileTransferService.class);
-		org.apache.cxf.endpoint.Client client = ClientProxy.getClient(service);
-		HTTPConduit httpConduit = (HTTPConduit) client.getConduit();
-
-		configureTimeout(httpConduit, config);
-
-		return service;
-	}
-
-	private static void configureTimeout(HTTPConduit httpConduit, ClientConfig config) {
-		long ms = config.getRequestTimeout() * 1000;
-		HTTPClientPolicy cp = new HTTPClientPolicy();
-		cp.setConnectionTimeout(ms);
-		cp.setReceiveTimeout(ms);
-		httpConduit.setClient(cp);
-	}
+        return service;
+    }
 }

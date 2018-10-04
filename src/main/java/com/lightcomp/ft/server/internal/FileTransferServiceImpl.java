@@ -18,8 +18,8 @@ public class FileTransferServiceImpl implements FileTransferService {
 
     private final TransferManager manager;
 
-    public FileTransferServiceImpl(TransferManager transferProvider) {
-        this.manager = transferProvider;
+    public FileTransferServiceImpl(TransferManager manager) {
+        this.manager = manager;
     }
 
     @Override
@@ -68,17 +68,17 @@ public class FileTransferServiceImpl implements FileTransferService {
 
     private static FileTransferState convertState(TransferState state) {
         switch (state) {
-            case STARTED:
-            case TRANSFERED:
-                return FileTransferState.ACTIVE;
-            case FINISHED:
-                return FileTransferState.FINISHED;
-            case FAILED:
-            case CANCELED:
-            case ABORTED:
-                return FileTransferState.FAILED;
-            default:
-                throw new IllegalStateException();
+        case STARTED:
+        case TRANSFERED:
+            return FileTransferState.ACTIVE;
+        case FINISHED:
+            return FileTransferState.FINISHED;
+        case FAILED:
+        case CANCELED:
+        case ABORTED:
+            return FileTransferState.FAILED;
+        default:
+            throw new IllegalStateException();
         }
     }
 }

@@ -24,7 +24,10 @@ public class FileTransferClient {
     private static final Logger logger = LoggerFactory.getLogger(FileTransferClient.class);
 
     public static void main(String[] args) {
-        // BasicConfigurator.configure();
+        /*  
+         * BasicConfigurator.configure();
+         * Logger.getRootLogger().setLevel(Level.INFO);
+         */
         logger.debug("Starting FileTransferClient, params: {} {} {} {}", args[0], args[1], args[2], args[3]);
 
         ClientConfig cfg = new ClientConfig(args[0]);

@@ -7,10 +7,7 @@ import com.lightcomp.ft.exception.TransferException;
  */
 public interface Server {
 
-    /**
-     * Returns WS API implementor, suitable for end-point publishing.
-     */
-    Object getImplementor();
+    EndpointFactory getEndpointFactory();
 
     /**
      * Start service.
@@ -23,8 +20,8 @@ public interface Server {
     void stop();
 
     /**
-     * Cancel transfer. Caller will wait for termination if the transfer is active. When canceled
-     * {@link TransferDataHandler#onTransferCanceled()} is called.
+     * Cancel transfer. Caller will wait for termination if the transfer is active.
+     * When canceled {@link TransferDataHandler#onTransferCanceled()} is called.
      * 
      * 
      * @throws TransferException
