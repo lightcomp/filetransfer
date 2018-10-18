@@ -18,6 +18,7 @@ import com.lightcomp.ft.xsd.v1.GenericDataType;
  * 2) request type - UPLOAD/DOWNLOAD<br>
  * 3) requestId - server upload or download directory<br>
  * 4) client directory
+ * 5) transfer type - optional, e.g. SIP_UPLOAD
  */
 public class FileTransferClient {
 
@@ -36,9 +37,15 @@ public class FileTransferClient {
         Client client = FileTransfer.createClient(cfg);
         client.start();
 
-        Mode mode = Mode.valueOf(args[1]);
+        Mode mode = Mode.valueOf(args[1]);        
         Path clientDir = Paths.get(args[3]);
-        AbstractRequest request = startTransfer(client, mode, clientDir, args[2]);
+        String transferType;
+        if(args.length>4) {
+        	transferType = args[4];
+        } else {
+        	transferType = args[1];
+        }
+        AbstractRequest request = startTransfer(client, mode, clientDir, args[2], transferType);
 
         while (!request.isTerminated()) {
             try {
@@ -51,9 +58,9 @@ public class FileTransferClient {
         System.exit(0);
     }
 
-    private static AbstractRequest startTransfer(Client client, Mode mode, Path clientDir, String serverDir) {
+    private static AbstractRequest startTransfer(Client client, Mode mode, Path clientDir, String serverDir, String transferType) {
         GenericDataType data = new GenericDataType();
-        data.setType(mode.name());
+        data.setType(transferType);
         data.setId(serverDir);
 
         if (mode == Mode.UPLOAD) {
