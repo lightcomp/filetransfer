@@ -1,11 +1,13 @@
 package com.lightcomp.ft.client.internal;
 
-import javax.xml.ws.soap.SOAPBinding;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.commons.lang3.Validate;
 import org.apache.cxf.ext.logging.LoggingFeature;
 import org.apache.cxf.frontend.ClientProxy;
 import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
+import org.apache.cxf.message.Message;
 import org.apache.cxf.transport.http.HTTPConduit;
 import org.apache.cxf.transports.http.configuration.HTTPClientPolicy;
 
@@ -15,6 +17,7 @@ import com.lightcomp.ft.client.DownloadRequest;
 import com.lightcomp.ft.client.Transfer;
 import com.lightcomp.ft.client.UploadRequest;
 import com.lightcomp.ft.common.TaskExecutor;
+import com.lightcomp.ft.server.EndpointFactory;
 import com.lightcomp.ft.wsdl.v1.FileTransferService;
 
 /**
@@ -77,23 +80,33 @@ public class ClientImpl implements Client {
     private static FileTransferService createService(ClientConfig config) {
         JaxWsProxyFactoryBean fb = new JaxWsProxyFactoryBean();
         fb.setAddress(config.getAddress());
-        // enable logging if needed
+
+        // set WSDL location
+        String wsdlLocation = EndpointFactory.getWsdlLocation().toExternalForm();
+        fb.setWsdlLocation(wsdlLocation);
+
+        // enable MTOM
+        Map<String, Object> props = new HashMap<String, Object>();
+        props.put(Message.MTOM_ENABLED, Boolean.TRUE);
+        fb.setProperties(props);
+
+        // enable logging if requested
         if (config.isSoapLogging()) {
-            fb.getFeatures().add(new LoggingFeature());
+            LoggingFeature lf = new LoggingFeature();
+            lf.setPrettyLogging(true);
+            fb.getFeatures().add(lf);
         }
-        // set SOAP 1.2 with MTOM
-        fb.setBindingId(SOAPBinding.SOAP12HTTP_MTOM_BINDING);
-        // create HTTP policy with timeouts
-        long ms = config.getRequestTimeout() * 1000;
-        HTTPClientPolicy cp = new HTTPClientPolicy();
-        cp.setConnectionTimeout(ms);
-        cp.setReceiveTimeout(ms);
+
         // create service 
         FileTransferService service = fb.create(FileTransferService.class);
-        // set HTTP policy
-        org.apache.cxf.endpoint.Client client = ClientProxy.getClient(service);
-        HTTPConduit httpConduit = (HTTPConduit) client.getConduit();
-        httpConduit.setClient(cp);
+
+        // prepare HTTP policy with timeouts
+        HTTPConduit conduit = (HTTPConduit) ClientProxy.getClient(service).getConduit();
+        HTTPClientPolicy policy = new HTTPClientPolicy();
+        long msTimeout = config.getRequestTimeout() * 1000;
+        policy.setConnectionTimeout(msTimeout);
+        policy.setReceiveTimeout(msTimeout);
+        conduit.setClient(policy);
 
         return service;
     }

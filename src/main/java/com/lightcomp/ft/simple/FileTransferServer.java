@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import org.apache.cxf.Bus;
 import org.apache.cxf.BusFactory;
 import org.apache.cxf.jaxws.EndpointImpl;
 import org.slf4j.Logger;
@@ -40,16 +39,11 @@ public class FileTransferServer {
         StatusStorageImpl statusStorage = new StatusStorageImpl();
         ServerConfig cfg = new ServerConfig(handler, statusStorage);
 
-        Bus bus = BusFactory.newInstance().createBus();
-        BusFactory.setThreadDefaultBus(bus);
-
         Server server = FileTransfer.createServer(cfg);
         server.start();
 
-        EndpointImpl ep = server.getEndpointFactory().createCxfEndpoint();
-        ep.setBus(BusFactory.getThreadDefaultBus());
-        ep.setAddress(args[0]);
-        ep.publish();
+        EndpointImpl ep = server.getEndpointFactory().createCxf(BusFactory.getThreadDefaultBus());
+        ep.publish(args[0]);
         
         System.out.println("Press any key to exit ...");
         try {

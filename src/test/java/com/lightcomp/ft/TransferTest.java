@@ -116,10 +116,8 @@ public class TransferTest {
 		Validate.isTrue(server == null);
 
 		server = FileTransfer.createServer(cfg);
-		ep = server.getEndpointFactory().createCxfEndpoint();
-		ep.setBus(BusFactory.getThreadDefaultBus());
-		ep.setAddress(getCurrentAddress());
-		ep.publish();
+		ep = server.getEndpointFactory().createCxf(BusFactory.getThreadDefaultBus());
+		ep.publish(getCurrentAddress());
 
 		server.start();
 	}

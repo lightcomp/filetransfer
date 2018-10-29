@@ -32,6 +32,8 @@ public class ServerConfig implements SendConfig {
     private int maxFrameBlocks = 10000;
 
     private Algorithm checksumAlg = Algorithm.SHA_512;
+    
+    private boolean soapLogging;
 
     public ServerConfig(TransferHandler transferHandler, TransferStatusStorage statusStorage) {
         this.transferHandler = Validate.notNull(transferHandler);
@@ -141,5 +143,13 @@ public class ServerConfig implements SendConfig {
      */
     public void setChecksumAlg(Algorithm checksumAlg) {
         this.checksumAlg = Validate.notNull(checksumAlg);
+    }
+
+    public boolean isSoapLogging() {
+        return soapLogging;
+    }
+
+    public void setSoapLogging(boolean soapLogging) {
+        this.soapLogging = soapLogging;
     }
 }

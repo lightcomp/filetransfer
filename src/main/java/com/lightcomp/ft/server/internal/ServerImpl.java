@@ -74,7 +74,7 @@ public class ServerImpl implements Server, TransferManager {
 
     @Override
     public EndpointFactory getEndpointFactory() {
-    	return new EndpointFactory(this);
+    	return new EndpointFactory(this, config);
     }
 
     @Override
