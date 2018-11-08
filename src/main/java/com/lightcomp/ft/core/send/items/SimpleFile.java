@@ -9,15 +9,41 @@ import java.nio.file.Path;
 
 public class SimpleFile implements SourceFile {
 
+	/*
+	 * Path to file
+	 */
     private final Path path;
+    
+    /*
+     * Name of file. Last part of path is used when null
+     */
+    private final String name;
 
+    /**
+     * Construct SimpleFile. Use last part of path as name
+     * @param path to file
+     */
     public SimpleFile(Path path) {
-        this.path = path;
+        this(path,null);
     }
 
+    /**
+     * Construct SimpleFile with different name.
+     * @param path to file
+     * @param name alternative name of file
+     */
+    public SimpleFile(Path path, String name) {
+    	this.path = path;
+    	this.name = name;
+    }
+    
     @Override
     public String getName() {
-        return path.getFileName().toString();
+    	if ( name != null ) {
+    		return name;
+    	} else {
+    		return path.getFileName().toString();
+    	}
     }
 
     @Override

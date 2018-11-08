@@ -46,6 +46,7 @@ import com.lightcomp.ft.core.blocks.DirEndBlockImpl;
 import com.lightcomp.ft.core.send.SendFrameContextImpl;
 import com.lightcomp.ft.core.send.items.BaseDir;
 import com.lightcomp.ft.core.send.items.ListReader;
+import com.lightcomp.ft.core.send.items.MemoryFile;
 import com.lightcomp.ft.core.send.items.SourceItem;
 import com.lightcomp.ft.core.send.items.SourceItemReader;
 import com.lightcomp.ft.exception.TransferException;
