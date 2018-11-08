@@ -1,5 +1,7 @@
 package com.lightcomp.ft.server.internal;
 
+import javax.xml.ws.WebServiceProvider;
+
 import com.lightcomp.ft.server.TransferState;
 import com.lightcomp.ft.wsdl.v1.FileTransferException;
 import com.lightcomp.ft.wsdl.v1.FileTransferService;
@@ -14,6 +16,7 @@ import com.lightcomp.ft.xsd.v1.SendRequest;
 import com.lightcomp.ft.xsd.v1.TransferStatus;
 import com.lightcomp.ft.xsd.v1.TransferStatusRequest;
 
+@WebServiceProvider(targetNamespace = "http://www.lightcomp.com/ft/wsdl/v1", serviceName = "FileTransferService")
 public class FileTransferServiceImpl implements FileTransferService {
 
     private final TransferManager manager;
