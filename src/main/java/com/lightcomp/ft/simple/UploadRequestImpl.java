@@ -2,6 +2,7 @@ package com.lightcomp.ft.simple;
 
 import java.nio.file.Path;
 
+import com.lightcomp.ft.client.AbstractRequest;
 import com.lightcomp.ft.client.UploadRequest;
 import com.lightcomp.ft.core.send.items.DirReader;
 import com.lightcomp.ft.core.send.items.SourceItemReader;

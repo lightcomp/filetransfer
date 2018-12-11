@@ -2,6 +2,7 @@ package com.lightcomp.ft.simple;
 
 import java.nio.file.Path;
 
+import com.lightcomp.ft.client.AbstractRequest;
 import com.lightcomp.ft.client.DownloadRequest;
 import com.lightcomp.ft.xsd.v1.GenericDataType;
 

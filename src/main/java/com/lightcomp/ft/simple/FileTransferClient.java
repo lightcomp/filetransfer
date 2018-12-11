@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.lightcomp.ft.FileTransfer;
+import com.lightcomp.ft.client.AbstractRequest;
 import com.lightcomp.ft.client.Client;
 import com.lightcomp.ft.client.ClientConfig;
 import com.lightcomp.ft.server.TransferDataHandler.Mode;
