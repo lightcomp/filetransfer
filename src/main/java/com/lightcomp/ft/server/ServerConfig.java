@@ -23,7 +23,7 @@ public class ServerConfig implements SendConfig {
 
     private Path workDir = PathUtils.SYS_TEMP;
 
-    private int threadPoolSize = 50;
+    private int threadPoolSize = 5;
 
     private int inactiveTimeout = 60 * 5;
 

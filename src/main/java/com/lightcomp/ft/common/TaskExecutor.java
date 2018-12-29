@@ -11,6 +11,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class TaskExecutor {
+	
+	public final static String DEFAULT_THREAD_NAME = "FileTransferTask";
 
     private static final Logger logger = LoggerFactory.getLogger(TaskExecutor.class);
 
@@ -22,7 +24,7 @@ public class TaskExecutor {
 
     private final List<Runnable> processingTasks;
 
-    private final ExecutorService executorService;
+    private ExecutorService executorService;
 
     private final int threadPoolSize;
 
@@ -34,7 +36,7 @@ public class TaskExecutor {
         Validate.isTrue(threadPoolSize > 0);
 
         this.processingTasks = new ArrayList<>(threadPoolSize);
-        this.executorService = Executors.newFixedThreadPool(threadPoolSize);
+        
         this.threadPoolSize = threadPoolSize;
         this.threadNamePostfix = threadNamePostfix;
     }
@@ -48,6 +50,11 @@ public class TaskExecutor {
      */
     public synchronized void start() {
         Validate.isTrue(state == State.TERMINATED);
+        Validate.isTrue(executorService == null);
+
+        executorService = Executors.newFixedThreadPool(threadPoolSize, (r) -> {
+        	return new Thread(null, r, DEFAULT_THREAD_NAME);
+        });
 
         state = State.RUNNING;
         Thread managerThread = new Thread(this::runManager,
@@ -134,6 +141,9 @@ public class TaskExecutor {
         if (logger.isDebugEnabled()) {
             logger.debug("Task executor stopped");
         }
+        
+        executorService.shutdown();
+        executorService = null;
         state = State.TERMINATED;
         // notify stopping thread about termination
         notifyAll();
