@@ -3,6 +3,7 @@ package com.lightcomp.ft.client;
 import java.nio.file.Path;
 
 import org.apache.commons.lang3.Validate;
+import org.apache.cxf.configuration.security.AuthorizationPolicy;
 
 import com.lightcomp.ft.common.Checksum.Algorithm;
 import com.lightcomp.ft.common.PathUtils;
@@ -30,6 +31,8 @@ public final class ClientConfig implements SendConfig {
     private Algorithm checksumAlg = Algorithm.SHA_512;
 
     private boolean soapLogging;
+    
+    private Authorization authorization;
 
     /**
      * @param address
@@ -165,4 +168,66 @@ public final class ClientConfig implements SendConfig {
     public void setSoapLogging(boolean soapLogging) {
         this.soapLogging = soapLogging;
     }
+    
+    public Authorization getAuthorization() {
+		return authorization;
+	}
+
+	public void setAuthorization(Authorization authorization) {
+		this.authorization = authorization;
+	}
+
+	public static class Authorization {
+
+        private String username;
+
+        private String password;
+
+        private String authorization;
+
+        private String authorizationType;
+
+        public String getUsername() {
+            return username;
+        }
+
+        public void setUsername(String username) {
+            this.username = username;
+        }
+
+        public String getPassword() {
+            return password;
+        }
+
+        public void setPassword(String password) {
+            this.password = password;
+        }
+
+        public String getAuthorization() {
+            return authorization;
+        }
+
+        public void setAuthorization(String authorization) {
+            this.authorization = authorization;
+        }
+
+        public String getAuthorizationType() {
+            return authorizationType;
+        }
+
+        public void setAuthorizationType(String authorizationType) {
+            this.authorizationType = authorizationType;
+        }
+
+        public AuthorizationPolicy toPolicy() {
+            AuthorizationPolicy policy = new AuthorizationPolicy();
+            policy.setUserName(username);
+            policy.setPassword(password);
+            policy.setAuthorization(authorization);
+            policy.setAuthorizationType(authorizationType);
+            return policy;
+        }
+    }
+
+    
 }

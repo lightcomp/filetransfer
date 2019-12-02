@@ -102,6 +102,11 @@ public class ClientImpl implements Client {
 
         // prepare HTTP policy with timeouts
         HTTPConduit conduit = (HTTPConduit) ClientProxy.getClient(service).getConduit();
+        
+        if (config.getAuthorization() != null) {
+            conduit.setAuthorization(config.getAuthorization().toPolicy());
+        }
+        
         HTTPClientPolicy policy = new HTTPClientPolicy();
         long msTimeout = config.getRequestTimeout() * 1000;
         policy.setConnectionTimeout(msTimeout);
