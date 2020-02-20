@@ -34,7 +34,20 @@ public class FileListBuilder {
             
             // seradim lexikograficky podle cesty vytvareneho souboru
             fileList.sort((f1,f2)->{return f1.getRemoteFile().compareTo(f2.getRemoteFile());});
-            
+
+            int i = 1;
+            while (i < fileList.size()) {
+                if (fileList.get(i - 1).getRemoteFile().equals(fileList.get(i).getRemoteFile())) {
+                    if (fileList.get(i - 1).getLocalFile().equals(fileList.get(i).getLocalFile())) {
+                        fileList.remove(i);
+                    } else {
+                        throw new IllegalStateException("Remote file duplicity with different local file");
+                    }
+                } else {
+                    i++;
+                }
+            }
+
             for(TransferedFile file:fileList) {
                 Path tmp = Paths.get(file.getRemoteFile());
                 int dirParts = tmp.getNameCount() - 1;
@@ -102,17 +115,16 @@ public class FileListBuilder {
         }
         
     }
-    
-    
+
     public static void main(String [] args) throws Exception {
         List<TransferedFile> tfs = new ArrayList<>();
-        tfs.add(new TransferedFile("komponenty/a.txt","objects/komponenty/a.txt"));
-        tfs.add(new TransferedFile("komponenty/b.txt","objects/komponenty/b.txt"));
-        tfs.add(new TransferedFile("komponenty/x/c.txt","objects/komponenty/c.txt"));
-        tfs.add(new TransferedFile("komponenty/x/d.txt","objects/komponenty/d.txt"));
-        tfs.add(new TransferedFile("konvertovane/komponenty/a.txt","konvertovane/komponenty/a.txt"));
+        tfs.add(new TransferedFile("komponenty/a.txt", "objects/komponenty/a.txt"));
+        tfs.add(new TransferedFile("komponenty/b.txt", "objects/komponenty/b.txt"));
+        tfs.add(new TransferedFile("komponenty/x/c.txt", "objects/komponenty/c.txt"));
+        tfs.add(new TransferedFile("komponenty/x/d.txt", "objects/komponenty/d.txt"));
+        tfs.add(new TransferedFile("konvertovane/komponenty/a.txt", "konvertovane/komponenty/a.txt"));
         FileListBuilder flb = new FileListBuilder(tfs);
         flb.writeFileList(Paths.get("test.txt"));
     }
-    
+
 }
