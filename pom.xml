@@ -200,7 +200,7 @@
 	<distributionManagement>
 		<repository>
 			<id>LightCompReleaseRepository</id>
-			<url>https://vlas1.lightcomp.cz:8079/releases/repository/nacr-release</url>
+			<url>https://www.lightcomp.cz/releases/repository/nacr-release</url>
 		</repository>
 	</distributionManagement>
 
