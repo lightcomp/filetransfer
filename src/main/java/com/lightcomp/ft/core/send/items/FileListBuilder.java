@@ -35,17 +35,22 @@ public class FileListBuilder {
             // seradim lexikograficky podle cesty vytvareneho souboru
             fileList.sort((f1,f2)->{return f1.getRemoteFile().compareTo(f2.getRemoteFile());});
 
-            int i = 1;
-            while (i < fileList.size()) {
-                if (fileList.get(i - 1).getRemoteFile().equals(fileList.get(i).getRemoteFile())) {
-                    if (fileList.get(i - 1).getLocalFile().equals(fileList.get(i).getLocalFile())) {
-                        fileList.remove(i);
-                    } else {
-                        throw new IllegalStateException("Remote file duplicity with different local file");
-                    }
-                } else {
-                    i++;
-                }
+            if(fileList.size()>=2) {
+            	Iterator<TransferedFile> iter = fileList.iterator();
+            	TransferedFile tf = iter.next();
+            	while(iter.hasNext()) {
+            		TransferedFile tf2 = iter.next();
+            		if(tf.getRemoteFile().equals(tf2.getRemoteFile())) {
+            			if(tf.getLocalFile().equals(tf2.getLocalFile())) {
+            				iter.remove();
+            			} else {
+            				throw new IllegalStateException("Remote file duplicated with different local file, remote file: "+tf.getRemoteFile());
+            			}
+            		} else {
+            			tf = tf2;
+            		}
+            	}
+            	
             }
 
             for(TransferedFile file:fileList) {
@@ -85,7 +90,7 @@ public class FileListBuilder {
                 Path dirPath = stack.removeLast();
                 writer.append("E|").append(dirPath.toString()).append(System.lineSeparator());
             }
-        }        
+        }
     }
     
 

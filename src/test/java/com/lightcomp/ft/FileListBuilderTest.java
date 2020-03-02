@@ -40,9 +40,11 @@ public class FileListBuilderTest {
         tfsEx.add(new TransferedFile("komponenty/a.txt", "objects/komponenty/a1.txt"));
 
         FileListBuilder flb = new FileListBuilder(tfsEx);
-        flb.writeFileList(Paths.get(TEST_FILE_EXCEPTION));
-
-        Files.delete(Paths.get(TEST_FILE_EXCEPTION));
+        try {
+        	flb.writeFileList(Paths.get(TEST_FILE_EXCEPTION));
+        } finally {
+        	Files.delete(Paths.get(TEST_FILE_EXCEPTION));
+        }
     }
 
 }
