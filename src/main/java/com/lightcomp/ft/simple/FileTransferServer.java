@@ -3,6 +3,9 @@ package com.lightcomp.ft.simple;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.apache.cxf.BusFactory;
 import org.apache.cxf.jaxws.EndpointImpl;
@@ -12,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import com.lightcomp.ft.FileTransfer;
 import com.lightcomp.ft.server.Server;
 import com.lightcomp.ft.server.ServerConfig;
+import com.lightcomp.ft.server.TransferDataHandler.Mode;
 
 /**
  * input params:<br>
@@ -34,8 +38,25 @@ public class FileTransferServer {
          */
         logger.debug("Starting FileTransferServer, params: {} {}", args[0], args[1]);
 
+        Set<String> uploadModes = new HashSet<>();
+        if (args.length>2) {
+        	String [] splitted = args[2].split(",");
+        	uploadModes.addAll(Arrays.asList(splitted));
+        } else {
+        	uploadModes.add(Mode.UPLOAD.name());
+        }
+        
+        if (args.length>3) {
+        	String [] splitted = args[3].split(",");
+        	uploadModes.addAll(Arrays.asList(splitted));
+        } else {
+        	uploadModes.add(Mode.DOWNLOAD.name());
+        }
+        
+        Set<String> downloadModes = new HashSet<>();
+        
         Path workDir = Paths.get(args[1]);
-        TransferHandlerImpl handler = new TransferHandlerImpl(workDir);
+        TransferHandlerImpl handler = new TransferHandlerImpl(workDir,downloadModes,uploadModes);
         StatusStorageImpl statusStorage = new StatusStorageImpl();
         ServerConfig cfg = new ServerConfig(handler, statusStorage);
 
