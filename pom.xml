@@ -183,23 +183,23 @@
 		</profile>
 	</profiles>
 
-	<repositories>
-		<repository>
-			<id>central</id>
-			<url>http://central.maven.org/maven2/</url>
-		</repository>
-	</repositories>
-
 	<scm>
 		<connection>scm:git:ssh://frnk.lightcomp.cz/opt/git/ft.git</connection>
 		<developerConnection>scm:git:ssh://frnk.lightcomp.cz/opt/git/ft.git</developerConnection>
 		<tag>HEAD</tag>
 	</scm>
 	<distributionManagement>
+<!--
 		<repository>
 			<id>LightCompReleaseRepository</id>
 			<url>https://www.lightcomp.cz/releases/repository/nacr-release</url>
 		</repository>
+-->
+    <snapshotRepository>
+	<id>frnkRepo</id>
+	<url>http://10.2.0.2:8080/artifactory/libs-snapshot-local</url>
+    </snapshotRepository>
+
 	</distributionManagement>
 
 </project>
