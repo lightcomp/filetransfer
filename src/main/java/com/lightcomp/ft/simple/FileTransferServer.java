@@ -46,14 +46,15 @@ public class FileTransferServer {
         	uploadModes.add(Mode.UPLOAD.name());
         }
         
+	Set<String> downloadModes = new HashSet<>();
         if (args.length>3) {
         	String [] splitted = args[3].split(",");
-        	uploadModes.addAll(Arrays.asList(splitted));
+        	downloadModes.addAll(Arrays.asList(splitted));
         } else {
-        	uploadModes.add(Mode.DOWNLOAD.name());
+        	downloadModes.add(Mode.DOWNLOAD.name());
         }
         
-        Set<String> downloadModes = new HashSet<>();
+        
         
         Path workDir = Paths.get(args[1]);
         TransferHandlerImpl handler = new TransferHandlerImpl(workDir,downloadModes,uploadModes);
