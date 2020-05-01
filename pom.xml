@@ -6,7 +6,7 @@
 
 	<groupId>com.lightcomp.ft</groupId>
 	<artifactId>file-transfer</artifactId>
-	<version>1.6</version>
+	<version>1.7-SNAPSHOT</version>
 	<name>FileTransfer</name>
 	<url>http://www.lightcomp.com</url>
 
@@ -186,7 +186,7 @@
 	<scm>
 		<connection>scm:git:ssh://frnk.lightcomp.cz/opt/git/ft.git</connection>
 		<developerConnection>scm:git:ssh://frnk.lightcomp.cz/opt/git/ft.git</developerConnection>
-		<tag>file-transfer-1.6</tag>
+		<tag>HEAD</tag>
 	</scm>
 	<distributionManagement>
 		<repository>
