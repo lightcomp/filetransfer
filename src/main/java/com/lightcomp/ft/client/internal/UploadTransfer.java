@@ -34,29 +34,34 @@ public class UploadTransfer extends AbstractTransfer implements SendProgressInfo
     }
 
     @Override
-    protected boolean transferFrames() throws TransferException {
-        FrameBuilder frameBuilder = new FrameBuilder(this, config);
-        frameBuilder.init(request.getRootItemsReader());
-        // send all frames
-        while (true) {
-            if (cancelIfRequested()) {
-                return false;
-            }
-            // build frame
-            SendFrameContext frameCtx = frameBuilder.build();
-            // send frame
-            SendOperation op = new SendOperation(this, service, frameCtx);
-            OperationResult result = op.execute();
-            if (result.getType() != Type.SUCCESS) {
-                operationFailed(result);
-                return false;
-            }
-            // add processed frame num
-            frameProcessed(frameCtx.getSeqNum());
-            // exit if last
-            if (frameCtx.isLast()) {
-                return true;
-            }
-        }
-    }
+	protected boolean transferFrames() throws TransferException {
+		FrameBuilder frameBuilder = new FrameBuilder(this, config);
+		frameBuilder.init(request.getRootItemsReader());
+
+		try {
+			// send all frames
+			while (true) {
+				if (cancelIfRequested()) {
+					return false;
+				}
+				// build frame
+				SendFrameContext frameCtx = frameBuilder.build();
+				// send frame
+				SendOperation op = new SendOperation(this, service, frameCtx);
+				OperationResult result = op.execute();
+				if (result.getType() != Type.SUCCESS) {
+					operationFailed(result);
+					return false;
+				}
+				// add processed frame num
+				frameProcessed(frameCtx.getSeqNum());
+				// exit if last
+				if (frameCtx.isLast()) {
+					return true;
+				}
+			}
+		} finally {
+			frameBuilder.closeBuilder();
+		}
+	}
 }

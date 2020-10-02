@@ -15,6 +15,13 @@ public class DwnldFrameWorker implements Runnable {
 
     private State state = State.RUNNING;
 
+    /**
+     * Constructor
+     * @param transfer 
+     * @param frameBuilder
+     * 
+     * frameBuilder is closed after finish downloading or download fail
+     */
     public DwnldFrameWorker(DwnldTransfer transfer, FrameBuilder frameBuilder) {
         this.transfer = transfer;
         this.frameBuilder = frameBuilder;
@@ -35,30 +42,34 @@ public class DwnldFrameWorker implements Runnable {
         }
     }
 
-    @Override
-    public void run() {
-        while (true) {
-            synchronized (this) {
-                if (state != State.RUNNING) {
-                    break; // stopping worker
-                }
-            }
-            try {
-                SendFrameContext frameCtx = frameBuilder.build();
-                if (!transfer.frameProcessed(frameCtx)) {
-                    break; // worker terminated
-                }
-            } catch (Throwable t) {
-                ServerError err = new ServerError("Failed to build download frame", transfer)
-                        .addParam("seqNum", frameBuilder.getCurrentSeqNum()).setCause(t);
-                transfer.frameProcessingFailed(err);
-                break; // builder failed
-            }
-        }
-        synchronized (this) {
-            state = State.TERMINATED;
-            // notify terminating threads
-            notifyAll();
-        }
-    }
+	@Override
+	public void run() {
+		try {
+			while (true) {
+				synchronized (this) {
+					if (state != State.RUNNING) {
+						break; // stopping worker
+					}
+				}
+				try {
+					SendFrameContext frameCtx = frameBuilder.build();
+					if (!transfer.frameProcessed(frameCtx)) {
+						break; // worker terminated
+					}
+				} catch (Throwable t) {
+					ServerError err = new ServerError("Failed to build download frame", transfer)
+							.addParam("seqNum", frameBuilder.getCurrentSeqNum()).setCause(t);
+					transfer.frameProcessingFailed(err);
+					break; // builder failed
+				}
+			}
+			synchronized (this) {
+				state = State.TERMINATED;
+				// notify terminating threads
+				notifyAll();
+			}
+		} finally {
+			frameBuilder.closeBuilder();
+		}
+	}
 }

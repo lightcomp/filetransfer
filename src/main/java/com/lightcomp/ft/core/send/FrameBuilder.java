@@ -125,4 +125,13 @@ public class FrameBuilder {
 		frameCtx.addBlock(b);
 		return true;
 	}
+	
+	/**
+	 * Close remaining opened FrameDirContext placed in dirStack  
+	 */
+	public void closeBuilder() {
+		for(FrameDirContext dir:dirStack) {
+			dir.close();
+		}
+	}
 }

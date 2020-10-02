@@ -2,6 +2,7 @@ package com.lightcomp.ft.simple;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +32,8 @@ public class FileTransferClient {
          * Logger.getRootLogger().setLevel(Level.INFO);
          */
         logger.debug("Starting FileTransferClient, params: {} {} {} {}", args[0], args[1], args[2], args[3]);
+        
+        System.out.println("Start:"+LocalDateTime.now());
 
         ClientConfig cfg = new ClientConfig(args[0]);
         cfg.setRecoveryDelay(5);
@@ -56,6 +59,9 @@ public class FileTransferClient {
             }
         }
         client.stop();
+        
+        System.out.println("Stop:"+java.time.LocalDateTime.now());
+        
         System.exit(0);
     }
 
