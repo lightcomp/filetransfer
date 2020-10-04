@@ -272,5 +272,8 @@ public class DwnldTransfer extends ServerTransfer implements SendProgressInfo, D
 			frameWorker.terminate();
 			frameWorker = null;
 		}
+		if (frameBuilder!=null) {
+			frameBuilder.closeBuilder();
+		}
 	}
 }

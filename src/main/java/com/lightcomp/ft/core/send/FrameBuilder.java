@@ -133,5 +133,6 @@ public class FrameBuilder {
 		for(FrameDirContext dir:dirStack) {
 			dir.close();
 		}
+		dirStack.clear();
 	}
 }
