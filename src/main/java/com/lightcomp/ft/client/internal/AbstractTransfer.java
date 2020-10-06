@@ -94,7 +94,7 @@ public abstract class AbstractTransfer implements Runnable, Transfer, OperationH
                 return false;
             }
             if (delay > 0) {
-                logger.info("Transfer wating {}s before recovery ...", delay);
+                logger.info("Transfer waiting {}s before recovery ...", delay);
                 try {
                     wait(delay * 1000);
                 } catch (InterruptedException e) {
