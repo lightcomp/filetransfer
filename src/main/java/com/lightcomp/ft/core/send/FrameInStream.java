@@ -28,7 +28,7 @@ public class FrameInStream extends InputStream {
         byte[] b = new byte[1];
         int n = read(b, 0, 1);
         if (n == 1) {
-            return b[0];
+            return Byte.toUnsignedInt(b[0]);
         }
         return n;
     }
