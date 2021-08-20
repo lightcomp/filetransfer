@@ -54,6 +54,7 @@ public class UploadFrameWorker implements Runnable {
                 wait(100);
             } catch (InterruptedException e) {
                 // ignore
+            	Thread.currentThread().interrupt();
             }
         }
     }

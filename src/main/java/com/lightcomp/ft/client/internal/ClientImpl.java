@@ -108,7 +108,7 @@ public class ClientImpl implements Client {
         }
         
         HTTPClientPolicy policy = new HTTPClientPolicy();
-        long msTimeout = config.getRequestTimeout() * 1000;
+        long msTimeout = config.getRequestTimeout() * 1000L;
         policy.setConnectionTimeout(msTimeout);
         policy.setReceiveTimeout(msTimeout);
         conduit.setClient(policy);

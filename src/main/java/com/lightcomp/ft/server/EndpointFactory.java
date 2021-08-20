@@ -35,7 +35,7 @@ public class EndpointFactory {
     public EndpointImpl createCxf(Bus bus) {
         Validate.notNull(bus);
 
-        EndpointImpl ep = new EndpointImpl(bus, getImplementor());
+        EndpointImpl ep = new EndpointImpl(bus, getImplementor()); //NOSONAR
 
         // set WSDL location
         String wsdlLocation = EndpointFactory.getWsdlLocation().toExternalForm();

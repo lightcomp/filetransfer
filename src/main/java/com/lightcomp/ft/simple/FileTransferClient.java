@@ -56,6 +56,7 @@ public class FileTransferClient {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
                 // ignore
+            	Thread.currentThread().interrupt();
             }
         }
         client.stop();

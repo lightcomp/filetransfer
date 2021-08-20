@@ -79,6 +79,7 @@ public class TaskExecutor {
                 wait(100);
             } catch (InterruptedException e) {
                 // ignore
+            	Thread.currentThread().interrupt();
             }
         }
     }
@@ -112,6 +113,7 @@ public class TaskExecutor {
                     }
                 } catch (InterruptedException e) {
                     // ignore
+                	Thread.currentThread().interrupt();
                 }
                 continue;
             }
@@ -133,9 +135,12 @@ public class TaskExecutor {
         // wait for currently processing tasks
         while (processingTasks.size() > 0) {
             try {
-                wait();
+            	synchronized(this) {
+            		wait();
+            	}
             } catch (InterruptedException e) {
                 // ignore
+            	Thread.currentThread().interrupt();
             }
         }
         if (logger.isDebugEnabled()) {
@@ -146,7 +151,9 @@ public class TaskExecutor {
         executorService = null;
         state = State.TERMINATED;
         // notify stopping thread about termination
-        notifyAll();
+        synchronized(this) {
+        	notifyAll();
+        }
     }
 
     private synchronized void taskFinished(Runnable task) {

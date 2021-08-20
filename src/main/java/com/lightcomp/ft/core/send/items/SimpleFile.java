@@ -86,7 +86,7 @@ public class SimpleFile implements SourceFile {
 
     @Override
     public ReadableByteChannel openChannel(long position) throws IOException {
-    	SeekableByteChannel channel = Files.newByteChannel(path);
+    	SeekableByteChannel channel = Files.newByteChannel(path); //NOSONAR
     	channel.position(position);
     	return channel;
     }

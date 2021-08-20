@@ -27,7 +27,7 @@ public class ServerConfig implements SendConfig {
 
     private int inactiveTimeout = 60 * 5;
 
-    private long maxFrameSize = 10 * 1024 * 1024;
+    private long maxFrameSize = 10 * 1024 * 1024L;
 
     private int maxFrameBlocks = 10000;
 

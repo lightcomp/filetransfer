@@ -96,9 +96,10 @@ public abstract class AbstractTransfer implements Runnable, Transfer, OperationH
             if (delay > 0) {
                 logger.info("Transfer waiting {}s before recovery ...", delay);
                 try {
-                    wait(delay * 1000);
+                    wait(delay * 1000L);
                 } catch (InterruptedException e) {
                     // ignore
+                	Thread.currentThread().interrupt();
                 }
                 // check if thread awakened by cancel
                 if (cancelRequested && cancelable) {
@@ -135,6 +136,7 @@ public abstract class AbstractTransfer implements Runnable, Transfer, OperationH
                         wait(100);
                     } catch (InterruptedException e) {
                         // ignore
+                    	Thread.currentThread().interrupt();
                     }
             }
         }

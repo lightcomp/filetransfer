@@ -110,7 +110,7 @@ public class RecvFrameProcessor {
     private ReadableByteChannel openDataChannel() throws TransferException {
         ReadableByteChannel dch;
         try {
-            dch = Files.newByteChannel(dataFile, StandardOpenOption.READ);
+            dch = Files.newByteChannel(dataFile, StandardOpenOption.READ); //NOSONAR
         } catch (IOException e) {
             throw new TransferExBuilder("Failed to open temporary frame data").addParam("seqNum", seqNum)
                     .addParam("dataFile", dataFile).setCause(e).build();

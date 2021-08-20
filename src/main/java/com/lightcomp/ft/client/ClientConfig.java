@@ -24,7 +24,7 @@ public final class ClientConfig implements SendConfig {
 
     private int recoveryDelay = 60;
 
-    private long maxFrameSize = 10 * 1024 * 1024;
+    private long maxFrameSize = 10 * 1024 * 1024L;
 
     private int maxFrameBlocks = 10000;
 

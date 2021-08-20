@@ -243,9 +243,12 @@ public abstract class ServerTransfer implements Transfer, TransferInfo {
     private void waitWhileFinishing() {
         while (status.getState() == TransferState.FINISHING) {
             try {
-                wait(100);
+            	synchronized(this) {
+            		wait(100);
+            	}
             } catch (InterruptedException e) {
                 // ignore
+            	Thread.currentThread().interrupt();
             }
         }
     }

@@ -103,6 +103,7 @@ public class ServerImpl implements Server, TransferManager {
                     wait(100);
                 } catch (InterruptedException e) {
                     // ignore
+                	Thread.currentThread().interrupt();
                 }
             }
         }
@@ -268,6 +269,7 @@ public class ServerImpl implements Server, TransferManager {
                     wait(wakeupInterval);
                 } catch (InterruptedException e) {
                     // ignore
+                	Thread.currentThread().interrupt();
                 }
             }
         }
