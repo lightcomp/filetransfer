@@ -150,7 +150,7 @@ public class TransferTest {
 	}
 
 	@Test
-	public void testFolderUpload() throws TimeoutException {
+	public void testFolderUpload() throws TimeoutException, InterruptedException {
 		UploadTransferHandler uth = new UploadTransferHandler(tempDir) {
 			@Override
 			protected UploadHandler createUpload(String transferId, Path uploadDir, GenericDataType request) {
@@ -188,7 +188,7 @@ public class TransferTest {
 	}
 
 	@Test
-	public void testInactiveTransfer() throws TimeoutException {
+	public void testInactiveTransfer() throws TimeoutException, InterruptedException {
 		UploadTransferHandler uth = new UploadTransferHandler(tempDir) {
 			@Override
 			protected UploadHandler createUpload(String transferId, Path uploadDir, GenericDataType request) {
@@ -222,7 +222,7 @@ public class TransferTest {
 	}
 
 	@Test
-	public void testMaxFrameSizeUpload() throws TimeoutException {
+	public void testMaxFrameSizeUpload() throws TimeoutException, InterruptedException {
 		UploadTransferHandler uth = new UploadTransferHandler(tempDir) {
 			@Override
 			protected UploadHandler createUpload(String transferId, Path uploadDir, GenericDataType request) {
@@ -260,7 +260,7 @@ public class TransferTest {
 	}
 
 	@Test
-	public void testMaxFrameBlocksUpload() throws TimeoutException {
+	public void testMaxFrameBlocksUpload() throws TimeoutException, InterruptedException {
 		UploadTransferHandler uth = new UploadTransferHandler(tempDir) {
 			@Override
 			protected UploadHandlerImpl createUpload(String transferId, Path uploadDir, GenericDataType request) {
@@ -295,7 +295,7 @@ public class TransferTest {
 	}
 
 	@Test
-	public void testInvalidChecksum() throws TimeoutException {
+	public void testInvalidChecksum() throws TimeoutException, InterruptedException {
 		UploadTransferHandler uth = new UploadTransferHandler(tempDir) {
 			@Override
 			protected UploadHandler createUpload(String transferId, Path uploadDir, GenericDataType request) {
@@ -326,7 +326,7 @@ public class TransferTest {
 	}
 
 	@Test
-	public void testMixedContentUpload() throws TimeoutException {
+	public void testMixedContentUpload() throws TimeoutException, InterruptedException {
 		int blockMax = 5;
 
 		UploadTransferHandler uth = new UploadTransferHandler(tempDir) {
@@ -361,7 +361,7 @@ public class TransferTest {
 	}
 
 	@Test
-	public void testInvalidFrameUpload() throws TimeoutException {
+	public void testInvalidFrameUpload() throws TimeoutException, InterruptedException {
 		UploadTransferHandler uth = new UploadTransferHandler(tempDir) {
 			@Override
 			protected UploadHandler createUpload(String transferId, Path uploadDir, GenericDataType request) {
@@ -411,7 +411,7 @@ public class TransferTest {
 	}
 
 	@Test
-	public void testUploadRequestResponse() throws TimeoutException, ParserConfigurationException {
+	public void testUploadRequestResponse() throws TimeoutException, ParserConfigurationException, InterruptedException {
 		UploadTransferHandler uth = new UploadTransferHandler(tempDir) {
 			@Override
 			protected UploadHandler createUpload(String transferId, Path uploadDir, GenericDataType request) {
@@ -462,7 +462,7 @@ public class TransferTest {
 	}
 
 	@Test
-	public void testFolderDownload() throws TimeoutException {
+	public void testFolderDownload() throws TimeoutException, InterruptedException {
 		DwnldTransferHandler dth = new DwnldTransferHandler() {
 			@Override
 			protected DownloadHandler createDownload(String transferId, GenericDataType request) {
@@ -499,7 +499,7 @@ public class TransferTest {
 	}
 
 	@Test
-	public void testMixedContentDownload() throws TimeoutException {
+	public void testMixedContentDownload() throws TimeoutException, InterruptedException {
 		int blockMax = 5;
 		Pair<Collection<SourceItem>, Integer> pair = createMixedContentWithoutData(3, blockMax);
 
@@ -533,7 +533,7 @@ public class TransferTest {
 	}
 
 	@Test
-	public void testInvalidClientSeqNumDownload() throws TimeoutException {
+	public void testInvalidClientSeqNumDownload() throws TimeoutException, InterruptedException {
 		DwnldTransferHandler dth = new DwnldTransferHandler() {
 			@Override
 			protected DownloadHandler createDownload(String transferId, GenericDataType request) {
@@ -576,7 +576,7 @@ public class TransferTest {
 	}
 
 	@Test
-	public void testInvalidClientSeqNumUpload() throws TimeoutException {
+	public void testInvalidClientSeqNumUpload() throws TimeoutException, InterruptedException {
 		UploadTransferHandler uth = new UploadTransferHandler(tempDir) {
 			@Override
 			protected UploadHandler createUpload(String transferId, Path uploadDir, GenericDataType request) {
@@ -620,7 +620,7 @@ public class TransferTest {
 	}
 
 	@Test
-	public void testInvalidServerSeqNumDownload() throws TimeoutException {
+	public void testInvalidServerSeqNumDownload() throws TimeoutException, InterruptedException {
 		// client must abort server when invalid frame number received
 		DwnldTransferHandler dth = new DwnldTransferHandler() {
 			@Override
@@ -657,7 +657,7 @@ public class TransferTest {
 	}
 
 	@Test
-	public void testClientCancelDownload() throws TimeoutException, TransferException {
+	public void testClientCancelDownload() throws TimeoutException, TransferException, InterruptedException {
 		DwnldTransferHandler dth = new DwnldTransferHandler() {
 			@Override
 			protected DownloadHandler createDownload(String transferId, GenericDataType request) {
@@ -689,7 +689,7 @@ public class TransferTest {
 	}
 
 	@Test
-	public void testServerCancelDownload() throws TimeoutException, TransferException {
+	public void testServerCancelDownload() throws TimeoutException, TransferException, InterruptedException {
 		DwnldTransferHandler dth = new DwnldTransferHandler() {
 			@Override
 			protected DownloadHandler createDownload(String transferId, GenericDataType request) {

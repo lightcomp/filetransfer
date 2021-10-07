@@ -9,12 +9,6 @@ import java.nio.file.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.lightcomp.ft.core.send.items.SimpleFile;
-import com.lightcomp.ft.core.send.items.SourceDir;
-import com.lightcomp.ft.core.send.items.SourceFile;
-import com.lightcomp.ft.core.send.items.SourceItem;
-import com.lightcomp.ft.core.send.items.SourceItemReader;
-
 public class FileListReader implements SourceItemReader {
 
     static final Logger log = LoggerFactory.getLogger(FileListReader.class);

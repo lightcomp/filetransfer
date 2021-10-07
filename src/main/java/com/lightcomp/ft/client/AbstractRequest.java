@@ -1,8 +1,5 @@
 package com.lightcomp.ft.client;
 
-import com.lightcomp.ft.client.Transfer;
-import com.lightcomp.ft.client.TransferRequest;
-import com.lightcomp.ft.client.TransferStatus;
 import com.lightcomp.ft.xsd.v1.GenericDataType;
 
 /**
