@@ -13,7 +13,7 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<java.version>1.8</java.version>
-		<cxf.version>3.3.5</cxf.version>
+		<cxf.version>3.3.7</cxf.version>
 	</properties>
 
 	<dependencies>
@@ -23,28 +23,28 @@
 			<artifactId>jaxb-api</artifactId>
 			<version>2.3.1</version>
 		</dependency>
-		<!-- https://mvnrepository.com/artifact/com.sun.xml.ws/jaxws-ri -->
+		<!-- https://mvnrepository.com/artifact/com.sun.xml.ws/jaxws-rt/2.3.3 -->
 		<dependency>
 			<groupId>com.sun.xml.ws</groupId>
-			<artifactId>jaxws-ri</artifactId>
-			<version>2.3.2</version>
+			<artifactId>jaxws-rt</artifactId>
+			<version>2.3.3</version>
 			<type>pom</type>
 		</dependency>
 
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-lang3</artifactId>
-			<version>3.7</version>
+			<version>3.11</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-collections4</artifactId>
-			<version>4.1</version>
+			<version>4.4</version>
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-log4j12</artifactId>
-			<version>1.7.25</version>
+			<version>1.7.30</version>
 		</dependency>
 		<!-- CXF -->
 		<dependency>
@@ -72,7 +72,7 @@
 		<dependency>
 			<groupId>net.jodah</groupId>
 			<artifactId>concurrentunit</artifactId>
-			<version>0.4.3</version>
+			<version>0.4.6</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
