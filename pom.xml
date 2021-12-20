@@ -184,14 +184,14 @@
 	</profiles>
 
 	<scm>
-		<connection>scm:git:ssh://frnk.lightcomp.cz/opt/git/ft.git</connection>
-		<developerConnection>scm:git:ssh://frnk.lightcomp.cz/opt/git/ft.git</developerConnection>
+		<connection>scm:git:ssh://gitlab.lightcomp.cz/lightcomp/filetransfer.git</connection>
+		<developerConnection>scm:git:ssh://git@gitlab.lightcomp.cz/lightcomp/filetransfer.git</developerConnection>
 		<tag>HEAD</tag>
 	</scm>
 	<distributionManagement>
 		<repository>
 			<id>LightCompReleaseRepository</id>
-			<url>https://www.lightcomp.cz/releases/repository/nacr-release</url>
+			<url>https://www.lightcomp.cz/releases/repository/lc-public-release</url>
 		</repository>
     <snapshotRepository>
 	<id>frnkRepo</id>
