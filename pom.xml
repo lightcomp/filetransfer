@@ -193,10 +193,10 @@
 			<id>LightCompReleaseRepository</id>
 			<url>https://www.lightcomp.cz/releases/repository/lc-public-release</url>
 		</repository>
-    <snapshotRepository>
-	<id>frnkRepo</id>
-	<url>http://10.2.0.2:8080/artifactory/libs-snapshot-local</url>
-    </snapshotRepository>
+		<snapshotRepository>
+			<id>frnkRepo</id>
+			<url>http://10.2.0.2:8080/artifactory/libs-snapshot-local</url>
+		</snapshotRepository>
 
 	</distributionManagement>
 
