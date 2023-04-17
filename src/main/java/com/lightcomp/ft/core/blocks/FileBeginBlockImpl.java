@@ -4,7 +4,7 @@ import com.lightcomp.ft.core.recv.RecvContext;
 import com.lightcomp.ft.exception.TransferException;
 import com.lightcomp.ft.xsd.v1.FileBegin;
 
-public class FileBeginBlockImpl extends FileBegin {
+public class FileBeginBlockImpl extends FileBegin implements BlockProcessor {
 
     private static final long serialVersionUID = 1L;
 

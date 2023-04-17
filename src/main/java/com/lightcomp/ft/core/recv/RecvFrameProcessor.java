@@ -10,7 +10,6 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.Collection;
 
-import javax.activation.DataHandler;
 
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
@@ -18,8 +17,10 @@ import org.slf4j.LoggerFactory;
 
 import com.lightcomp.ft.exception.TransferException;
 import com.lightcomp.ft.exception.TransferExBuilder;
-import com.lightcomp.ft.xsd.v1.Frame;
 import com.lightcomp.ft.xsd.v1.FrameBlock;
+import com.lightcomp.ft.xsd.v1.Frame;
+
+import jakarta.activation.DataHandler;
 
 public class RecvFrameProcessor {
 

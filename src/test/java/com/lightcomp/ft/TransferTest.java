@@ -8,7 +8,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 
-import javax.xml.bind.DatatypeConverter;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -63,6 +62,7 @@ import com.lightcomp.ft.xsd.v1.ReceiveRequest;
 import com.lightcomp.ft.xsd.v1.SendRequest;
 import com.lightcomp.ft.xsd.v1.XmlData;
 
+import jakarta.xml.bind.DatatypeConverter;
 import net.jodah.concurrentunit.Waiter;
 
 public class TransferTest {

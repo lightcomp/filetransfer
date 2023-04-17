@@ -4,7 +4,7 @@ import com.lightcomp.ft.core.recv.RecvContext;
 import com.lightcomp.ft.exception.TransferException;
 import com.lightcomp.ft.xsd.v1.FileEnd;
 
-public class FileEndBlockImpl extends FileEnd {
+public class FileEndBlockImpl extends FileEnd implements BlockProcessor {
 
     private static final long serialVersionUID = 1L;
 

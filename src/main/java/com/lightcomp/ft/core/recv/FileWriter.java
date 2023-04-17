@@ -11,8 +11,6 @@ import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.FileTime;
 import java.util.Arrays;
 
-import javax.xml.bind.DatatypeConverter;
-
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +19,9 @@ import com.lightcomp.ft.common.Checksum.Algorithm;
 import com.lightcomp.ft.common.ChecksumByteChannel;
 import com.lightcomp.ft.common.ChecksumGenerator;
 import com.lightcomp.ft.exception.TransferException;
+
+import jakarta.xml.bind.DatatypeConverter;
+
 import com.lightcomp.ft.exception.TransferExBuilder;
 
 class FileWriter {

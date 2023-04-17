@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<xs:schema targetNamespace="http://www.lightcomp.com/ft/xsd/v1" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ft="http://www.lightcomp.com/ft/xsd/v1" xmlns:xmime="http://www.w3.org/2005/05/xmlmime">
+<xs:schema targetNamespace="http://www.lightcomp.com/ft/xsd/v1" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ft="http://www.lightcomp.com/ft/xsd/v1" xmlns:xmime="http://www.w3.org/2005/05/xmlmime" 
+  xmlns:jxb="https://jakarta.ee/xml/ns/jaxb" jxb:version="3.0">
 	<xs:annotation>
 		<xs:documentation>Definice datových typů - XSD schéma</xs:documentation>
 	</xs:annotation>

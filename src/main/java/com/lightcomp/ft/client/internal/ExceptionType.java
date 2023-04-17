@@ -5,13 +5,13 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 
-import javax.xml.bind.MarshalException;
-
 import org.apache.cxf.transport.http.HTTPException;
 
 import com.lightcomp.ft.wsdl.v1.FileTransferException;
 import com.lightcomp.ft.xsd.v1.ErrorCode;
 import com.lightcomp.ft.xsd.v1.ErrorDescription;
+
+import jakarta.xml.bind.MarshalException;
 
 public enum ExceptionType {
     UKNOWN, CONNECTION, BUSY, FATAL;

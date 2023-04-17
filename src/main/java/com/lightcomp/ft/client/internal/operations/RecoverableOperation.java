@@ -4,8 +4,8 @@ import com.lightcomp.ft.client.internal.ExceptionType;
 import com.lightcomp.ft.client.internal.operations.OperationResult.Type;
 import com.lightcomp.ft.wsdl.v1.FileTransferException;
 import com.lightcomp.ft.wsdl.v1.FileTransferService;
-import com.lightcomp.ft.xsd.v1.TransferStatus;
 import com.lightcomp.ft.xsd.v1.TransferStatusRequest;
+import com.lightcomp.ft.xsd.v1.TransferStatus;
 
 public abstract class RecoverableOperation {
 

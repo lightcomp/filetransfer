@@ -4,7 +4,7 @@ import com.lightcomp.ft.core.recv.RecvContext;
 import com.lightcomp.ft.exception.TransferException;
 import com.lightcomp.ft.xsd.v1.DirBegin;
 
-public class DirBeginBlockImpl extends DirBegin {
+public class DirBeginBlockImpl extends DirBegin implements BlockProcessor {
 
     private static final long serialVersionUID = 1L;
 

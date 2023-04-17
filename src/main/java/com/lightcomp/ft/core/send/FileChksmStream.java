@@ -3,12 +3,12 @@ package com.lightcomp.ft.core.send;
 import java.io.IOException;
 import java.nio.file.Path;
 
-import javax.xml.bind.DatatypeConverter;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.lightcomp.ft.common.Checksum;
+
+import jakarta.xml.bind.DatatypeConverter;
 
 public class FileChksmStream implements BlockStream {
 

@@ -3,15 +3,16 @@ package com.lightcomp.ft.core.send;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.activation.DataHandler;
 
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.lightcomp.ft.xsd.v1.Frame;
 import com.lightcomp.ft.xsd.v1.FrameBlock;
 import com.lightcomp.ft.xsd.v1.FrameBlocks;
+import com.lightcomp.ft.xsd.v1.Frame;
+
+import jakarta.activation.DataHandler;
 
 public class SendFrameContextImpl implements SendFrameContext {
 
