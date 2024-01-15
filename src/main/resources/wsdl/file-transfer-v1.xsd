@@ -61,14 +61,18 @@
 	</xs:element>
 	<xs:simpleType name="BinData">
 		<xs:annotation>
-			<xs:documentation>Binární data</xs:documentation>
+			<xs:documentation>Binární data
+
+Odpovídající datový prvek v ISDP:  	CA0010</xs:documentation>
 		</xs:annotation>
 		<xs:restriction base="xs:base64Binary"/>
 	</xs:simpleType>
 	<xs:simpleType name="ErrorCode">
 		<xs:annotation>
 			<xs:documentation>	- FATAL - nelze pokračovat v daném přenosu
-	- BUSY - příjemce je zaneprázdněn, lze opakovat požadavek</xs:documentation>
+	- BUSY - příjemce je zaneprázdněn, lze opakovat požadavek
+
+Odpovídající datový prvek v ISDP: CA0004</xs:documentation>
 		</xs:annotation>
 		<xs:restriction base="xs:string">
 			<xs:enumeration value="BUSY"/>
@@ -77,11 +81,18 @@
 	</xs:simpleType>
 	<xs:simpleType name="ErrorDetail">
 		<xs:annotation>
-			<xs:documentation>Volitelný textový popis chyby, který upřesňuje standardní chybu v SOAP obálce. Položka slouží k lepšímu porozumění a příčině chyby.</xs:documentation>
+			<xs:documentation>Volitelný textový popis chyby, který upřesňuje standardní chybu v SOAP obálce. Položka slouží k lepšímu porozumění a příčině chyby.
+
+Odpovídající datový prvek v ISDP: CA0011</xs:documentation>
 		</xs:annotation>
 		<xs:restriction base="xs:string"/>
 	</xs:simpleType>
 	<xs:simpleType name="FileTransferState">
+		<xs:annotation>
+			<xs:documentation>Možné stavy přenosu.
+
+Odpovídající datový prvek v ISDP: CA0011</xs:documentation>
+		</xs:annotation>
 		<xs:restriction base="xs:string">
 			<xs:enumeration value="ACTIVE"/>
 			<xs:enumeration value="FAILED"/>
@@ -90,13 +101,17 @@
 	</xs:simpleType>
 	<xs:simpleType name="FrameSeqNum">
 		<xs:annotation>
-			<xs:documentation>Pořadové číslo rámce</xs:documentation>
+			<xs:documentation>Pořadové číslo rámce
+
+Odpovídající datový prvek v ISDP: CA0009</xs:documentation>
 		</xs:annotation>
 		<xs:restriction base="xs:int"/>
 	</xs:simpleType>
 	<xs:simpleType name="TransferIdType">
 		<xs:annotation>
-			<xs:documentation>Typ pro identifikátor přenosu</xs:documentation>
+			<xs:documentation>Typ pro identifikátor přenosu
+
+Odpovídající datový prvek v ISDP: CA0004</xs:documentation>
 		</xs:annotation>
 		<xs:restriction base="xs:string"/>
 	</xs:simpleType>
@@ -122,7 +137,9 @@
 				<xs:sequence/>
 				<xs:attribute name="n" use="required" type="xs:string">
 					<xs:annotation>
-						<xs:documentation>Jméno přenášeného adresáře. Uvádí se prosté jméno položky, tj. bez cesty.</xs:documentation>
+						<xs:documentation>Jméno přenášeného adresáře. Uvádí se prosté jméno položky, tj. bez cesty.
+
+Odpovídající datový prvek v ISDP: CA0011</xs:documentation>
 					</xs:annotation>
 				</xs:attribute>
 			</xs:extension>
@@ -154,12 +171,16 @@
 				<xs:attribute name="fs" use="required" type="xs:long">
 					<xs:annotation>
 						<xs:documentation>Velikost souboru v bytech, může být větší než 
-2/4GB.</xs:documentation>
+2/4GB.
+
+Odpovídající datový prvek v ISDP: CA0009</xs:documentation>
 					</xs:annotation>
 				</xs:attribute>
 				<xs:attribute name="n" use="required" type="xs:string">
 					<xs:annotation>
-						<xs:documentation>Jméno přenášeného souboru. Uvádí se prosté jméno položky, tj. bez cesty.</xs:documentation>
+						<xs:documentation>Jméno přenášeného souboru. Uvádí se prosté jméno položky, tj. bez cesty.
+
+Odpovídající datový prvek v ISDP: CA0011</xs:documentation>
 					</xs:annotation>
 				</xs:attribute>
 			</xs:extension>
@@ -174,12 +195,16 @@
 				<xs:sequence/>
 				<xs:attribute name="ds" use="required" type="xs:long">
 					<xs:annotation>
-						<xs:documentation>Velikost přenášených dat v bloku.</xs:documentation>
+						<xs:documentation>Velikost přenášených dat v bloku.
+
+Odpovídající datový prvek v ISDP: CA0009</xs:documentation>
 					</xs:annotation>
 				</xs:attribute>
 				<xs:attribute name="off" use="required" type="xs:long">
 					<xs:annotation>
-						<xs:documentation>Offset dat v souboru.</xs:documentation>
+						<xs:documentation>Offset dat v souboru.
+
+Odpovídající datový prvek v ISDP: CA0009</xs:documentation>
 					</xs:annotation>
 				</xs:attribute>
 			</xs:extension>
@@ -194,7 +219,9 @@
 				<xs:sequence/>
 				<xs:attribute name="lm" use="required" type="xs:long">
 					<xs:annotation>
-						<xs:documentation>Čas poslední modifikace souboru.</xs:documentation>
+						<xs:documentation>Čas poslední modifikace souboru.
+
+Odpovídající datový prvek v ISDP: CA0009</xs:documentation>
 					</xs:annotation>
 				</xs:attribute>
 			</xs:extension>
@@ -224,11 +251,11 @@ Každý blok se týká nějaké položka. ID položky musí být v bloku vždy u
 				<xs:annotation>
 					<xs:documentation>Jeden přenášený blok</xs:documentation>
 				</xs:annotation>
+				<xs:element name="db" type="ft:DirBegin" minOccurs="0" maxOccurs="1"/>
 				<xs:element name="de" type="ft:DirEnd" minOccurs="0" maxOccurs="1"/>
+				<xs:element name="fb" type="ft:FileBegin" minOccurs="0" maxOccurs="1"/>
 				<xs:element name="fd" type="ft:FileData" minOccurs="0" maxOccurs="1"/>
 				<xs:element name="fe" type="ft:FileEnd" minOccurs="0" maxOccurs="1"/>
-				<xs:element name="fb" type="ft:FileBegin" minOccurs="0" maxOccurs="1"/>
-				<xs:element name="db" type="ft:DirBegin" minOccurs="0" maxOccurs="1"/>
 			</xs:choice>
 		</xs:sequence>
 	</xs:complexType>
@@ -237,29 +264,41 @@ Každý blok se týká nějaké položka. ID položky musí být v bloku vždy u
 			<xs:documentation>Rámec definuje přenášené složky a soubory, pro data souborů obsahuje jeden datový stream (preferovaná implementace je MTOM). Jeden velký soubor může být rozložen do několika rámců. Naopak několik menších souborů může být odesláno v jednom rámci. Vše se odvíjí od definované max. velikosti rámce a max. počtu bloků (složky + soubory) v rámci.</xs:documentation>
 		</xs:annotation>
 		<xs:sequence>
-			<xs:element name="blocks" type="ft:FrameBlocks" minOccurs="1" maxOccurs="1"/>
+			<xs:element name="blocks" type="ft:FrameBlocks" minOccurs="1" maxOccurs="1">
+				<xs:annotation>
+					<xs:documentation>Rámec definuje přenášené složky a soubory, pro data souborů obsahuje jeden datový stream (preferovaná implementace je MTOM). Jeden velký soubor může být rozložen do několika rámců. Naopak několik menších souborů může být odesláno v jednom rámci. Vše se odvíjí od definované max. velikosti rámce a max. počtu bloků (složky + soubory) v rámci.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
 			<xs:element name="data" type="xs:base64Binary" xmime:expectedContentTypes="application/octet-stream" minOccurs="1" maxOccurs="1">
 				<xs:annotation>
 					<xs:documentation>Přenášená data souborů. Implementace by měly podporovat rozšíření MTOM pro efektivní přenos binárních dat.
 
 Implementační poznámka k vytváření XSD: 
-If you would like to use MTOM you have to add the xmime:expectedContentTypes="application/octet-stream" attribute (namespace is predefined).</xs:documentation>
+If you would like to use MTOM you have to add the xmime:expectedContentTypes="application/octet-stream" attribute (namespace is predefined).
+
+Odpovídající datový prvek v ISDP: CA0010</xs:documentation>
 				</xs:annotation>
 			</xs:element>
 		</xs:sequence>
 		<xs:attribute name="dataSize" use="required" type="xs:long">
 			<xs:annotation>
-				<xs:documentation>Velikost přenášených dat v rámci, tj. velikost dat v atributu data.</xs:documentation>
+				<xs:documentation>Velikost přenášených dat v rámci, tj. velikost dat v atributu data.
+
+Odpovídající datový prvek v ISDP: CA0009</xs:documentation>
 			</xs:annotation>
 		</xs:attribute>
 		<xs:attribute name="last" use="optional" type="xs:boolean">
 			<xs:annotation>
-				<xs:documentation>Příznak, zda se jedná o poslední rámec přenosu.</xs:documentation>
+				<xs:documentation>Příznak, zda se jedná o poslední rámec přenosu.
+
+Odpovídající datový prvek v ISDP: CA0008</xs:documentation>
 			</xs:annotation>
 		</xs:attribute>
 		<xs:attribute name="seqNum" use="required" type="xs:int">
 			<xs:annotation>
-				<xs:documentation>Sekvenční číslo rámce. První rámec má číslo 1.</xs:documentation>
+				<xs:documentation>Sekvenční číslo rámce. První rámec má číslo 1.
+
+Odpovídající datový prvek v ISDP: CA0009</xs:documentation>
 			</xs:annotation>
 		</xs:attribute>
 	</xs:complexType>
@@ -278,12 +317,16 @@ If you would like to use MTOM you have to add the xmime:expectedContentTypes="ap
 		</xs:sequence>
 		<xs:attribute name="id" use="optional" type="xs:string">
 			<xs:annotation>
-				<xs:documentation>Identifikátor pro uživatelská data</xs:documentation>
+				<xs:documentation>Identifikátor pro uživatelská data
+
+Odpovídající datový prvek v ISDP: CA0004</xs:documentation>
 			</xs:annotation>
 		</xs:attribute>
 		<xs:attribute name="type" use="required" type="xs:string">
 			<xs:annotation>
-				<xs:documentation>Typ přenášených uživatelských dat</xs:documentation>
+				<xs:documentation>Typ přenášených uživatelských dat.
+
+Odpovídající datový prvek v ISDP: CA0011</xs:documentation>
 			</xs:annotation>
 		</xs:attribute>
 	</xs:complexType>
@@ -324,7 +367,9 @@ If you would like to use MTOM you have to add the xmime:expectedContentTypes="ap
 		</xs:attribute>
 		<xs:attribute name="state" use="required" type="ft:FileTransferState">
 			<xs:annotation>
-				<xs:documentation>Stav přenosu</xs:documentation>
+				<xs:documentation>Stav přenosu
+
+Odpovídající datový prvek v ISDP: CA0011</xs:documentation>
 			</xs:annotation>
 		</xs:attribute>
 	</xs:complexType>

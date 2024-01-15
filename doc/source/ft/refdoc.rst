@@ -14,4 +14,4 @@ Referenční dokumentace
 
 `Referenční dokumentace služby`_
 
-.. _`Referenční dokumentace služby`: ../../ws-specs/ft/index.html
+.. _`Referenční dokumentace služby`: ../model/index.html
