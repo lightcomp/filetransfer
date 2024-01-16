@@ -10,7 +10,7 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<java.version>17</java.version>
-		<cxf.version>4.0.0</cxf.version>
+        <cxf.version>4.0.3</cxf.version>
 	</properties>
 
 	<dependencies>
@@ -50,6 +50,11 @@
 			<artifactId>cxf-rt-features-logging</artifactId>
 			<version>${cxf.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>org.glassfish.jaxb</groupId>
+			<artifactId>jaxb-runtime</artifactId>
+			<version>4.0.4</version>
+		</dependency>
 		<!-- test -->
 		<dependency>
 			<groupId>junit</groupId>
@@ -62,11 +67,6 @@
 			<artifactId>concurrentunit</artifactId>
 			<version>0.4.6</version>
 			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.glassfish.jaxb</groupId>
-			<artifactId>jaxb-runtime</artifactId>
-			<version>4.0.2</version>
 		</dependency>
 	</dependencies>
 
@@ -95,15 +95,18 @@
 				</executions>
 			</plugin>
 			<plugin>
-				<groupId>org.apache.cxf</groupId>
-				<artifactId>cxf-codegen-plugin</artifactId>
-				<version>${cxf.version}</version>
+                <groupId>org.apache.cxf</groupId>
+                <artifactId>cxf-codegen-plugin</artifactId>
+                <version>${cxf.version}</version>
 				<executions>
 					<execution>
 						<id>ft-api</id>
 						<phase>generate-sources</phase>
+                        <goals>
+                            <goal>wsdl2java</goal>
+						</goals>					
 						<configuration>
-							<sourceRoot>target/generated-sources/api</sourceRoot>
+							<sourceRoot>${project.build.directory}/generated-sources/api</sourceRoot>
 							<wsdlOptions>
 								<wsdlOption>
 									<wsdl>src/main/resources/wsdl/file-transfer-v1.wsdl</wsdl>
@@ -116,11 +119,16 @@
 								</wsdlOption>
 							</wsdlOptions>
 						</configuration>
-						<goals>
-							<goal>wsdl2java</goal>
-						</goals>
 					</execution>
 				</executions>
+				<dependencies>
+					<dependency>
+                                    <groupId>org.jvnet.jaxb</groupId>
+                                    <artifactId>jaxb-plugins</artifactId>
+                                    <version>4.0.0</version>
+					</dependency>
+				</dependencies>
+<!--
 				<dependencies>
 					<dependency>						
 						<groupId>jakarta.xml.ws</groupId>
@@ -134,8 +142,27 @@
 						<version>3.0.0-SNAPSHOT</version>
 					</dependency>
 
-				</dependencies>
+				</dependencies>-->
 			</plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>3.5.0</version>
+                <executions>
+                    <execution>
+                        <id>add-gen-sources</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>add-source</goal>
+						</goals>
+                        <configuration>
+                            <sources>
+                                <source>${project.build.directory}/generated-sources/api</source>
+							</sources>
+						</configuration>
+					</execution>
+                </executions>
+            </plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-dependency-plugin</artifactId>

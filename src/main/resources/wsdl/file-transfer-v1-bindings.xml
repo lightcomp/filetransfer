@@ -3,7 +3,7 @@
 	xmlns="https://jakarta.ee/xml/ns/jaxb"
 	xmlns:xsd="http://www.w3.org/2001/XMLSchema" 
 	xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc"
-	xmlns:inh="http://jaxb3-commons.dev.java.net/basic/inheritance">
+	xmlns:inh="urn:jaxb.jvnet.org:plugin:inheritance">
 
 	<jaxws:bindings xmlns:jaxws="https://jakarta.ee/xml/ns/jaxws">
 		<jaxws:enableWrapperStyle>false</jaxws:enableWrapperStyle> <!-- force bare methods (do not unwrap) -->
