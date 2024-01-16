@@ -89,7 +89,7 @@ public class SendFrameContextImpl implements SendFrameContext {
 
         // create frame blocks
         FrameBlocks fbs = new FrameBlocks();
-        fbs.getDesAndFdsAndFes().addAll(blocks);
+        fbs.getDbsAndDesAndFbs().addAll(blocks);
         frame.setBlocks(fbs);
 
         // set MTOM data source

@@ -167,7 +167,7 @@ public class RecvFrameProcessor {
 
     public static RecvFrameProcessor create(RecvContext recvCtx, Frame frame) {
         boolean last = Boolean.TRUE.equals(frame.isLast());
-        Collection<FrameBlock> blocks = frame.getBlocks().getDesAndFdsAndFes();
+        Collection<FrameBlock> blocks = frame.getBlocks().getDbsAndDesAndFbs();
         return new RecvFrameProcessor(recvCtx, frame.getSeqNum(), last, blocks, frame.getData(), frame.getDataSize());
     }
 }
