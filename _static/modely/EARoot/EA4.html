@@ -1,0 +1,334 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>Types</title>
+<link href="../css/ea.css" rel="stylesheet" type="text/css" />
+<script language="JavaScript" src="../js/displayToc.js" type="text/javascript"></script>
+<script>
+
+  function switchProjectProperties() {
+			if (document.getElementById("proj00").style.display == "none") {
+				document.getElementById("proj00").style.display = "revert";
+				document.getElementById("proj01").style.display = "revert";
+				document.getElementById("proj02").style.display = "revert";
+				document.getElementById("proj03").style.display = "revert";
+				document.getElementById("proj04").style.display = "revert";
+				document.getElementById("proj05").style.display = "revert";
+			} else {
+				document.getElementById("proj00").style.display = "none";
+				document.getElementById("proj01").style.display = "none";
+				document.getElementById("proj02").style.display = "none";
+				document.getElementById("proj03").style.display = "none";
+				document.getElementById("proj04").style.display = "none";
+				document.getElementById("proj05").style.display = "none";
+			}
+}
+
+		function switchAdvancedProperties(){
+
+			if (document.getElementById("adv00").style.display == "none") {;
+				document.getElementById("adv00").style.display = "revert";
+				document.getElementById("adv01").style.display = "revert";
+			} else {
+				document.getElementById("adv00").style.display = "none";
+				document.getElementById("adv01").style.display = "none";
+			}
+		}
+		function initPage()
+        {			
+			var divs = document.getElementsByClassName("ObjectDetailsNotes");
+			for (var j = 0; j < divs.length; j++) {
+				var tmpStr = divs[j].innerHTML;
+				tmpStr = tmpStr.replace(/#gt;/g, "&gt;");
+				tmpStr = tmpStr.replace(/#lt;/g, "&lt;");
+
+				tmpStr = tmpStr.replace(/&gt;/g, ">");
+				tmpStr = tmpStr.replace(/&lt;/g, "<");
+
+				divs[j].innerHTML = tmpStr;
+			}
+
+            if (document.getElementById('TableGroup') != null)
+            {
+                toggleItem(document.getElementById('TableGroup').getElementsByTagName('li')[0].id.replace("Title", ""));
+            }
+
+        }
+</script>
+<style>
+
+</style>
+</head>
+<body onload="initPage();">
+<div class="section group" >
+
+		<div class="col span_2_of_2 header_frame">
+			<h1> Types </h1>
+			<!-- <img class="header_image" src="../images/ea-banner.png" align="right" alt="Header Image" />-->
+			<img class="header_image" src="../images/ea-banner.png" align="right" alt="Header Image" />
+		</div>
+		<div class="col span_2_of_2 breadcrumb_frame">
+			<p><a href="EA3.html">FileTrasnfer API v1</a> / <a href="./EA1/EA26.html">Types</a></p>
+		</div>
+			
+		<table class="contentmaintable">
+			<!-- <tfoot>
+				<tr>
+					<td>foot1</td>
+					<td>foot2</td>
+				</tr>
+			</tfoot> -->
+			<tbody>
+				<tr>
+					<td class="indexcell">
+						<div class="projectBrowserTitle">Project: </div>
+						<ul>
+<li><img src="../images/175.png" alt="Diagram"/> <a href="./EA1/EA6.html">Basic Types</a></li>
+<li><img src="../images/175.png" alt="Diagram"/> <a href="./EA1/EA8.html">Error description</a></li>
+<li><img src="../images/175.png" alt="Diagram"/> <a href="./EA1/EA10.html">Generic data</a></li>
+<li><img src="../images/175.png" alt="Diagram"/> <a href="./EA1/EA12.html">Begin</a></li>
+<li><img src="../images/175.png" alt="Diagram"/> <a href="./EA1/EA14.html">Frame</a></li>
+<li><img src="../images/175.png" alt="Diagram"/> <a href="./EA1/EA16.html">Receive</a></li>
+<li><img src="../images/175.png" alt="Diagram"/> <a href="./EA1/EA18.html">Send</a></li>
+<li><img src="../images/175.png" alt="Diagram"/> <a href="./EA1/EA20.html">FinishRequest</a></li>
+<li><img src="../images/175.png" alt="Diagram"/> <a href="./EA1/EA22.html">Status</a></li>
+<li><img src="../images/175.png" alt="Diagram"/> <a href="./EA1/EA24.html">AbortRequest</a></li>
+<li><img src="../images/5.png" alt="Class"/> <a href="./EA1/EA27.html">AbortRequest</a></li>
+<li><img src="../images/5.png" alt="Class"/> <a href="./EA1/EA28.html">AbortRequestType</a></li>
+<li><img src="../images/5.png" alt="Class"/> <a href="./EA1/EA29.html">BeginRequest</a></li>
+<li><img src="../images/5.png" alt="Class"/> <a href="./EA1/EA30.html">BeginResponse</a></li>
+<li><img src="../images/5.png" alt="Class"/> <a href="./EA1/EA31.html">BeginResponseType</a></li>
+<li><img src="../images/5.png" alt="Class"/> <a href="./EA1/EA32.html">BinData</a></li>
+<li><img src="../images/5.png" alt="Class"/> <a href="./EA1/EA33.html">DirBegin</a></li>
+<li><img src="../images/5.png" alt="Class"/> <a href="./EA1/EA34.html">DirEnd</a></li>
+<li><img src="../images/5.png" alt="Class"/> <a href="./EA1/EA35.html">ErrorDescription</a></li>
+<li><img src="../images/5.png" alt="Class"/> <a href="./EA1/EA36.html">ErrorDescriptionType</a></li>
+<li><img src="../images/5.png" alt="Class"/> <a href="./EA1/EA37.html">ErrorDetail</a></li>
+<li><img src="../images/5.png" alt="Class"/> <a href="./EA1/EA38.html">FileBegin</a></li>
+<li><img src="../images/5.png" alt="Class"/> <a href="./EA1/EA39.html">FileData</a></li>
+<li><img src="../images/5.png" alt="Class"/> <a href="./EA1/EA40.html">FileEnd</a></li>
+<li><img src="../images/5.png" alt="Class"/> <a href="./EA1/EA41.html">TransferStatus</a></li>
+<li><img src="../images/5.png" alt="Class"/> <a href="./EA1/EA42.html">TransferStatusType</a></li>
+<li><img src="../images/5.png" alt="Class"/> <a href="./EA1/EA43.html">FinishRequest</a></li>
+<li><img src="../images/5.png" alt="Class"/> <a href="./EA1/EA44.html">FinishRequestType</a></li>
+<li><img src="../images/5.png" alt="Class"/> <a href="./EA1/EA45.html">Frame</a></li>
+<li><img src="../images/5.png" alt="Class"/> <a href="./EA1/EA46.html">FrameBlock</a></li>
+<li><img src="../images/5.png" alt="Class"/> <a href="./EA1/EA47.html">FrameBlocks</a></li>
+<li><img src="../images/5.png" alt="Class"/> <a href="./EA1/EA48.html">FrameBlockChoice</a></li>
+<li><img src="../images/5.png" alt="Class"/> <a href="./EA1/EA49.html">FrameSeqNum</a></li>
+<li><img src="../images/5.png" alt="Class"/> <a href="./EA1/EA50.html">FrameType</a></li>
+<li><img src="../images/5.png" alt="Class"/> <a href="./EA1/EA51.html">GenericData</a></li>
+<li><img src="../images/5.png" alt="Class"/> <a href="./EA1/EA52.html">GenericDataType</a></li>
+<li><img src="../images/5.png" alt="Class"/> <a href="./EA1/EA53.html">GenericDataWrapper</a></li>
+<li><img src="../images/5.png" alt="Class"/> <a href="./EA1/EA54.html">ReceiveRequest</a></li>
+<li><img src="../images/5.png" alt="Class"/> <a href="./EA1/EA55.html">ReceiveRequestType</a></li>
+<li><img src="../images/5.png" alt="Class"/> <a href="./EA1/EA56.html">SendRequest</a></li>
+<li><img src="../images/5.png" alt="Class"/> <a href="./EA1/EA57.html">SendRequestType</a></li>
+<li><img src="../images/5.png" alt="Class"/> <a href="./EA1/EA58.html">TransferId</a></li>
+<li><img src="../images/5.png" alt="Class"/> <a href="./EA1/EA59.html">TransferIdType</a></li>
+<li><img src="../images/5.png" alt="Class"/> <a href="./EA1/EA60.html">TransferStatusRequest</a></li>
+<li><img src="../images/5.png" alt="Class"/> <a href="./EA1/EA61.html">TransferStatusRequestType</a></li>
+<li><img src="../images/5.png" alt="Class"/> <a href="./EA1/EA62.html">AnyData</a></li>
+<li><img src="../images/5.png" alt="Class"/> <a href="./EA1/EA63.html">XmlData</a></li>
+<li><img src="../images/247.png" alt="Enumeration"/> <a href="./EA1/EA64.html">ErrorCode</a></li>
+<li><img src="../images/247.png" alt="Enumeration"/> <a href="./EA1/EA65.html">FileTransferState</a></li>
+</ul>
+
+					</td>
+					<td class="contentcell"><div class="pageHeader"></div>
+<div class="PageBody">
+	<span class="ObjectTitle">Types  : Public  &lt;&lt;XSDschema&gt;&gt; Package</span>
+	<table border="0" class="ObjectDetails">
+		<tr>
+			<td width="15%" class="ObjectDetailsTopic">Created:</td>
+			<td width="85%" class="ObjectDetailsValue">15.02.2018 15:23:21</td>
+		</tr>
+		<tr>
+			<td class="ObjectDetailsTopic">Modified:</td>
+			<td class="ObjectDetailsValue">20.08.2019 17:32:12</td>
+		</tr>
+		<tr style="height: 10px"><td colspan="2"></td></tr>
+		<tr>
+			<td class="ObjectDetailsTopic"><button onclick="switchProjectProperties()"><img src="../images/plus03.gif" align="absmiddle" id="proj" /></button>Project:</td>
+			<td class="ObjectDetailsValue"></td>
+		</tr>
+		<tr id="proj00" style="display: none;">
+			<td class="ObjectDetailsTopic" style="padding-left: 18px;">Author:</td>
+			<td class="ObjectDetailsValue"></td>
+		</tr>
+		<tr id="proj01" style="display: none;">
+			<td class="ObjectDetailsTopic" style="padding-left: 18px;">Version:</td>
+			<td class="ObjectDetailsValue">1.0</td>
+		</tr>
+		<tr id="proj02" style="display: none;">
+			<td class="ObjectDetailsTopic" style="padding-left: 18px;">Phase:</td>
+			<td class="ObjectDetailsValue">1.0</td>
+		</tr>
+		<tr id="proj03" style="display: none;">
+			<td class="ObjectDetailsTopic" style="padding-left: 18px;">Status:</td>
+			<td class="ObjectDetailsValue">Proposed</td>
+		</tr>
+		<tr id="proj04" style="display: none;">
+			<td class="ObjectDetailsTopic" style="padding-left: 18px;">Complexity:</td>
+			<td class="ObjectDetailsValue">Easy</td>
+		</tr>
+		<tr id="proj05" style="display: none;">
+			<td class="ObjectDetailsTopic" style="padding-left: 18px;">Difficulty:</td>
+			<td class="ObjectDetailsValue"></td>
+		</tr>
+		<tr id="proj06" style="display: none;">
+			<td class="ObjectDetailsTopic" style="padding-left: 18px;">Priority:</td>
+			<td class="ObjectDetailsValue"></td>
+		</tr>
+		<tr id="proj05" style="display: none;">
+			<td class="ObjectDetailsTopic" >Multiplicity:</td>
+			<td class="ObjectDetailsValue"></td>
+		</tr>
+		<tr>
+			<td class="ObjectDetailsTopic"><button onclick="switchAdvancedProperties()"><img src="../images/plus03.gif" align="absmiddle" id="adv" /></button>Advanced:</td>
+			<td class="ObjectDetailsValue"></td>
+		</tr>
+		<tr id="adv00" style="display: none;">
+			<td class="ObjectDetailsTopic" style="padding-left: 18px;">UUID:</td>
+			<td class="ObjectDetailsValue">{981959EF-DFD7-42aa-A4E8-AA1029B0B779}</td>
+		</tr>
+		<tr id="adv01" style="display: none;">
+			<td class="ObjectDetailsTopic" style="padding-left: 18px;">Appears In:</td>
+			<td class="ObjectDetailsValue"><a href="EA1.html">Overview</a></td>
+		</tr>
+	</table>
+	<div class="ObjectDetailsNotes">Definice datových typù - XSD schéma&lt;br/&gt;</div>
+
+	<div class="TableGroup" id="TableGroup">
+		<ul class="ItemTitle">
+			<li onClick="parent != null ? parent.toggleItem('TaggedVal') : toggleItem('TaggedVal');" id="TaggedValTitle">Tagged Values</li>
+		</ul>
+<div class="ItemBody" id="TaggedValTable">
+	<table align="center" border="0" cellspacing="0" cellpadding="0" class="Table">
+		<tr>
+			<td width="50%" class="TableHeading">Tag</td>
+			<td width="50%" class="TableHeading">Value</td>
+		</tr>
+					<tr>
+				<td width="50%" class="TableRow" valign="top">anonymousRole</td>
+				<td width="50%" class="TableRow" valign="top">false</td>
+			</tr>	
+			<tr>
+				<td class="TableRowBottomDashed"  colspan="2">
+					Details:
+						<div class="ObjectDetailsNotes">Values: true | false<br />Default: false<br />Description: Specifies if the role name is included in the element declaration for the UML attribute<br /></div>
+
+				</td>
+			</tr>			<tr>
+				<td width="50%" class="TableRow" valign="top">anonymousType</td>
+				<td width="50%" class="TableRow" valign="top">true</td>
+			</tr>	
+			<tr>
+				<td class="TableRowBottomDashed"  colspan="2">
+					Details:
+						<div class="ObjectDetailsNotes">Values: true | false<br />Default: true<br />Description: Specifies whether the class type is anonymous for attributes<br /></div>
+
+				</td>
+			</tr>			<tr>
+				<td width="50%" class="TableRow" valign="top">attributeFormDefault</td>
+				<td width="50%" class="TableRow" valign="top">unqualified</td>
+			</tr>	
+			<tr>
+				<td class="TableRowBottomDashed"  colspan="2">
+					Details:
+						<div class="ObjectDetailsNotes">Values: qualified | unqualified<br />Default: unqualified<br />Description: Global default specifying whether instance attributes require namespace prefix<br /></div>
+
+				</td>
+			</tr>			<tr>
+				<td width="50%" class="TableRow" valign="top">elementDerivation</td>
+				<td width="50%" class="TableRow" valign="top">true</td>
+			</tr>	
+			<tr>
+				<td class="TableRowBottomDashed"  colspan="2">
+					Details:
+						<div class="ObjectDetailsNotes">Values: true | false<br />Default: true<br />Description: Determines whether derived complexType definitions will be used or copy down inheritance<br /></div>
+
+				</td>
+			</tr>			<tr>
+				<td width="50%" class="TableRow" valign="top">elementFormDefault</td>
+				<td width="50%" class="TableRow" valign="top">unqualified</td>
+			</tr>	
+			<tr>
+				<td class="TableRowBottomDashed"  colspan="2">
+					Details:
+						<div class="ObjectDetailsNotes">Values: qualified | unqualified<br />Default: unqualified<br />Description: Global default specifying whether instance elements require namespace prefix<br /></div>
+
+				</td>
+			</tr>			<tr>
+				<td width="50%" class="TableRow" valign="top">memberNames</td>
+				<td width="50%" class="TableRow" valign="top">unqualified</td>
+			</tr>	
+			<tr>
+				<td class="TableRowBottomDashed"  colspan="2">
+					Details:
+						<div class="ObjectDetailsNotes">Values: qualified | unqualified<br />Default: unqualified<br />Description: Determines whether the UML attribute and role names are qualified by the UML class name<br /></div>
+
+				</td>
+			</tr>			<tr>
+				<td width="50%" class="TableRow" valign="top">modelGroup</td>
+				<td width="50%" class="TableRow" valign="top">sequence</td>
+			</tr>	
+			<tr>
+				<td class="TableRowBottomDashed"  colspan="2">
+					Details:
+						<div class="ObjectDetailsNotes">Values: all | sequence | choice<br />Default: sequence<br />Description: Default model group used when generating complexType definitions for this Schema<br /></div>
+
+				</td>
+			</tr>			<tr>
+				<td width="50%" class="TableRow" valign="top">schemaLocation</td>
+				<td width="50%" class="TableRow" valign="top">file-transfer-v1.xsd</td>
+			</tr>	
+			<tr>
+				<td class="TableRowBottomDashed"  colspan="2">
+					Details:
+						<div class="ObjectDetailsNotes">Description: URI which identifies the location of the schema<br /></div>
+
+				</td>
+			</tr>			<tr>
+				<td width="50%" class="TableRow" valign="top">targetNamespace</td>
+				<td width="50%" class="TableRow" valign="top"><a href="http://www.lightcomp.com/ft/xsd/v1" target="_blank" >http://www.lightcomp.com/ft/xsd/v1</a></td>
+			</tr>	
+			<tr>
+				<td class="TableRowBottomDashed"  colspan="2">
+					Details:
+						<div class="ObjectDetailsNotes">Description: URI to unique target namespace<br /></div>
+
+				</td>
+			</tr>			<tr>
+				<td width="50%" class="TableRow" valign="top">targetNamespacePrefix</td>
+				<td width="50%" class="TableRow" valign="top">ft</td>
+			</tr>	
+			<tr>
+				<td class="TableRowBottomDashed"  colspan="2">
+					Details:
+						<div class="ObjectDetailsNotes">Description: Prefix associated with namespace<br /></div>
+
+				</td>
+			</tr>			<tr>
+				<td width="50%" class="TableRow" valign="top">xmlns</td>
+				<td width="50%" class="TableRow" valign="top"><a href="xmlns:xmime=http://www.w3.org/2005/05/xmlmime,<br />xmlns:xs=http://www.w3.org/2001/XMLSchema" target="_blank" >xmlns:xmime=http://www.w3.org/2005/05/xmlmime,<br />xmlns:xs=http://www.w3.org/2001/XMLSchema</a></td>
+			</tr>	
+			<tr>
+				<td class="TableRowBottomDashed"  colspan="2">
+					Details:
+						&nbsp;
+				</td>
+			</tr>
+	</table>
+</div>	</div>
+ </div>
+ </td>
+				</tr>
+			</tbody>
+		</table>
+		
+</div>
+</body>
+</html>
+

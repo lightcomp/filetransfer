@@ -1,0 +1,2 @@
+tocTab[tocTab.length] = new Array("0.2.3:1", "", "Bindings", "EARoot/EA2/EA3/EA95.html", "175.png", "8", "0", "", "Logical diagram0","{21024E80-B45B-41c8-8B2E-325ED50CD77F}");
+tocTab[tocTab.length] = new Array("0.2.3:2", "", "FileTransferSOAPBinding", "EARoot/EA2/EA3/EA98.html", "5.png", "E35", "0", "", "Class0","{B1F3DA10-9BDB-4cc1-BCF2-6633E35A71C7}");

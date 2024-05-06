@@ -1,0 +1,383 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>FileTransferService</title>
+<link href="../../../css/ea.css" rel="stylesheet" type="text/css" />
+<script language="JavaScript" src="../../../js/displayToc.js" type="text/javascript"></script>
+<script>
+
+  function switchProjectProperties() {
+			if (document.getElementById("proj00").style.display == "none") {
+				document.getElementById("proj00").style.display = "revert";
+				document.getElementById("proj01").style.display = "revert";
+				document.getElementById("proj02").style.display = "revert";
+				document.getElementById("proj03").style.display = "revert";
+				document.getElementById("proj04").style.display = "revert";
+				document.getElementById("proj05").style.display = "revert";
+			} else {
+				document.getElementById("proj00").style.display = "none";
+				document.getElementById("proj01").style.display = "none";
+				document.getElementById("proj02").style.display = "none";
+				document.getElementById("proj03").style.display = "none";
+				document.getElementById("proj04").style.display = "none";
+				document.getElementById("proj05").style.display = "none";
+			}
+}
+
+		function switchAdvancedProperties(){
+
+			if (document.getElementById("adv00").style.display == "none") {;
+				document.getElementById("adv00").style.display = "revert";
+				document.getElementById("adv01").style.display = "revert";
+			} else {
+				document.getElementById("adv00").style.display = "none";
+				document.getElementById("adv01").style.display = "none";
+			}
+		}
+		function initPage()
+        {			
+			var divs = document.getElementsByClassName("ObjectDetailsNotes");
+			for (var j = 0; j < divs.length; j++) {
+				var tmpStr = divs[j].innerHTML;
+				tmpStr = tmpStr.replace(/#gt;/g, "&gt;");
+				tmpStr = tmpStr.replace(/#lt;/g, "&lt;");
+
+				tmpStr = tmpStr.replace(/&gt;/g, ">");
+				tmpStr = tmpStr.replace(/&lt;/g, "<");
+
+				divs[j].innerHTML = tmpStr;
+			}
+
+            if (document.getElementById('TableGroup') != null)
+            {
+                toggleItem(document.getElementById('TableGroup').getElementsByTagName('li')[0].id.replace("Title", ""));
+            }
+
+        }
+</script>
+<style>
+
+</style>
+</head>
+<body onload="initPage();">
+<div class="section group" >
+
+		<div class="col span_2_of_2 header_frame">
+			<h1> FileTransferService </h1>
+			<!-- <img class="header_image" src="../../../images/ea-banner.png" align="right" alt="Header Image" />-->
+			<img class="header_image" src="../../../images/ea-banner.png" align="right" alt="Header Image" />
+		</div>
+		<div class="col span_2_of_2 breadcrumb_frame">
+			<p><a href="../../EA3.html">FileTrasnfer API v1</a> / <a href="../EA68.html">WebService</a> / <a href="EA93.html">PortTypes</a> / <a href="EA94.html">FileTransferService</a></p>
+		</div>
+			
+		<table class="contentmaintable">
+			<!-- <tfoot>
+				<tr>
+					<td>foot1</td>
+					<td>foot2</td>
+				</tr>
+			</tfoot> -->
+			<tbody>
+				<tr>
+					<td class="indexcell">
+						<div class="projectBrowserTitle">Project: </div>
+						<ul>
+<a href="EA93.html">PortTypes</a></ul>
+
+					</td>
+					<td class="contentcell"><div class="pageHeader"></div>
+<div class="PageBody">
+	<span class="ObjectTitle">FileTransferService  : Public abstract &lt;&lt;WSDLportType&gt;&gt; Interface</span>
+	<table border="0" class="ObjectDetails">
+		<tr>
+			<td width="15%" class="ObjectDetailsTopic">Created:</td>
+			<td width="85%" class="ObjectDetailsValue">16.02.2018 10:31:32</td>
+		</tr>
+		<tr>
+			<td class="ObjectDetailsTopic">Modified:</td>
+			<td class="ObjectDetailsValue">21.08.2019 0:48:48</td>
+		</tr>
+		<tr style="height: 10px"><td colspan="2"></td></tr>
+		<tr>
+			<td class="ObjectDetailsTopic"><button onclick="switchProjectProperties()"><img src="../../../images/plus03.gif" align="absmiddle" id="proj" /></button>Project:</td>
+			<td class="ObjectDetailsValue"></td>
+		</tr>
+		<tr id="proj00" style="display: none;">
+			<td class="ObjectDetailsTopic" style="padding-left: 18px;">Author:</td>
+			<td class="ObjectDetailsValue">todtj</td>
+		</tr>
+		<tr id="proj01" style="display: none;">
+			<td class="ObjectDetailsTopic" style="padding-left: 18px;">Version:</td>
+			<td class="ObjectDetailsValue">1.0</td>
+		</tr>
+		<tr id="proj02" style="display: none;">
+			<td class="ObjectDetailsTopic" style="padding-left: 18px;">Phase:</td>
+			<td class="ObjectDetailsValue">1.0</td>
+		</tr>
+		<tr id="proj03" style="display: none;">
+			<td class="ObjectDetailsTopic" style="padding-left: 18px;">Status:</td>
+			<td class="ObjectDetailsValue">Proposed</td>
+		</tr>
+		<tr id="proj04" style="display: none;">
+			<td class="ObjectDetailsTopic" style="padding-left: 18px;">Complexity:</td>
+			<td class="ObjectDetailsValue">Easy</td>
+		</tr>
+		<tr id="proj05" style="display: none;">
+			<td class="ObjectDetailsTopic" style="padding-left: 18px;">Difficulty:</td>
+			<td class="ObjectDetailsValue"></td>
+		</tr>
+		<tr id="proj06" style="display: none;">
+			<td class="ObjectDetailsTopic" style="padding-left: 18px;">Priority:</td>
+			<td class="ObjectDetailsValue"></td>
+		</tr>
+		<tr id="proj05" style="display: none;">
+			<td class="ObjectDetailsTopic" >Multiplicity:</td>
+			<td class="ObjectDetailsValue"></td>
+		</tr>
+		<tr>
+			<td class="ObjectDetailsTopic"><button onclick="switchAdvancedProperties()"><img src="../../../images/plus03.gif" align="absmiddle" id="adv" /></button>Advanced:</td>
+			<td class="ObjectDetailsValue"></td>
+		</tr>
+		<tr id="adv00" style="display: none;">
+			<td class="ObjectDetailsTopic" style="padding-left: 18px;">UUID:</td>
+			<td class="ObjectDetailsValue">{170E817D-DF64-4970-A293-285FFD07781D}</td>
+		</tr>
+		<tr id="adv01" style="display: none;">
+			<td class="ObjectDetailsTopic" style="padding-left: 18px;">Appears In:</td>
+			<td class="ObjectDetailsValue"><a href="EA91.html">PortTypes</a>, <a href="../EA3/EA95.html">Bindings</a></td>
+		</tr>
+	</table>
+	<div class="ObjectDetailsNotes">File Transfer umo&#382;òuje pøenos dat z klienta na server nebo ze serveru na klienta. Klientem se rozum&#237; strana, kter&#225; aktivnì vol&#225; server. Server odpov&#237;d&#225; na po&#382;adavky klientù. Server mù&#382;e paralelnì oblushovat v&#237;ce klientù/pøenosù.&lt;br/&gt;API je tvoøeno pìti pøenosov&#253;mi metodami/slu&#382;bami a &#353;estou pro zji&#353;tìn&#237; stavu pøenosu (Status).&lt;br/&gt;</div>
+
+	<div class="TableGroup" id="TableGroup">
+		<ul class="ItemTitle">
+			<li onClick="parent != null ? parent.toggleItem('Operations') : toggleItem('Operations');" id="OperationsTitle">Operations</li>
+			<li onClick="parent != null ? parent.toggleItem('CustomProperties') : toggleItem('CustomProperties');" id="CustomPropertiesTitle">Advanced</li>
+			<li onClick="parent != null ? parent.toggleItem('Links') : toggleItem('Links');" id="LinksTitle">Other Links</li>
+		</ul>
+<div class="ItemBody" id="OperationsTable">
+	<table class="Table ea_table">
+		<tr>
+			<td width="100%" class="TableHeading">Operation</td>
+		</tr>
+						<tr>
+				<td width="100%" class="TableRow">
+					<i>Public</i><br />
+					<strong>Abort</strong> (abortRequest: <a href="../EA1/EA78.html">AbortRequest</a>, 
+abortResponse: <a href="../EA1/EA79.html">AbortResponse</a>, 
+fileTransferException: <a href="../EA1/EA82.html">FileTransferException</a>, 
+) : 
+				</td>
+			</tr>
+			<tr>
+				<td class="TableRowBottomDashed"  colspan="1">
+					<div class="DetailsDivParent">Details:</BR>
+						<div id="detailsDIVOperations169" class="DetailsDiv" >					
+					<div class="ObjectDetailsNotes"><table>
+	<tr>
+		<td valign="top">
+			<i>Notes: </i><span style="margin-left: .4cm;"> </span>
+		</td>
+		<td>
+			Slu&#382;ba pro pøeru&#353;en&#237; prob&#237;haj&#237;c&#237;ho pøenosu. Po&#382;adavek na pøeru&#353;en&#237; pøenosu zas&#237;l&#225; klient. Po&#382;adavek lze prov&#233;st pouze pokud je pøenos aktivn&#237;. Jednou pøeru&#353;en&#253; pøenos ji&#382; nelze obnovit a pokraèovat v nìm.&lt;br/&gt;&lt;br/&gt;Pøi po&#382;adavku na pøeru&#353;en&#237; pøenosu se jako jedin&#253; vstupn&#237; parametr zas&#237;l&#225; identifik&#225;tor pøenosu. Identifik&#225;tor pøenosu se z&#237;sk&#225; z odpovìdi na vol&#225;n&#237; Begin.&lt;br/&gt;&lt;br/&gt;Odpovìï: V pø&#237;padì &#250;spì&#353;n&#233;ho pøeru&#353;en&#237; pøenosu se vrac&#237; pr&#225;zdn&#225; odpovìï. Pokud ji&#382; pøenos nen&#237; mo&#382;n&#233; pøeru&#353;it nebo pøenos s dan&#253;m identifik&#225;torem nebyl na serveru nalezen, dojde k v&#253;jimce FileTransferException.&lt;br/&gt;&lt;br/&gt;
+		</td>
+	</tr>
+</table></div>
+
+						</div>
+<div style="text-align: right">[ Is static False. Is abstract False. Is return array False. Is query False. Is synchronized False. ]</div>
+					</div>
+				</td>
+			</tr>
+			<tr>
+				<td width="100%" class="TableRow">
+					<i>Public</i><br />
+					<strong>Begin</strong> (beginRequest: <a href="../EA1/EA80.html">BeginRequest</a>, 
+beginResponse: <a href="../EA1/EA81.html">BeginResponse</a>, 
+fileTransferException: <a href="../EA1/EA82.html">FileTransferException</a>, 
+) : 
+				</td>
+			</tr>
+			<tr>
+				<td class="TableRowBottomDashed"  colspan="1">
+					<div class="DetailsDivParent">Details:</BR>
+						<div id="detailsDIVOperations170" class="DetailsDiv" >					
+					<div class="ObjectDetailsNotes"><table>
+	<tr>
+		<td valign="top">
+			<i>Notes: </i><span style="margin-left: .4cm;"> </span>
+		</td>
+		<td>
+			Slu&#382;ba pro zah&#225;jen&#237; pøenosu dat. Pøenos dat se zahajuje vol&#225;n&#237;m Begin jeho&#382; souè&#225;st&#237; jsou parametry po&#382;adovan&#233;ho pøenosu. Ka&#382;d&#253; zahajovan&#253; pøenos je urèit&#233;ho typu. Typ pøenosu se urèuje øetìzcem s pevnì definovan&#253;m v&#253;znamem. Data se pøen&#225;&#353;ej&#237; v podobì adres&#225;øe se soubory a to v&#382;dy jedn&#237;m smìrem - buï ze serveru na klienta nebo z klienta na server. Smìr pøenosu je pevnì spojen s typem pøenosu a pøedem obìma stranami dohodnut.&lt;br/&gt;Souè&#225;st&#237; zah&#225;jen&#237; pøenosu mù&#382;e b&#253;t pøed&#225;n&#237; voliteln&#253;ch u&#382;ivatelsk&#253;ch dat. Po&#382;adavky na parametrizace zah&#225;jen&#237; pøenosu jsou v&#382;dy definov&#225;ny samostatnì v r&#225;mci dokumentace celku, kter&#253; slu&#382;bu FileTransfer vyu&#382;&#237;v&#225;.&lt;br/&gt;&lt;br/&gt;Mo&#382;n&#233; parametry metody jsou:&lt;br/&gt;- typ pøenosu - mìl by se uv&#225;dìt v&#382;dy, jedn&#225; se o textovou konstantu&lt;br/&gt;- identifik&#225;tor pøen&#225;&#353;en&#253;ch dat - voliteln&#253; identifik&#225;tor, kter&#253; urèuje pøen&#225;&#353;en&#225; data. Napø&#237;klad pro typ pøenosu &quot;DOWNLOAD&quot; by identifik&#225;torem mohl b&#253;t n&#225;zev souboru.&lt;br/&gt;- bin&#225;rn&#237; data - volitelnou souè&#225;st&#237; po&#382;adavku mohou b&#253;t bin&#225;rn&#237; data&lt;br/&gt;- XML data - volitelnou souè&#225;st&#237; po&#382;adavku mù&#382;e b&#253;t XML dokument&lt;br/&gt;&lt;br/&gt;Slu&#382;ba vyhodnot&#237; opr&#225;vnìnost po&#382;adavku na zah&#225;jen&#237; pøenosu. V pø&#237;padì zah&#225;jen&#237; pøenosu je vr&#225;cen identifik&#225;tor pøenosu. V pø&#237;padì chybn&#233;ho po&#382;adavku dojde k v&#253;jimce FileTransferException.&lt;br/&gt;Po &#250;spì&#353;n&#233;m zah&#225;jen&#237; pøenosu je tento aktivn&#237; dokud nebude dokonèen, pøeru&#353;en, nesel&#382;e, nebo nedojde k vypr&#353;en&#237; èasov&#253;ch limitù. Pokud pøenos prob&#237;h&#225; z klienta na server, tak se d&#225;le vol&#225; metoda Send, pokud pøenos prob&#237;h&#225; ze serveru na klienta, tak se d&#225;le vol&#225; metoda Receive.&lt;br/&gt;&lt;br/&gt;Odpovìd&#237; na zah&#225;jen&#237; pøenosu je TransferId. Jedn&#225; se o jednoznaèn&#253; identifik&#225;tor pøenosu.&lt;br/&gt;
+		</td>
+	</tr>
+</table></div>
+
+						</div>
+<div style="text-align: right">[ Is static False. Is abstract False. Is return array False. Is query False. Is synchronized False. ]</div>
+					</div>
+				</td>
+			</tr>
+			<tr>
+				<td width="100%" class="TableRow">
+					<i>Public</i><br />
+					<strong>Finish</strong> (finishRequest: <a href="../EA1/EA83.html">FinishRequest</a>, 
+finishResponse: <a href="../EA1/EA84.html">FinishResponse</a>, 
+fileTransferException: <a href="../EA1/EA82.html">FileTransferException</a>, 
+) : 
+				</td>
+			</tr>
+			<tr>
+				<td class="TableRowBottomDashed"  colspan="1">
+					<div class="DetailsDivParent">Details:</BR>
+						<div id="detailsDIVOperations171" class="DetailsDiv" >					
+					<div class="ObjectDetailsNotes"><table>
+	<tr>
+		<td valign="top">
+			<i>Notes: </i><span style="margin-left: .4cm;"> </span>
+		</td>
+		<td>
+			Slu&#382;ba pro dokonèen&#237; pøenosu. Zavol&#225;n&#237;m metody znamen&#225;, &#382;e v&#353;echna data ji&#382; byla pøenesena a nebude n&#225;sledovat vol&#225;n&#237; Send nebo Receive.&lt;br/&gt;Parametrem vol&#225;n&#237; je identifik&#225;tor pøenosu.&lt;br/&gt;Pokud metoda skonè&#237; &#250;spì&#353;nì, tak t&#237;m i druh&#225; strana potvrzuje &#250;spì&#353;n&#233; dokonèen&#237; pøenosu. Pokud metoda skonè&#237; chybou - dojde k v&#253;jimce, tak to znamen&#225;, &#382;e cel&#253; pøenos se pova&#382;uje za ne&#250;spì&#353;n&#253;. Pokud je v&#253;jimka typu BUSY, tak by se vol&#225;n&#237; slu&#382;by mìlo opakovat pozdìji.&lt;br/&gt;V&#253;sledkem &#250;spì&#353;n&#233;ho zavol&#225;n&#237; metody ukonèen&#237; pøenosu je struktura GenericData. Tato struktura umo&#382;òuje pøedat ze serveru na klienta doplòuj&#237;c&#237; data odpovìdi. Rozsah takto pøed&#225;van&#253;ch dat je pøedmìtem specifikace dan&#233;ho u&#382;it&#237; slu&#382;by. Typick&#253;m pø&#237;kladem pøedan&#253;ch dat mù&#382;e b&#253;t identifik&#225;tor ulo&#382;en&#233; entity.&lt;br/&gt;&lt;br/&gt;
+		</td>
+	</tr>
+</table></div>
+
+						</div>
+<div style="text-align: right">[ Is static False. Is abstract False. Is return array False. Is query False. Is synchronized False. ]</div>
+					</div>
+				</td>
+			</tr>
+			<tr>
+				<td width="100%" class="TableRow">
+					<i>Public</i><br />
+					<strong>Receive</strong> (receiveRequest: <a href="../EA1/EA85.html">ReceiveRequest</a>, 
+receiveResponse: <a href="../EA1/EA86.html">ReceiveResponse</a>, 
+fileTransferException: <a href="../EA1/EA82.html">FileTransferException</a>, 
+) : 
+				</td>
+			</tr>
+			<tr>
+				<td class="TableRowBottomDashed"  colspan="1">
+					<div class="DetailsDivParent">Details:</BR>
+						<div id="detailsDIVOperations172" class="DetailsDiv" >					
+					<div class="ObjectDetailsNotes"><table>
+	<tr>
+		<td valign="top">
+			<i>Notes: </i><span style="margin-left: .4cm;"> </span>
+		</td>
+		<td>
+			Slu&#382;ba pro pøenos dat ze serveru na klienta. Metoda se vol&#225; po &#250;spì&#353;n&#233;m zah&#225;jen&#237; pøenosu vol&#225;n&#237;m Begin a z&#237;sk&#225;n&#237; identifik&#225;toru pøenosu.&lt;br/&gt;Parametrem vol&#225;n&#237; je identifik&#225;tor pøenosu (v&#253;sledek metody Begin) a poøadov&#233; è&#237;slo r&#225;mce. Prvn&#237; pøen&#225;&#353;en&#253; r&#225;mec m&#225; poøadov&#233; è&#237;slo 0. V prùbìhu pøenosu je mo&#382;n&#233; &#382;&#225;dat o st&#225;vaj&#237;c&#237; nebo n&#225;sleduj&#237;c&#237; r&#225;mec. Napø&#237;klad po pøenosu r&#225;mce è&#237;slo 2 je mo&#382;n&#225; opakovanì volat metodu pro pøenos r&#225;mce è&#237;slo 2 nebo pøenos n&#225;sleduj&#237;c&#237;ho r&#225;mce è&#237;slo 3. Pøenos r&#225;mcù mus&#237; prob&#237;hat jeden po druh&#233;m a nelze je pøen&#225;&#353;et v n&#225;hodn&#233;m poøad&#237;.&lt;br/&gt;&lt;br/&gt;Odpovìd&#237; na vol&#225;n&#237; slu&#382;by je r&#225;mec, struktura Frame. Souè&#225;st&#237; t&#233;to struktury je pø&#237;znak (element &quot;last&quot;) urèuj&#237;c&#237;, zda se jedn&#225; o posledn&#237; r&#225;mec v r&#225;mci pøenosu. Po pøenesen&#237; posledn&#237;ho r&#225;mce ji&#382; nelze metodu volat a pøenos by mìl b&#253;t ukonèen. Ukonèen&#237; pøenosu se provede vol&#225;n&#237;m finish.&lt;br/&gt;&lt;br/&gt;Pøi vol&#225;n&#237; metody mù&#382;e doj&#237;t k v&#253;jimce FileTransferException. Volaj&#237;c&#237; mus&#237; respektovat stav BUSY a pokusit se o pokraèov&#225;n&#237; pøenosu a&#382; to bude mo&#382;n&#233;. V pø&#237;padì jin&#233; v&#253;jimky se jedn&#225; o neobnovitelnou chybu pøenosu.&lt;br/&gt;&lt;br/&gt;
+		</td>
+	</tr>
+</table></div>
+
+						</div>
+<div style="text-align: right">[ Is static False. Is abstract False. Is return array False. Is query False. Is synchronized False. ]</div>
+					</div>
+				</td>
+			</tr>
+			<tr>
+				<td width="100%" class="TableRow">
+					<i>Public</i><br />
+					<strong>Send</strong> (sendRequest: <a href="../EA1/EA87.html">SendRequest</a>, 
+sendResponse: <a href="../EA1/EA88.html">SendResponse</a>, 
+fileTransferException: <a href="../EA1/EA82.html">FileTransferException</a>, 
+) : 
+				</td>
+			</tr>
+			<tr>
+				<td class="TableRowBottomDashed"  colspan="1">
+					<div class="DetailsDivParent">Details:</BR>
+						<div id="detailsDIVOperations173" class="DetailsDiv" >					
+					<div class="ObjectDetailsNotes"><table>
+	<tr>
+		<td valign="top">
+			<i>Notes: </i><span style="margin-left: .4cm;"> </span>
+		</td>
+		<td>
+			Slu&#382;ba pro pøenos dat z klienta na server. Metoda se vol&#225; po &#250;spì&#353;n&#233;m zah&#225;jen&#237; pøenosu vol&#225;n&#237;m Begin a z&#237;sk&#225;n&#237; identifik&#225;toru pøenosu.&lt;br/&gt;Metoda slou&#382;&#237; pro pøenos r&#225;mce s daty. R&#225;mec obsahuje hlavièku a data tvoøen&#225; streamem bin&#225;rn&#237;ch dat souborù, bloky popisuj&#237;c&#237; pøen&#225;&#353;en&#233; slo&#382;ky a soubory.&lt;br/&gt;Parametrem metody je identifik&#225;tor pøenosu a pøen&#225;&#353;en&#253; r&#225;mec. Jednotliv&#233; r&#225;mce se pøen&#225;&#353;ej&#237; sekvenènì jeden za druh&#253;m. Prvn&#237; pøen&#225;&#353;en&#253; r&#225;mec m&#225; è&#237;slo 0. Posledn&#237; pøen&#225;&#353;en&#253; r&#225;mec mus&#237; m&#237;t nastaven pø&#237;znak last.&lt;br/&gt;V pø&#237;padì v&#253;padku pøenosu je mo&#382;n&#233; posledn&#237; r&#225;mec zaslat opakovanì. Pokud vol&#225;n&#237; metody skonè&#237; bez chyby, tak druh&#225; strana r&#225;mec pøijala a je mo&#382;n&#233; zaslat dal&#353;&#237;.&lt;br/&gt;&lt;br/&gt;Pøi vol&#225;n&#237; metody mù&#382;e doj&#237;t k v&#253;jimce FileTransferException. Pokud je v&#253;jimka typu BUSY, tak by mìl volaj&#237;c&#237; zaslat posledn&#237; r&#225;mec pozdìji. Pokud je v&#253;jimka jin&#233;ho typu, tak to znamen&#225; selh&#225;n&#237; pøenosu.&lt;br/&gt;
+		</td>
+	</tr>
+</table></div>
+
+						</div>
+<div style="text-align: right">[ Is static False. Is abstract False. Is return array False. Is query False. Is synchronized False. ]</div>
+					</div>
+				</td>
+			</tr>
+			<tr>
+				<td width="100%" class="TableRow">
+					<i>Public</i><br />
+					<strong>Status</strong> (statusRequest: <a href="../EA1/EA89.html">StatusRequest</a>, 
+statusResponse: <a href="../EA1/EA90.html">StatusResponse</a>, 
+fileTransferException: <a href="../EA1/EA82.html">FileTransferException</a>, 
+) : 
+				</td>
+			</tr>
+			<tr>
+				<td class="TableRowBottomDashed"  colspan="1">
+					<div class="DetailsDivParent">Details:</BR>
+						<div id="detailsDIVOperations174" class="DetailsDiv" >					
+					<div class="ObjectDetailsNotes"><table>
+	<tr>
+		<td valign="top">
+			<i>Notes: </i><span style="margin-left: .4cm;"> </span>
+		</td>
+		<td>
+			Slu&#382;ba pro z&#237;sk&#225;n&#237; informac&#237; o stavu pøenosu. Metodu lze volat kdykoliv. Parametrem metody je identifik&#225;tor pøenosu.&lt;br/&gt;Metoda umo&#382;òuje obnoven&#237; pøenosu po pøedchoz&#237; chybì, ztr&#225;tì spojen&#237;. V&#253;sledkem vol&#225;n&#237; je informace o stavu pøenosu a è&#237;slo posledn&#237;ho pøenesen&#233;ho r&#225;mce. Pokud byl pøenos ø&#225;dnì ukonèen, metoda tak&#233; vrac&#237; data shodn&#225; s odpovìd&#237; na vol&#225;n&#237; metody Finish. Doba dostupnosti informac&#237; o ukonèen&#233;m pøenosu z&#225;vis&#237; na konfiguraci konkr&#233;tn&#237; slu&#382;by.&lt;br/&gt;Pokud nìkter&#233; z pøedchoz&#237;ch vol&#225;n&#237; skonè&#237; v&#253;jimkou s k&#243;dem BUSY je mo&#382;n&#233; metodu pou&#382;&#237;t pro ovìøen&#237; opìtovn&#233; dostupnosti serveru.&lt;br/&gt;
+		</td>
+	</tr>
+</table></div>
+
+						</div>
+<div style="text-align: right">[ Is static False. Is abstract False. Is return array False. Is query False. Is synchronized False. ]</div>
+					</div>
+				</td>
+			</tr>
+
+		</table>
+</div>		<div class="ItemBody" id="CustomPropertiesTable">
+			<table class="Table ea_table">
+				<tr>
+					<td width="30%" class="TableHeading">Property</td>
+					<td width="70%" class="TableHeading">Value</td>
+				</tr>
+			<tr>
+				<td width="30%" class="TableRow">isFinalSpecialization:</td>
+				<td width="70%" class="TableRow">0</td>
+			</tr>
+
+
+			</table>
+		</div>		<div class="ItemBody" id="LinksTable">
+			<table class="Table ea_table">
+				<tr>
+					<td width="30%" class="TableHeading">Object</td>
+					<td width="10%" class="TableHeading">Type</td>
+					<td width="10%" class="TableHeading">Connection</td>
+					<td width="10%" class="TableHeading">Direction</td>
+					<td width="40%" class="TableHeading">Notes</td>
+				</tr>
+				<tr>
+					<td width="30%" class="TableRow" valign="top"><a href="../EA3/EA98.html">«WSDLbinding» FileTransferSOAPBinding</a></td>
+					<td width="10%" class="TableRow" valign="top">Class</td>
+					<td width="10%" class="TableRow" valign="top">Realization</td>
+					<td width="10%" class="TableRow" valign="top">From</td>
+					<td width="40%" class="TableRow" valign="top">&nbsp;</td>
+				</tr>
+
+			</table>
+		</div>
+	</div>
+ </div>
+ </td>
+				</tr>
+			</tbody>
+		</table>
+		
+</div>
+</body>
+</html>
+

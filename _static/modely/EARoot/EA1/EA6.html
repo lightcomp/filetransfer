@@ -1,0 +1,190 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>Basic Types</title>
+<link href="../../css/ea.css" rel="stylesheet" type="text/css" />
+<script language="JavaScript" src="../../js/displayToc.js" type="text/javascript"></script>
+<script>
+
+  function switchProjectProperties() {
+			if (document.getElementById("proj00").style.display == "none") {
+				document.getElementById("proj00").style.display = "revert";
+				document.getElementById("proj01").style.display = "revert";
+				document.getElementById("proj02").style.display = "revert";
+				document.getElementById("proj03").style.display = "revert";
+				document.getElementById("proj04").style.display = "revert";
+				document.getElementById("proj05").style.display = "revert";
+			} else {
+				document.getElementById("proj00").style.display = "none";
+				document.getElementById("proj01").style.display = "none";
+				document.getElementById("proj02").style.display = "none";
+				document.getElementById("proj03").style.display = "none";
+				document.getElementById("proj04").style.display = "none";
+				document.getElementById("proj05").style.display = "none";
+			}
+}
+
+		function switchAdvancedProperties(){
+
+			if (document.getElementById("adv00").style.display == "none") {;
+				document.getElementById("adv00").style.display = "revert";
+				document.getElementById("adv01").style.display = "revert";
+			} else {
+				document.getElementById("adv00").style.display = "none";
+				document.getElementById("adv01").style.display = "none";
+			}
+		}
+		function initPage()
+        {			
+			var divs = document.getElementsByClassName("ObjectDetailsNotes");
+			for (var j = 0; j < divs.length; j++) {
+				var tmpStr = divs[j].innerHTML;
+				tmpStr = tmpStr.replace(/#gt;/g, "&gt;");
+				tmpStr = tmpStr.replace(/#lt;/g, "&lt;");
+
+				tmpStr = tmpStr.replace(/&gt;/g, ">");
+				tmpStr = tmpStr.replace(/&lt;/g, "<");
+
+				divs[j].innerHTML = tmpStr;
+			}
+
+            if (document.getElementById('TableGroup') != null)
+            {
+                toggleItem(document.getElementById('TableGroup').getElementsByTagName('li')[0].id.replace("Title", ""));
+            }
+
+        }
+</script>
+<style>
+
+</style>
+</head>
+<body onload="initPage();">
+<div class="section group" >
+
+		<div class="col span_2_of_2 header_frame">
+			<h1> Basic Types </h1>
+			<!-- <img class="header_image" src="../../images/ea-banner.png" align="right" alt="Header Image" />-->
+			<img class="header_image" src="../../images/ea-banner.png" align="right" alt="Header Image" />
+		</div>
+		<div class="col span_2_of_2 breadcrumb_frame">
+			<p><a href="../EA3.html">FileTrasnfer API v1</a> / <a href="EA26.html">Types</a> / <a href="EA6.html">Basic Types</a></p>
+		</div>
+			
+		<table class="contentmaintable">
+			<!-- <tfoot>
+				<tr>
+					<td>foot1</td>
+					<td>foot2</td>
+				</tr>
+			</tfoot> -->
+			<tbody>
+				<tr>
+					<td class="indexcell">
+						<div class="projectBrowserTitle">Project: </div>
+						<ul>
+<li><img src="../../images/175.png" alt="Diagram"/> <a href="EA6.html">Basic Types</a></li>
+<li><img src="../../images/175.png" alt="Diagram"/> <a href="EA8.html">Error description</a></li>
+<li><img src="../../images/175.png" alt="Diagram"/> <a href="EA10.html">Generic data</a></li>
+<li><img src="../../images/175.png" alt="Diagram"/> <a href="EA12.html">Begin</a></li>
+<li><img src="../../images/175.png" alt="Diagram"/> <a href="EA14.html">Frame</a></li>
+<li><img src="../../images/175.png" alt="Diagram"/> <a href="EA16.html">Receive</a></li>
+<li><img src="../../images/175.png" alt="Diagram"/> <a href="EA18.html">Send</a></li>
+<li><img src="../../images/175.png" alt="Diagram"/> <a href="EA20.html">FinishRequest</a></li>
+<li><img src="../../images/175.png" alt="Diagram"/> <a href="EA22.html">Status</a></li>
+<li><img src="../../images/175.png" alt="Diagram"/> <a href="EA24.html">AbortRequest</a></li>
+<li><img src="../../images/5.png" alt="Class"/> <a href="EA27.html">AbortRequest</a></li>
+<li><img src="../../images/5.png" alt="Class"/> <a href="EA28.html">AbortRequestType</a></li>
+<li><img src="../../images/5.png" alt="Class"/> <a href="EA29.html">BeginRequest</a></li>
+<li><img src="../../images/5.png" alt="Class"/> <a href="EA30.html">BeginResponse</a></li>
+<li><img src="../../images/5.png" alt="Class"/> <a href="EA31.html">BeginResponseType</a></li>
+<li><img src="../../images/5.png" alt="Class"/> <a href="EA32.html">BinData</a></li>
+<li><img src="../../images/5.png" alt="Class"/> <a href="EA33.html">DirBegin</a></li>
+<li><img src="../../images/5.png" alt="Class"/> <a href="EA34.html">DirEnd</a></li>
+<li><img src="../../images/5.png" alt="Class"/> <a href="EA35.html">ErrorDescription</a></li>
+<li><img src="../../images/5.png" alt="Class"/> <a href="EA36.html">ErrorDescriptionType</a></li>
+<li><img src="../../images/5.png" alt="Class"/> <a href="EA37.html">ErrorDetail</a></li>
+<li><img src="../../images/5.png" alt="Class"/> <a href="EA38.html">FileBegin</a></li>
+<li><img src="../../images/5.png" alt="Class"/> <a href="EA39.html">FileData</a></li>
+<li><img src="../../images/5.png" alt="Class"/> <a href="EA40.html">FileEnd</a></li>
+<li><img src="../../images/5.png" alt="Class"/> <a href="EA41.html">TransferStatus</a></li>
+<li><img src="../../images/5.png" alt="Class"/> <a href="EA42.html">TransferStatusType</a></li>
+<li><img src="../../images/5.png" alt="Class"/> <a href="EA43.html">FinishRequest</a></li>
+<li><img src="../../images/5.png" alt="Class"/> <a href="EA44.html">FinishRequestType</a></li>
+<li><img src="../../images/5.png" alt="Class"/> <a href="EA45.html">Frame</a></li>
+<li><img src="../../images/5.png" alt="Class"/> <a href="EA46.html">FrameBlock</a></li>
+<li><img src="../../images/5.png" alt="Class"/> <a href="EA47.html">FrameBlocks</a></li>
+<li><img src="../../images/5.png" alt="Class"/> <a href="EA48.html">FrameBlockChoice</a></li>
+<li><img src="../../images/5.png" alt="Class"/> <a href="EA49.html">FrameSeqNum</a></li>
+<li><img src="../../images/5.png" alt="Class"/> <a href="EA50.html">FrameType</a></li>
+<li><img src="../../images/5.png" alt="Class"/> <a href="EA51.html">GenericData</a></li>
+<li><img src="../../images/5.png" alt="Class"/> <a href="EA52.html">GenericDataType</a></li>
+<li><img src="../../images/5.png" alt="Class"/> <a href="EA53.html">GenericDataWrapper</a></li>
+<li><img src="../../images/5.png" alt="Class"/> <a href="EA54.html">ReceiveRequest</a></li>
+<li><img src="../../images/5.png" alt="Class"/> <a href="EA55.html">ReceiveRequestType</a></li>
+<li><img src="../../images/5.png" alt="Class"/> <a href="EA56.html">SendRequest</a></li>
+<li><img src="../../images/5.png" alt="Class"/> <a href="EA57.html">SendRequestType</a></li>
+<li><img src="../../images/5.png" alt="Class"/> <a href="EA58.html">TransferId</a></li>
+<li><img src="../../images/5.png" alt="Class"/> <a href="EA59.html">TransferIdType</a></li>
+<li><img src="../../images/5.png" alt="Class"/> <a href="EA60.html">TransferStatusRequest</a></li>
+<li><img src="../../images/5.png" alt="Class"/> <a href="EA61.html">TransferStatusRequestType</a></li>
+<li><img src="../../images/5.png" alt="Class"/> <a href="EA62.html">AnyData</a></li>
+<li><img src="../../images/5.png" alt="Class"/> <a href="EA63.html">XmlData</a></li>
+<li><img src="../../images/247.png" alt="Enumeration"/> <a href="EA64.html">ErrorCode</a></li>
+<li><img src="../../images/247.png" alt="Enumeration"/> <a href="EA65.html">FileTransferState</a></li>
+</ul>
+
+					</td>
+					<td class="contentcell"><div class="PageBody">
+	<div class="diagram_image"> 
+<img src="EA7.png" usemap="#EA7" border="0" />
+
+<MAP NAME="EA7">
+<area shape="rect" coords="10,12,100,82" href="EA58.html" target="_self">
+<area shape="rect" coords="171,10,261,80" href="EA59.html" target="_self">
+</MAP>
+ </div>
+	<div class="ObjectTitle">Basic Types : Class diagram</div>
+	<table border="0" cellpadding="0" cellspacing="0" class="ObjectDetails">
+		<tr>
+			<td width="15%" class="ObjectDetailsTopic">Created:</td>
+			<td width="85%" class="ObjectDetailsValue">14.05.2018 15:15:51</td>
+		</tr>
+		<tr>
+			<td width="15%" class="ObjectDetailsTopic">Modified:</td>
+			<td width="85%" class="ObjectDetailsValue">14.05.2018 15:16:48</td>
+		</tr>
+		<tr style="padding-top: 10px;">
+			<td width="15%" class="ObjectDetailsTopic"><button onclick="switchProjectProperties()"><img src="../../images/plus03.gif" align="absmiddle" id="proj" /></button>Project:</td>
+			<td width="85%" class="ObjectDetailsValue"></td>			
+		</tr>
+		<tr id="proj00" style="display: none;">
+			<td width="15%" class="ObjectDetailsTopic" style="padding-left: 18px;">Author:</td>
+			<td width="85%" class="ObjectDetailsValue">Petr Pytelka</td>
+		</tr>
+		<tr id="proj01" style="display: none;">
+			<td width="15%" class="ObjectDetailsTopic" style="padding-left: 18px;">Version:</td>
+			<td width="85%" class="ObjectDetailsValue">1.0</td>
+		</tr>
+		<tr>
+			<td width="15%" class="ObjectDetailsTopic"><button onclick="switchAdvancedProperties()"><img src="../../images/plus03.gif" align="absmiddle" id="adv" /></button>Advanced:</td>
+			<td width="85%" class="ObjectDetailsValue"></td>			
+		</tr>
+		<tr id="adv00" style="display: none;">
+			<td width="15%" class="ObjectDetailsTopic" style="padding-left: 18px;">ID:</td>
+			<td width="85%" class="ObjectDetailsValue">{61BE5166-80F3-4f23-8062-7EF69B4C8AD8}</td>
+		</tr>
+	</table>
+	
+</div>
+
+ </td>
+				</tr>
+			</tbody>
+		</table>
+		
+</div>
+</body>
+</html>
+
