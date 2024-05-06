@@ -82,7 +82,7 @@ Funkce      Účel
 ``Status``  Zjištění stavu přenosu.
 =========== ===============
 
-Jednotlivé funkce jsou popsány v `referenční dokumentaci <../../ws-specs/ft/index.html?guid=170E817D-DF64-4970-A293-285FFD07781D>`_.
+Jednotlivé funkce jsou popsány v `referenční dokumentaci <../_static/modely/index.html?guid=170E817D-DF64-4970-A293-285FFD07781D>`_.
 
 
 Postup volání služeb pro přenos z klienta na server

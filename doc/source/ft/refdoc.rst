@@ -14,4 +14,4 @@ Referenční dokumentace
 
 `Referenční dokumentace služby`_
 
-.. _`Referenční dokumentace služby`: ../model/index.html
+.. _`Referenční dokumentace služby`: ../_static/modely/index.html?guid=170E817D-DF64-4970-A293-285FFD07781D

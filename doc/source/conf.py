@@ -18,11 +18,11 @@
 # -- Project information -----------------------------------------------------
 
 project = 'LightComp FileTransfer'
-copyright = '2022, LightComp v.o.s.'
+copyright = '2022-2024, LightComp v.o.s.'
 author = 'LightComp v.o.s.'
 
 # The full version, including alpha/beta/rc tags
-release = '1.7'
+release = '2.0'
 
 
 # -- General configuration ---------------------------------------------------
