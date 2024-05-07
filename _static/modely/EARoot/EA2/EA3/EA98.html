@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-<title>FileTransferSOAPBinding</title>
+<title>Bindings</title>
 <link href="../../../css/ea.css" rel="stylesheet" type="text/css" />
 <script language="JavaScript" src="../../../js/displayToc.js" type="text/javascript"></script>
 <script>
@@ -64,12 +64,12 @@
 <div class="section group" >
 
 		<div class="col span_2_of_2 header_frame">
-			<h1> FileTransferSOAPBinding </h1>
+			<h1> Bindings </h1>
 			<!-- <img class="header_image" src="../../../images/ea-banner.png" align="right" alt="Header Image" />-->
 			<img class="header_image" src="../../../images/ea-banner.png" align="right" alt="Header Image" />
 		</div>
 		<div class="col span_2_of_2 breadcrumb_frame">
-			<p><a href="../../EA3.html">FileTrasnfer API v1</a> / <a href="../EA68.html">WebService</a> / <a href="EA97.html">Bindings</a> / <a href="EA98.html">FileTransferSOAPBinding</a></p>
+			<p><a href="../../EA3.html">FileTrasnfer API v1</a> / <a href="../EA68.html">WebService</a> / <a href="EA98.html">Bindings</a></p>
 		</div>
 			
 		<table class="contentmaintable">
@@ -84,20 +84,22 @@
 					<td class="indexcell">
 						<div class="projectBrowserTitle">Project: </div>
 						<ul>
-<a href="EA97.html">Bindings</a></ul>
+<li><img src="../../../images/175.png" alt="Diagram"/> <a href="EA96.html">Bindings</a></li>
+<li><img src="../../../images/5.png" alt="Class"/> <a href="EA99.html">FileTransferSOAPBinding</a></li>
+</ul>
 
 					</td>
 					<td class="contentcell"><div class="pageHeader"></div>
 <div class="PageBody">
-	<span class="ObjectTitle">FileTransferSOAPBinding  : Public  &lt;&lt;WSDLbinding&gt;&gt; Class</span>
+	<span class="ObjectTitle">Bindings  : Public   Package</span>
 	<table border="0" class="ObjectDetails">
 		<tr>
 			<td width="15%" class="ObjectDetailsTopic">Created:</td>
-			<td width="85%" class="ObjectDetailsValue">14.05.2018 22:08:41</td>
+			<td width="85%" class="ObjectDetailsValue">16.02.2018 10:28:46</td>
 		</tr>
 		<tr>
 			<td class="ObjectDetailsTopic">Modified:</td>
-			<td class="ObjectDetailsValue">06.05.2024 22:00:25</td>
+			<td class="ObjectDetailsValue">06.05.2024 21:55:19</td>
 		</tr>
 		<tr style="height: 10px"><td colspan="2"></td></tr>
 		<tr>
@@ -106,7 +108,7 @@
 		</tr>
 		<tr id="proj00" style="display: none;">
 			<td class="ObjectDetailsTopic" style="padding-left: 18px;">Author:</td>
-			<td class="ObjectDetailsValue">Petr Pytelka</td>
+			<td class="ObjectDetailsValue">todtj</td>
 		</tr>
 		<tr id="proj01" style="display: none;">
 			<td class="ObjectDetailsTopic" style="padding-left: 18px;">Version:</td>
@@ -142,305 +144,15 @@
 		</tr>
 		<tr id="adv00" style="display: none;">
 			<td class="ObjectDetailsTopic" style="padding-left: 18px;">UUID:</td>
-			<td class="ObjectDetailsValue">{B1F3DA10-9BDB-4cc1-BCF2-6633E35A71C7}</td>
+			<td class="ObjectDetailsValue">{7F07414A-FC9D-4679-AC28-F80F91ABCE2F}</td>
 		</tr>
 		<tr id="adv01" style="display: none;">
 			<td class="ObjectDetailsTopic" style="padding-left: 18px;">Appears In:</td>
-			<td class="ObjectDetailsValue"><a href="EA95.html">Bindings</a>, <a href="../EA4/EA99.html">Services</a></td>
+			<td class="ObjectDetailsValue"><a href="../EA66.html">Overview</a></td>
 		</tr>
 	</table>
-	<div class="ObjectDetailsNotes">FileTransferService, SOAP binding&lt;br/&gt;</div>
+	<div class="ObjectDetailsNotes">The method of connecting the interface to the SOAP transfer protocol. The actual methods and their functions are described in the PortTypes section.&lt;br/&gt;</div>
 
-	<div class="TableGroup" id="TableGroup">
-		<ul class="ItemTitle">
-			<li onClick="parent != null ? parent.toggleItem('Operations') : toggleItem('Operations');" id="OperationsTitle">Operations</li>
-			<li onClick="parent != null ? parent.toggleItem('AssociationsFrom') : toggleItem('AssociationsFrom');" id="AssociationsFromTitle">Associations From</li>
-			<li onClick="parent != null ? parent.toggleItem('TaggedVal') : toggleItem('TaggedVal');" id="TaggedValTitle">Tagged Values</li>
-			<li onClick="parent != null ? parent.toggleItem('CustomProperties') : toggleItem('CustomProperties');" id="CustomPropertiesTitle">Advanced</li>
-			<li onClick="parent != null ? parent.toggleItem('Links') : toggleItem('Links');" id="LinksTitle">Other Links</li>
-		</ul>
-<div class="ItemBody" id="OperationsTable">
-	<table class="Table ea_table">
-		<tr>
-			<td width="100%" class="TableHeading">Operation</td>
-		</tr>
-						<tr>
-				<td width="100%" class="TableRow">
-					<i>Public</i><br />
-					<strong>Abort</strong> (abortRequest: <a href="../EA1/EA78.html">AbortRequest</a>, 
-abortResponse: <a href="../EA1/EA79.html">AbortResponse</a>, 
-fileTransferException: <a href="../EA1/EA82.html">FileTransferException</a>, 
-) : 
-				</td>
-			</tr>
-			<tr>
-				<td class="TableRowBottomDashed"  colspan="1">
-					<div class="DetailsDivParent">Details:</BR>
-						<div id="detailsDIVOperations176" class="DetailsDiv" >					
-					<div class="ObjectDetailsNotes"><table>
-	<tr>
-		<td valign="top">
-			<i>Notes: </i><span style="margin-left: .4cm;"> </span>
-		</td>
-		<td>
-			Service to interrupt a transfer in progress. The request to interrupt the transfer is sent by the client. The request can only be made if the transfer is still active. Once interrupted, the transfer cannot be resumed and continued.&lt;br/&gt;&lt;br/&gt;When a request for interrupting a transfer is made, the transfer identifier is sent as the only input parameter. The transfer identifier is obtained from the response to the Begin call.&lt;br/&gt;&lt;br/&gt;Response. If the transfer can no longer be aborted or the transfer with the given identifier is not found on the server, a FileTransferException occurs.&lt;br/&gt;&lt;br/&gt;
-		</td>
-	</tr>
-</table></div>
-
-						</div>
-<div style="text-align: right">[ Is static False. Is abstract False. Is return array False. Is query False. Is synchronized False. ]</div>
-					</div>
-				</td>
-			</tr>
-			<tr>
-				<td width="100%" class="TableRow">
-					<i>Public</i><br />
-					<strong>Begin</strong> (beginRequest: <a href="../EA1/EA80.html">BeginRequest</a>, 
-beginResponse: <a href="../EA1/EA81.html">BeginResponse</a>, 
-fileTransferException: <a href="../EA1/EA82.html">FileTransferException</a>, 
-) : 
-				</td>
-			</tr>
-			<tr>
-				<td class="TableRowBottomDashed"  colspan="1">
-					<div class="DetailsDivParent">Details:</BR>
-						<div id="detailsDIVOperations177" class="DetailsDiv" >					
-					<div class="ObjectDetailsNotes"><table>
-	<tr>
-		<td valign="top">
-			<i>Notes: </i><span style="margin-left: .4cm;"> </span>
-		</td>
-		<td>
-			Service to start data transfer. The data transfer is initiated by the Begin call which includes the parameters of the requested transfer. Each transmission to be initiated is of a specific type. The type of transfer is specified by a string with a fixed meaning. Data is transferred in the form of a directory with files and always in one direction - either from server to client or from client to server. The direction of transfer is fixed to the type of transfer and agreed upon by both parties in advance.&lt;br/&gt;The initiation of the transfer may include the transfer of optional user data. The requirements for the parameterisation of the initiation of the transfer are always defined separately within the documentation of the application that uses the FileTransfer service.&lt;br/&gt;&lt;br/&gt;The possible parameters of the method are:&lt;br/&gt;&lt;ul&gt;<br />&lt;li&gt;transfer type - should always be specified, it is a text constant&lt;/li&gt;&lt;li&gt;identifier of the transferred data - optional identifier that specifies the transferred data. For example, for the transfer type &quot;DOWNLOAD&quot; the identifier could be the file name.&lt;/li&gt;&lt;li&gt;binary data - an optional part of the request can be binary data&lt;/li&gt;&lt;li&gt;XML data - an optional part of the request can be an XML document&lt;/li&gt;&lt;/ul&gt;<br />&lt;br/&gt;The service will evaluate the legitimacy of the request to start the transfer. If the transfer is initiated, a transfer identifier is returned. In case of an incorrect request, a FileTransferException is raised.&lt;br/&gt;Once a transfer is successfully initiated, it is active until it completes, aborts, fails, or times out. If the transfer is from client to server, the Send method is called, if the transfer is from server to client, the Receive method is called.&lt;br/&gt;The response to start the transfer is the TransferId. This is the unique identifier of the transfer.&lt;br/&gt;&lt;br/&gt;
-		</td>
-	</tr>
-</table></div>
-
-						</div>
-<div style="text-align: right">[ Is static False. Is abstract False. Is return array False. Is query False. Is synchronized False. ]</div>
-					</div>
-				</td>
-			</tr>
-			<tr>
-				<td width="100%" class="TableRow">
-					<i>Public</i><br />
-					<strong>Finish</strong> (finishRequest: <a href="../EA1/EA83.html">FinishRequest</a>, 
-finishResponse: <a href="../EA1/EA84.html">FinishResponse</a>, 
-fileTransferException: <a href="../EA1/EA82.html">FileTransferException</a>, 
-) : 
-				</td>
-			</tr>
-			<tr>
-				<td class="TableRowBottomDashed"  colspan="1">
-					<div class="DetailsDivParent">Details:</BR>
-						<div id="detailsDIVOperations178" class="DetailsDiv" >					
-					<div class="ObjectDetailsNotes"><table>
-	<tr>
-		<td valign="top">
-			<i>Notes: </i><span style="margin-left: .4cm;"> </span>
-		</td>
-		<td>
-			Service to complete the transfer. Calling the method means that all data has already been transferred and will not be followed by a Send or Receive call.&lt;br/&gt;The call parameter is the transfer identifier.&lt;br/&gt;If the method completes successfully, the other side confirms the successful completion of the transfer. If the method ends with an error - an exception occurs, it means that the entire transfer is considered unsuccessful. If the exception is of type BUSY, the service call should be repeated later.&lt;br/&gt;The result of a successful call to the transfer completion method is a GenericData structure. This structure allows additional response data to be passed from the server to the client. The scope of the data transferred in this way is subject to the specification of the service usage. A typical example of the data passed may be a stored entity identifier.&lt;br/&gt;&lt;br/&gt;
-		</td>
-	</tr>
-</table></div>
-
-						</div>
-<div style="text-align: right">[ Is static False. Is abstract False. Is return array False. Is query False. Is synchronized False. ]</div>
-					</div>
-				</td>
-			</tr>
-			<tr>
-				<td width="100%" class="TableRow">
-					<i>Public</i><br />
-					<strong>Receive</strong> (receiveRequest: <a href="../EA1/EA85.html">ReceiveRequest</a>, 
-receiveResponse: <a href="../EA1/EA86.html">ReceiveResponse</a>, 
-fileTransferException: <a href="../EA1/EA82.html">FileTransferException</a>, 
-) : 
-				</td>
-			</tr>
-			<tr>
-				<td class="TableRowBottomDashed"  colspan="1">
-					<div class="DetailsDivParent">Details:</BR>
-						<div id="detailsDIVOperations179" class="DetailsDiv" >					
-					<div class="ObjectDetailsNotes"><table>
-	<tr>
-		<td valign="top">
-			<i>Notes: </i><span style="margin-left: .4cm;"> </span>
-		</td>
-		<td>
-			A service for transferring data from the server to the client. The method is called after the transfer has been successfully initiated by calling &quot;Begin&quot; and obtaining the transfer identifier.&lt;br/&gt;The call parameter is the transfer identifier (the result of the &quot;Begin&quot; method) and the frame sequence number. The first transmitted frame has sequence number 0. It is possible to request the current or the next frame during the transmission. For example, after frame number 2 has been transmitted, the method can be called repeatedly to transmit frame number 2 or to transmit the next frame number 3. The frames must be transmitted one after the other and cannot be transmitted in random order.&lt;br/&gt;&lt;br/&gt;The response to a service call is a frame, it means &quot;Frame&quot; structure. This structure includes a flag (attribute &quot;last&quot;) indicating whether it is the last frame of the transmission. Once the last frame has been transmitted, the method can no longer be called and the transmission should be terminated. The transfer is completed by calling &quot;Finish&quot;.&lt;br/&gt;&lt;br/&gt;A FileTransferException may occur when the method is called. The caller must respect the BUSY state and attempt to continue the transfer when possible. In case of any other exception, this is a non-recoverable transfer error and the transfer is terminated.&lt;br/&gt;
-		</td>
-	</tr>
-</table></div>
-
-						</div>
-<div style="text-align: right">[ Is static False. Is abstract False. Is return array False. Is query False. Is synchronized False. ]</div>
-					</div>
-				</td>
-			</tr>
-			<tr>
-				<td width="100%" class="TableRow">
-					<i>Public</i><br />
-					<strong>Send</strong> (sendRequest: <a href="../EA1/EA87.html">SendRequest</a>, 
-sendResponse: <a href="../EA1/EA88.html">SendResponse</a>, 
-fileTransferException: <a href="../EA1/EA82.html">FileTransferException</a>, 
-) : 
-				</td>
-			</tr>
-			<tr>
-				<td class="TableRowBottomDashed"  colspan="1">
-					<div class="DetailsDivParent">Details:</BR>
-						<div id="detailsDIVOperations180" class="DetailsDiv" >					
-					<div class="ObjectDetailsNotes"><table>
-	<tr>
-		<td valign="top">
-			<i>Notes: </i><span style="margin-left: .4cm;"> </span>
-		</td>
-		<td>
-			Service for transferring data from client to server. The method is called after the transfer has been successfully initiated by calling Begin and obtaining the transfer identifier.&lt;br/&gt;The method is used to transfer a frame with data. The frame contains a header, blocks describing the folders and files to be transferred and data consisting of a stream of binary file data.&lt;br/&gt;The parameters of the method are the transfer identifier and the frame to be transferred. Individual frames are transferred sequentially one after the other. The first frame is number 0. The last frame transferred must have the &quot;last&quot; flag set.&lt;br/&gt;In case of a transmission failure, the last frame can be retransmitted. If the method call ends without error, the other side has received the frame and the next frame can be sent.&lt;br/&gt;&lt;br/&gt;A FileTransferException may occur when the method is called. If the exception is of type BUSY, the caller should resend the last frame later. If the exception is of any other type, it means the transfer has failed and the transfer will be terminated.&lt;br/&gt;
-		</td>
-	</tr>
-</table></div>
-
-						</div>
-<div style="text-align: right">[ Is static False. Is abstract False. Is return array False. Is query False. Is synchronized False. ]</div>
-					</div>
-				</td>
-			</tr>
-			<tr>
-				<td width="100%" class="TableRow">
-					<i>Public</i><br />
-					<strong>Status</strong> (statusRequest: <a href="../EA1/EA89.html">StatusRequest</a>, 
-statusResponse: <a href="../EA1/EA90.html">StatusResponse</a>, 
-fileTransferException: <a href="../EA1/EA82.html">FileTransferException</a>, 
-) : 
-				</td>
-			</tr>
-			<tr>
-				<td class="TableRowBottomDashed"  colspan="1">
-					<div class="DetailsDivParent">Details:</BR>
-						<div id="detailsDIVOperations181" class="DetailsDiv" >					
-					<div class="ObjectDetailsNotes"><table>
-	<tr>
-		<td valign="top">
-			<i>Notes: </i><span style="margin-left: .4cm;"> </span>
-		</td>
-		<td>
-			A service for obtaining information about the status of a transfer. The method can be called at any time. The method parameter is the transfer identifier.&lt;br/&gt;The method allows to resume transfer after a previous transfer error or loss of connection. The result of the call is the transfer status information and the number of the last transmitted frame. If the transfer has been properly terminated, the method also returns data identical to the response to the &quot;Finish&quot; method call. The period of availability of the completed transfer information depends on the configuration of the specific service.&lt;br/&gt;If any of the previous calls end with a BUSY exception, the method can be used to verify the server is available again.&lt;br/&gt;&lt;br/&gt;
-		</td>
-	</tr>
-</table></div>
-
-						</div>
-<div style="text-align: right">[ Is static False. Is abstract False. Is return array False. Is query False. Is synchronized False. ]</div>
-					</div>
-				</td>
-			</tr>
-
-		</table>
-</div>		<div class="ItemBody" id="AssociationsFromTable">
-			<table class="Table ea_table">
-				<tr>
-					<td width="40%" class="TableHeading">Element</td>
-					<td width="30%" class="TableHeading">Source Role</td>
-					<td width="30%" class="TableHeading">Target Role</td>
-				</tr>
-				<tr>
-					<td width="40%" class="TableRow" valign="top">
-						<a href="../EA4/EA102.html">«WSDLservice» FileTransferService</a><br />
-						Interface &nbsp;
-					</td>
-					<td width="30%" class="TableRow" valign="top">
-						<strong>Name:</strong> &nbsp;<br />
-						&nbsp;
-					</td>
-					<td width="30%" class="TableRow" valign="top">
-						<strong>Name:</strong> &nbsp;<br />
-						&nbsp;	
-					</td>
-				</tr>
-				<tr>
-					<td class="TableRowBottomDashed"  colspan="3">
-						<div class="DetailsDivParent"><button onclick="switchProjectProperties()"><img src="../../../images/minus03.gif" align="absmiddle" id="DetailsImageLink182" /></button>Details:
-							<div id="detailsDIVLink182" class="DetailsDiv" >
-							&nbsp;
-							</div>
-						</div>
-					</td>
-				</tr>
-
-			</table>
-		</div>
-<div class="ItemBody" id="TaggedValTable">
-	<table align="center" border="0" cellspacing="0" cellpadding="0" class="Table">
-		<tr>
-			<td width="50%" class="TableHeading">Tag</td>
-			<td width="50%" class="TableHeading">Value</td>
-		</tr>
-					<tr>
-				<td width="50%" class="TableRow" valign="top">protocol</td>
-				<td width="50%" class="TableRow" valign="top">soap</td>
-			</tr>	
-			<tr>
-				<td class="TableRowBottomDashed"  colspan="2">
-					Details:
-						&nbsp;
-				</td>
-			</tr>			<tr>
-				<td width="50%" class="TableRow" valign="top">style</td>
-				<td width="50%" class="TableRow" valign="top">document</td>
-			</tr>	
-			<tr>
-				<td class="TableRowBottomDashed"  colspan="2">
-					Details:
-						&nbsp;
-				</td>
-			</tr>			<tr>
-				<td width="50%" class="TableRow" valign="top">transport</td>
-				<td width="50%" class="TableRow" valign="top"><a href="http://schemas.xmlsoap.org/soap/http" target="_blank" >http://schemas.xmlsoap.org/soap/http</a></td>
-			</tr>	
-			<tr>
-				<td class="TableRowBottomDashed"  colspan="2">
-					Details:
-						&nbsp;
-				</td>
-			</tr>
-	</table>
-</div>		<div class="ItemBody" id="CustomPropertiesTable">
-			<table class="Table ea_table">
-				<tr>
-					<td width="30%" class="TableHeading">Property</td>
-					<td width="70%" class="TableHeading">Value</td>
-				</tr>
-			<tr>
-				<td width="30%" class="TableRow">isFinalSpecialization:</td>
-				<td width="70%" class="TableRow">0</td>
-			</tr>
-
-
-			</table>
-		</div>		<div class="ItemBody" id="LinksTable">
-			<table class="Table ea_table">
-				<tr>
-					<td width="30%" class="TableHeading">Object</td>
-					<td width="10%" class="TableHeading">Type</td>
-					<td width="10%" class="TableHeading">Connection</td>
-					<td width="10%" class="TableHeading">Direction</td>
-					<td width="40%" class="TableHeading">Notes</td>
-				</tr>
-				<tr>
-					<td width="30%" class="TableRow" valign="top"><a href="../EA2/EA94.html">«WSDLportType» FileTransferService</a></td>
-					<td width="10%" class="TableRow" valign="top">Interface</td>
-					<td width="10%" class="TableRow" valign="top">Realization</td>
-					<td width="10%" class="TableRow" valign="top">To</td>
-					<td width="40%" class="TableRow" valign="top">&nbsp;</td>
-				</tr>
-
-			</table>
-		</div>
-	</div>
  </div>
  </td>
 				</tr>

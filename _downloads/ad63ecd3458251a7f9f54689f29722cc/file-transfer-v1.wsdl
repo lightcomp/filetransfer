@@ -50,6 +50,10 @@
 		<wsdl:documentation>Transfer status request</wsdl:documentation>
 		<wsdl:part name="statusRequest" element="ft:TransferStatusRequest"/>
 	</wsdl:message>
+	<wsdl:message name="BeginResponse">
+		<wsdl:documentation>Response to request to start transfer. Response contains identifier of the transfer.</wsdl:documentation>
+		<wsdl:part name="beginResponse" element="ft:BeginResponse"/>
+	</wsdl:message>
 	<wsdl:portType name="FileTransferService">
 		<wsdl:documentation>File Transfer allows you to transfer data from client to server or from server to client. A client is defined as the party that actively calls the server. The server responds to client requests. The server can serve multiple clients/transfers in parallel.&#xD;
 The API consists of five transfer methods/services and a sixth to determine the status of the transfer.</wsdl:documentation>
@@ -142,30 +146,6 @@ Response. If the transfer can no longer be aborted or the transfer with the give
 				<soap:fault name="fileTransferException" use="literal"/>
 			</wsdl:fault>
 		</wsdl:operation>
-		<wsdl:operation name="Begin">
-			<wsdl:documentation>Service to start data transfer. The data transfer is initiated by the Begin call which includes the parameters of the requested transfer. Each transmission to be initiated is of a specific type. The type of transfer is specified by a string with a fixed meaning. Data is transferred in the form of a directory with files and always in one direction - either from server to client or from client to server. The direction of transfer is fixed to the type of transfer and agreed upon by both parties in advance.&#xD;
-The initiation of the transfer may include the transfer of optional user data. The requirements for the parameterisation of the initiation of the transfer are always defined separately within the documentation of the application that uses the FileTransfer service.&#xD;
-&#xD;
-The possible parameters of the method are:&#xD;
-	- transfer type - should always be specified, it is a text constant&#xD;
-	- identifier of the transferred data - optional identifier that specifies the transferred data. For example, for the transfer type "DOWNLOAD" the identifier could be the file name.&#xD;
-	- binary data - an optional part of the request can be binary data&#xD;
-	- XML data - an optional part of the request can be an XML document&#xD;
-&#xD;
-The service will evaluate the legitimacy of the request to start the transfer. If the transfer is initiated, a transfer identifier is returned. In case of an incorrect request, a FileTransferException is raised.&#xD;
-Once a transfer is successfully initiated, it is active until it completes, aborts, fails, or times out. If the transfer is from client to server, the Send method is called, if the transfer is from server to client, the Receive method is called.&#xD;
-The response to start the transfer is the TransferId. This is the unique identifier of the transfer.</wsdl:documentation>
-			<soap:operation soapAction="http://www.lightcomp.com/ft/ws/v1/Begin" style="document"/>
-			<wsdl:input name="beginRequest">
-				<soap:body use="literal"/>
-			</wsdl:input>
-			<wsdl:output name="beginResponse">
-				<soap:body use="literal"/>
-			</wsdl:output>
-			<wsdl:fault name="fileTransferException">
-				<soap:fault name="fileTransferException" use="literal"/>
-			</wsdl:fault>
-		</wsdl:operation>
 		<wsdl:operation name="Finish">
 			<wsdl:documentation>Service to complete the transfer. Calling the method means that all data has already been transferred and will not be followed by a Send or Receive call.&#xD;
 The call parameter is the transfer identifier.&#xD;
@@ -224,10 +204,34 @@ In case of a transmission failure, the last frame can be retransmitted. If the m
 A FileTransferException may occur when the method is called. If the exception is of type BUSY, the caller should resend the last frame later. If the exception is of any other type, it means the transfer has failed and the transfer will be terminated.</wsdl:documentation>
 			<soap:operation soapAction="http://www.lightcomp.com/ft/ws/v1/Send" style="document"/>
 			<wsdl:input name="sendRequest">
-				<wsdl:documentation>Pøenášená data</wsdl:documentation>
+				<wsdl:documentation>Sent data</wsdl:documentation>
 				<soap:body use="literal"/>
 			</wsdl:input>
 			<wsdl:output name="sendResponse">
+				<soap:body use="literal"/>
+			</wsdl:output>
+			<wsdl:fault name="fileTransferException">
+				<soap:fault name="fileTransferException" use="literal"/>
+			</wsdl:fault>
+		</wsdl:operation>
+		<wsdl:operation name="Begin">
+			<wsdl:documentation>Service to start data transfer. The data transfer is initiated by the Begin call which includes the parameters of the requested transfer. Each transmission to be initiated is of a specific type. The type of transfer is specified by a string with a fixed meaning. Data is transferred in the form of a directory with files and always in one direction - either from server to client or from client to server. The direction of transfer is fixed to the type of transfer and agreed upon by both parties in advance.&#xD;
+The initiation of the transfer may include the transfer of optional user data. The requirements for the parameterisation of the initiation of the transfer are always defined separately within the documentation of the application that uses the FileTransfer service.&#xD;
+&#xD;
+The possible parameters of the method are:&#xD;
+	- transfer type - should always be specified, it is a text constant&#xD;
+	- identifier of the transferred data - optional identifier that specifies the transferred data. For example, for the transfer type "DOWNLOAD" the identifier could be the file name.&#xD;
+	- binary data - an optional part of the request can be binary data&#xD;
+	- XML data - an optional part of the request can be an XML document&#xD;
+&#xD;
+The service will evaluate the legitimacy of the request to start the transfer. If the transfer is initiated, a transfer identifier is returned. In case of an incorrect request, a FileTransferException is raised.&#xD;
+Once a transfer is successfully initiated, it is active until it completes, aborts, fails, or times out. If the transfer is from client to server, the Send method is called, if the transfer is from server to client, the Receive method is called.&#xD;
+The response to start the transfer is the TransferId. This is the unique identifier of the transfer.</wsdl:documentation>
+			<soap:operation soapAction="http://www.lightcomp.com/ft/ws/v1/Begin" style="document"/>
+			<wsdl:input name="beginRequest">
+				<soap:body use="literal"/>
+			</wsdl:input>
+			<wsdl:output name="beginResponse">
 				<soap:body use="literal"/>
 			</wsdl:output>
 			<wsdl:fault name="fileTransferException">
