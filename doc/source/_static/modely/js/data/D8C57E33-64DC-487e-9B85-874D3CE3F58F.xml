@@ -1,2 +1,2 @@
-tocTab[tocTab.length] = new Array("0.2.2:1", "", "PortTypes", "EARoot/EA2/EA2/EA91.html", "175.png", "3", "0", "", "Logical diagram0","{55A30D32-C015-4aa3-8A3F-5ED95BF39AA4}");
-tocTab[tocTab.length] = new Array("0.2.2:2", "", "FileTransferService", "EARoot/EA2/EA2/EA94.html", "8.png", "E55", "0", "", "Interface0","{170E817D-DF64-4970-A293-285FFD07781D}");
+tocTab[tocTab.length] = new Array("0.2.2:1", "", "PortTypes", "EARoot/EA2/EA2/EA92.html", "175.png", "3", "0", "", "Logical diagram0","{55A30D32-C015-4aa3-8A3F-5ED95BF39AA4}");
+tocTab[tocTab.length] = new Array("0.2.2:2", "", "FileTransferService", "EARoot/EA2/EA2/EA95.html", "8.png", "E55", "0", "", "Interface0","{170E817D-DF64-4970-A293-285FFD07781D}");
