@@ -1,141 +1,140 @@
-<?xml version="1.0" encoding="utf-8"?>
-<wsdl:definitions name="FileTransferService" targetNamespace="http://www.lightcomp.com/ft/wsdl/v1" xmlns:tns="http://www.lightcomp.com/ft/wsdl/v1" xmlns:ft="http://www.lightcomp.com/ft/xsd/v1" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+<?xml  version='1.0' encoding='utf-8' ?>
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" name="FileTransferService" targetNamespace="http://www.lightcomp.com/ft/wsdl/v1" xmlns:tns="http://www.lightcomp.com/ft/wsdl/v1" xmlns:ft="http://www.lightcomp.com/ft/xsd/v1" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/">
 	<wsdl:import namespace="http://www.lightcomp.com/ft/xsd/v1" location="file-transfer-v1.xsd"/>
 	<wsdl:types/>
-	<wsdl:message name="BeginResponse">
-		<wsdl:documentation>odpověď na zahájení přenosu</wsdl:documentation>
-		<wsdl:part name="beginResponse" element="ft:BeginResponse"/>
-	</wsdl:message>
 	<wsdl:message name="ReceiveRequest">
-		<wsdl:documentation>Požadavek pro příjem dat ze serveru.</wsdl:documentation>
+		<wsdl:documentation>Requirement to receive data from the server.</wsdl:documentation>
 		<wsdl:part name="receiveRequest" element="ft:ReceiveRequest"/>
 	</wsdl:message>
 	<wsdl:message name="FileTransferException">
-		<wsdl:documentation>Definice výjimky při přenosu.</wsdl:documentation>
+		<wsdl:documentation>File transfer exception. Allows to pass a detail description of error.</wsdl:documentation>
 		<wsdl:part name="errorDescription" element="ft:ErrorDescription">
-			<wsdl:documentation>Popis výjimky</wsdl:documentation>
+			<wsdl:documentation>Detail description of error</wsdl:documentation>
 		</wsdl:part>
 	</wsdl:message>
 	<wsdl:message name="SendRequest">
-		<wsdl:documentation>Odesílaný požadavek na server, parametr metody Send.</wsdl:documentation>
+		<wsdl:documentation>Data sent to the server, parameter of the Send method.</wsdl:documentation>
 		<wsdl:part name="sendRequest" element="ft:SendRequest"/>
 	</wsdl:message>
 	<wsdl:message name="ReceiveResponse">
-		<wsdl:documentation>Odpověď na požadavek pro příjem dat. Obsahuje přenášený rámec.</wsdl:documentation>
+		<wsdl:documentation>Response to a request to receive data from the server. Contains the transmitted frame.</wsdl:documentation>
 		<wsdl:part name="frame" element="ft:Frame"/>
 	</wsdl:message>
 	<wsdl:message name="AbortResponse">
-		<wsdl:documentation>Odpověď na požadavek na přerušení přenosu.</wsdl:documentation>
+		<wsdl:documentation>Empty response to abort request.</wsdl:documentation>
 	</wsdl:message>
 	<wsdl:message name="AbortRequest">
-		<wsdl:documentation>Požadavek na ukončení přenosu</wsdl:documentation>
+		<wsdl:documentation>Request to abort transfer. ID of transfer has to be provided.</wsdl:documentation>
 		<wsdl:part name="abortRequest" element="ft:AbortRequest"/>
 	</wsdl:message>
 	<wsdl:message name="BeginRequest">
-		<wsdl:documentation>Identifikátor požadavku přenosu. Parametr metody Begin.</wsdl:documentation>
+		<wsdl:documentation>The date of the request to start the transfer. The structure is a parameter of the Begin method. It contains the transfer type and other optional user data.</wsdl:documentation>
 		<wsdl:part name="beginRequest" element="ft:BeginRequest"/>
 	</wsdl:message>
 	<wsdl:message name="SendResponse">
-		<wsdl:documentation>Odpověď na metodu Send</wsdl:documentation>
+		<wsdl:documentation>Response to the method "Send"</wsdl:documentation>
 	</wsdl:message>
 	<wsdl:message name="StatusResponse">
-		<wsdl:documentation>Stav přenosu</wsdl:documentation>
+		<wsdl:documentation>Response to transfer status request.</wsdl:documentation>
 		<wsdl:part name="status" element="ft:TransferStatus"/>
 	</wsdl:message>
 	<wsdl:message name="FinishResponse">
-		<wsdl:documentation>Odpověď na ukončení přenosu.</wsdl:documentation>
+		<wsdl:documentation>Response to the completed transfer.</wsdl:documentation>
 		<wsdl:part name="response" element="ft:GenericData"/>
 	</wsdl:message>
 	<wsdl:message name="FinishRequest">
-		<wsdl:documentation>Požadavek na dokončení přenosu</wsdl:documentation>
+		<wsdl:documentation>Request to complete the transfer</wsdl:documentation>
 		<wsdl:part name="finishRequest" element="ft:FinishRequest"/>
 	</wsdl:message>
 	<wsdl:message name="StatusRequest">
-		<wsdl:documentation>Požadavek na status</wsdl:documentation>
+		<wsdl:documentation>Transfer status request</wsdl:documentation>
 		<wsdl:part name="statusRequest" element="ft:TransferStatusRequest"/>
 	</wsdl:message>
+	<wsdl:message name="BeginResponse">
+		<wsdl:documentation>Response to request to start transfer. Response contains identifier of the transfer.</wsdl:documentation>
+		<wsdl:part name="beginResponse" element="ft:BeginResponse"/>
+	</wsdl:message>
 	<wsdl:portType name="FileTransferService">
-		<wsdl:documentation>File Transfer umožňuje přenos dat z klienta na server nebo ze serveru na klienta. Klientem se rozumí strana, která aktivně volá server. Server odpovídá na požadavky klientů. Server může paralelně oblushovat více klientů/přenosů.
-API je tvořeno pěti přenosovými metodami/službami a šestou pro zjištění stavu přenosu (Status).</wsdl:documentation>
+		<wsdl:documentation>File Transfer allows you to transfer data from client to server or from server to client. A client is defined as the party that actively calls the server. The server responds to client requests. The server can serve multiple clients/transfers in parallel.&#xD;
+The API consists of five transfer methods/services and a sixth to determine the status of the transfer.</wsdl:documentation>
 		<wsdl:operation name="Abort">
-			<wsdl:documentation>Služba pro přerušení probíhajícího přenosu. Požadavek na přerušení přenosu zasílá klient. Požadavek lze provést pouze pokud je přenos aktivní. Jednou přerušený přenos již nelze obnovit a pokračovat v něm.
-
-Při požadavku na přerušení přenosu se jako jediný vstupní parametr zasílá identifikátor přenosu. Identifikátor přenosu se získá z odpovědi na volání Begin.
-
-Odpověď: V případě úspěšného přerušení přenosu se vrací prázdná odpověď. Pokud již přenos není možné přerušit nebo přenos s daným identifikátorem nebyl na serveru nalezen, dojde k výjimce FileTransferException.</wsdl:documentation>
+			<wsdl:documentation>Service to interrupt a transfer in progress. The request to interrupt the transfer is sent by the client. The request can only be made if the transfer is still active. Once interrupted, the transfer cannot be resumed and continued.&#xD;
+&#xD;
+When a request for interrupting a transfer is made, the transfer identifier is sent as the only input parameter. The transfer identifier is obtained from the response to the Begin call.&#xD;
+&#xD;
+Response. If the transfer can no longer be aborted or the transfer with the given identifier is not found on the server, a FileTransferException occurs.</wsdl:documentation>
 			<wsdl:input name="abortRequest" message="tns:AbortRequest"/>
 			<wsdl:output name="abortResponse" message="tns:AbortResponse"/>
 			<wsdl:fault name="fileTransferException" message="tns:FileTransferException"/>
 		</wsdl:operation>
 		<wsdl:operation name="Begin">
-			<wsdl:documentation>Služba pro zahájení přenosu dat. Přenos dat se zahajuje voláním Begin jehož součástí jsou parametry požadovaného přenosu. Každý zahajovaný přenos je určitého typu. Typ přenosu se určuje řetězcem s pevně definovaným významem. Data se přenášejí v podobě adresáře se soubory a to vždy jedním směrem - buď ze serveru na klienta nebo z klienta na server. Směr přenosu je pevně spojen s typem přenosu a předem oběma stranami dohodnut.
-Součástí zahájení přenosu může být předání volitelných uživatelských dat. Požadavky na parametrizace zahájení přenosu jsou vždy definovány samostatně v rámci dokumentace celku, který službu FileTransfer využívá.
-
-Možné parametry metody jsou:
-- typ přenosu - měl by se uvádět vždy, jedná se o textovou konstantu
-- identifikátor přenášených dat - volitelný identifikátor, který určuje přenášená data. Například pro typ přenosu "DOWNLOAD" by identifikátorem mohl být název souboru.
-- binární data - volitelnou součástí požadavku mohou být binární data
-- XML data - volitelnou součástí požadavku může být XML dokument
-
-Služba vyhodnotí oprávněnost požadavku na zahájení přenosu. V případě zahájení přenosu je vrácen identifikátor přenosu. V případě chybného požadavku dojde k výjimce FileTransferException.
-Po úspěšném zahájení přenosu je tento aktivní dokud nebude dokončen, přerušen, neselže, nebo nedojde k vypršení časových limitů. Pokud přenos probíhá z klienta na server, tak se dále volá metoda Send, pokud přenos probíhá ze serveru na klienta, tak se dále volá metoda Receive.
-
-Odpovědí na zahájení přenosu je TransferId. Jedná se o jednoznačný identifikátor přenosu.</wsdl:documentation>
+			<wsdl:documentation>Service to start data transfer. The data transfer is initiated by the Begin call which includes the parameters of the requested transfer. Each transmission to be initiated is of a specific type. The type of transfer is specified by a string with a fixed meaning. Data is transferred in the form of a directory with files and always in one direction - either from server to client or from client to server. The direction of transfer is fixed to the type of transfer and agreed upon by both parties in advance.&#xD;
+The initiation of the transfer may include the transfer of optional user data. The requirements for the parameterisation of the initiation of the transfer are always defined separately within the documentation of the application that uses the FileTransfer service.&#xD;
+&#xD;
+The possible parameters of the method are:&#xD;
+	- transfer type - should always be specified, it is a text constant&#xD;
+	- identifier of the transferred data - optional identifier that specifies the transferred data. For example, for the transfer type "DOWNLOAD" the identifier could be the file name.&#xD;
+	- binary data - an optional part of the request can be binary data&#xD;
+	- XML data - an optional part of the request can be an XML document&#xD;
+&#xD;
+The service will evaluate the legitimacy of the request to start the transfer. If the transfer is initiated, a transfer identifier is returned. In case of an incorrect request, a FileTransferException is raised.&#xD;
+Once a transfer is successfully initiated, it is active until it completes, aborts, fails, or times out. If the transfer is from client to server, the Send method is called, if the transfer is from server to client, the Receive method is called.&#xD;
+The response to start the transfer is the TransferId. This is the unique identifier of the transfer.</wsdl:documentation>
 			<wsdl:input name="beginRequest" message="tns:BeginRequest"/>
 			<wsdl:output name="beginResponse" message="tns:BeginResponse"/>
 			<wsdl:fault name="fileTransferException" message="tns:FileTransferException"/>
 		</wsdl:operation>
 		<wsdl:operation name="Finish">
-			<wsdl:documentation>Služba pro dokončení přenosu. Zavoláním metody znamená, že všechna data již byla přenesena a nebude následovat volání Send nebo Receive.
-Parametrem volání je identifikátor přenosu.
-Pokud metoda skončí úspěšně, tak tím i druhá strana potvrzuje úspěšné dokončení přenosu. Pokud metoda skončí chybou - dojde k výjimce, tak to znamená, že celý přenos se považuje za neúspěšný. Pokud je výjimka typu BUSY, tak by se volání služby mělo opakovat později.
-Výsledkem úspěšného zavolání metody ukončení přenosu je struktura GenericData. Tato struktura umožňuje předat ze serveru na klienta doplňující data odpovědi. Rozsah takto předávaných dat je předmětem specifikace daného užití služby. Typickým příkladem předaných dat může být identifikátor uložené entity.</wsdl:documentation>
+			<wsdl:documentation>Service to complete the transfer. Calling the method means that all data has already been transferred and will not be followed by a Send or Receive call.&#xD;
+The call parameter is the transfer identifier.&#xD;
+If the method completes successfully, the other side confirms the successful completion of the transfer. If the method ends with an error - an exception occurs, it means that the entire transfer is considered unsuccessful. If the exception is of type BUSY, the service call should be repeated later.&#xD;
+The result of a successful call to the transfer completion method is a GenericData structure. This structure allows additional response data to be passed from the server to the client. The scope of the data transferred in this way is subject to the specification of the service usage. A typical example of the data passed may be a stored entity identifier.</wsdl:documentation>
 			<wsdl:input name="finishRequest" message="tns:FinishRequest"/>
 			<wsdl:output name="finishResponse" message="tns:FinishResponse"/>
 			<wsdl:fault name="fileTransferException" message="tns:FileTransferException"/>
 		</wsdl:operation>
 		<wsdl:operation name="Receive">
-			<wsdl:documentation>Služba pro přenos dat ze serveru na klienta. Metoda se volá po úspěšném zahájení přenosu voláním Begin a získání identifikátoru přenosu.
-Parametrem volání je identifikátor přenosu (výsledek metody Begin) a pořadové číslo rámce. První přenášený rámec má pořadové číslo 0. V průběhu přenosu je možné žádat o stávající nebo následující rámec. Například po přenosu rámce číslo 2 je možná opakovaně volat metodu pro přenos rámce číslo 2 nebo přenos následujícího rámce číslo 3. Přenos rámců musí probíhat jeden po druhém a nelze je přenášet v náhodném pořadí.
-
-Odpovědí na volání služby je rámec, struktura Frame. Součástí této struktury je příznak (element "last") určující, zda se jedná o poslední rámec v rámci přenosu. Po přenesení posledního rámce již nelze metodu volat a přenos by měl být ukončen. Ukončení přenosu se provede voláním finish.
-
-Při volání metody může dojít k výjimce FileTransferException. Volající musí respektovat stav BUSY a pokusit se o pokračování přenosu až to bude možné. V případě jiné výjimky se jedná o neobnovitelnou chybu přenosu.</wsdl:documentation>
+			<wsdl:documentation>A service for transferring data from the server to the client. The method is called after the transfer has been successfully initiated by calling "Begin" and obtaining the transfer identifier.&#xD;
+The call parameter is the transfer identifier (the result of the "Begin" method) and the frame sequence number. The first transmitted frame has sequence number 0. It is possible to request the current or the next frame during the transmission. For example, after frame number 2 has been transmitted, the method can be called repeatedly to transmit frame number 2 or to transmit the next frame number 3. The frames must be transmitted one after the other and cannot be transmitted in random order.&#xD;
+&#xD;
+The response to a service call is a frame, it means "Frame" structure. This structure includes a flag (attribute "last") indicating whether it is the last frame of the transmission. Once the last frame has been transmitted, the method can no longer be called and the transmission should be terminated. The transfer is completed by calling "Finish".&#xD;
+&#xD;
+A FileTransferException may occur when the method is called. The caller must respect the BUSY state and attempt to continue the transfer when possible. In case of any other exception, this is a non-recoverable transfer error and the transfer is terminated.</wsdl:documentation>
 			<wsdl:input name="receiveRequest" message="tns:ReceiveRequest"/>
 			<wsdl:output name="receiveResponse" message="tns:ReceiveResponse"/>
 			<wsdl:fault name="fileTransferException" message="tns:FileTransferException"/>
 		</wsdl:operation>
 		<wsdl:operation name="Status">
-			<wsdl:documentation>Služba pro získání informací o stavu přenosu. Metodu lze volat kdykoliv. Parametrem metody je identifikátor přenosu.
-Metoda umožňuje obnovení přenosu po předchozí chybě, ztrátě spojení. Výsledkem volání je informace o stavu přenosu a číslo posledního přeneseného rámce. Pokud byl přenos řádně ukončen, metoda také vrací data shodná s odpovědí na volání metody Finish. Doba dostupnosti informací o ukončeném přenosu závisí na konfiguraci konkrétní služby.
-Pokud některé z předchozích volání skončí výjimkou s kódem BUSY je možné metodu použít pro ověření opětovné dostupnosti serveru.</wsdl:documentation>
+			<wsdl:documentation>A service for obtaining information about the status of a transfer. The method can be called at any time. The method parameter is the transfer identifier.&#xD;
+The method allows to resume transfer after a previous transfer error or loss of connection. The result of the call is the transfer status information and the number of the last transmitted frame. If the transfer has been properly terminated, the method also returns data identical to the response to the "Finish" method call. The period of availability of the completed transfer information depends on the configuration of the specific service.&#xD;
+If any of the previous calls end with a BUSY exception, the method can be used to verify the server is available again.</wsdl:documentation>
 			<wsdl:input name="statusRequest" message="tns:StatusRequest"/>
 			<wsdl:output name="statusResponse" message="tns:StatusResponse"/>
 			<wsdl:fault name="fileTransferException" message="tns:FileTransferException"/>
 		</wsdl:operation>
 		<wsdl:operation name="Send">
-			<wsdl:documentation>Služba pro přenos dat z klienta na server. Metoda se volá po úspěšném zahájení přenosu voláním Begin a získání identifikátoru přenosu.
-Metoda slouží pro přenos rámce s daty. Rámec obsahuje hlavičku a data tvořená streamem binárních dat souborů, bloky popisující přenášené složky a soubory.
-Parametrem metody je identifikátor přenosu a přenášený rámec. Jednotlivé rámce se přenášejí sekvenčně jeden za druhým. První přenášený rámec má číslo 0. Poslední přenášený rámec musí mít nastaven příznak last.
-V případě výpadku přenosu je možné poslední rámec zaslat opakovaně. Pokud volání metody skončí bez chyby, tak druhá strana rámec přijala a je možné zaslat další.
-
-Při volání metody může dojít k výjimce FileTransferException. Pokud je výjimka typu BUSY, tak by měl volající zaslat poslední rámec později. Pokud je výjimka jiného typu, tak to znamená selhání přenosu.</wsdl:documentation>
+			<wsdl:documentation>Service for transferring data from client to server. The method is called after the transfer has been successfully initiated by calling Begin and obtaining the transfer identifier.&#xD;
+The method is used to transfer a frame with data. The frame contains a header, blocks describing the folders and files to be transferred and data consisting of a stream of binary file data.&#xD;
+The parameters of the method are the transfer identifier and the frame to be transferred. Individual frames are transferred sequentially one after the other. The first frame is number 0. The last frame transferred must have the "last" flag set.&#xD;
+In case of a transmission failure, the last frame can be retransmitted. If the method call ends without error, the other side has received the frame and the next frame can be sent.&#xD;
+&#xD;
+A FileTransferException may occur when the method is called. If the exception is of type BUSY, the caller should resend the last frame later. If the exception is of any other type, it means the transfer has failed and the transfer will be terminated.</wsdl:documentation>
 			<wsdl:input name="sendRequest" message="tns:SendRequest">
-				<wsdl:documentation>Přenášená data</wsdl:documentation>
+				<wsdl:documentation>Sent data</wsdl:documentation>
 			</wsdl:input>
 			<wsdl:output name="sendResponse" message="tns:SendResponse"/>
 			<wsdl:fault name="fileTransferException" message="tns:FileTransferException"/>
 		</wsdl:operation>
 	</wsdl:portType>
 	<wsdl:binding name="FileTransferSOAPBinding" type="tns:FileTransferService">
-		<wsdl:documentation>FileTransferService, vazba pomocí SOAP</wsdl:documentation>
+		<wsdl:documentation>FileTransferService, SOAP binding</wsdl:documentation>
 		<soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
 		<wsdl:operation name="Abort">
-			<wsdl:documentation>Klient pošle požadavek na přerušení přenosu. Lze jej provést pouze pokud je přenos aktivní. Po přerušení přenosu již v něm nelze pokračovat.
-
-Při požadavku na přerušení přenosu se jako jediný vstupní parametr zasílá identifikátor přenosu. Identifikátor přenosu se získá z odpovědi na volání Begin.
-
-Odpověď: V případě úspěšného přerušení přenosu se vrací prázdná odpověď. Pokud již přenos není možné přerušit nebo přenos s daným identifikátorem nebyl na serveru nalezen, dojde k výjimce FileTransferException.</wsdl:documentation>
+			<wsdl:documentation>Service to interrupt a transfer in progress. The request to interrupt the transfer is sent by the client. The request can only be made if the transfer is still active. Once interrupted, the transfer cannot be resumed and continued.&#xD;
+&#xD;
+When a request for interrupting a transfer is made, the transfer identifier is sent as the only input parameter. The transfer identifier is obtained from the response to the Begin call.&#xD;
+&#xD;
+Response. If the transfer can no longer be aborted or the transfer with the given identifier is not found on the server, a FileTransferException occurs.</wsdl:documentation>
 			<soap:operation soapAction="http://www.lightcomp.com/ft/ws/v1/Abort" style="document"/>
 			<wsdl:input name="abortRequest">
 				<soap:body use="literal"/>
@@ -147,36 +146,11 @@ Odpověď: V případě úspěšného přerušení přenosu se vrací prázdná 
 				<soap:fault name="fileTransferException" use="literal"/>
 			</wsdl:fault>
 		</wsdl:operation>
-		<wsdl:operation name="Begin">
-			<wsdl:documentation>Služba pro zahájení přenosu dat. Přenos dat se zahajuje voláním Begin jehož součástí jsou parametry požadovaného přenosu. Každý zahajovaný přenos je určitého typu. Typ přenosu se určuje řetězcem s pevně definovaným významem. Data se přenášejí v podobě adresáře se soubory a to vždy jedním směrem - buď ze serveru na klienta nebo z klienta na server. Směr přenosu je pevně spojen s typem přenosu a předem oběma stranami dohodnut.
-Součástí zahájení přenosu může být předání volitelných uživatelských dat. Požadavky na parametrizace zahájení přenosu jsou vždy definovány samostatně v rámci dokumentace celku, který službu FileTransfer využívá.
-
-Možné parametry metody jsou:
-- typ přenosu - měl by se uvádět vždy, jedná se o textovou konstantu
-- identifikátor přenášených dat - volitelný identifikátor, který určuje přenášená data. Například pro typ přenosu "DOWNLOAD" by identifikátorem mohl být název souboru.
-- binární data - volitelnou součástí požadavku mohou být binární data
-- XML data - volitelnou součástí požadavku může být XML dokument
-
-Služba vyhodnotí oprávněnost požadavku na zahájení přenosu. V případě zahájení přenosu je vrácen identifikátor přenosu. V případě chybného požadavku dojde k výjimce FileTransferException.
-Po úspěšném zahájení přenosu je tento aktivní dokud nebude dokončen, přerušen, neselže, nebo nedojde k vypršení časových limitů. Pokud přenos probíhá z klienta na server, tak se dále volá metoda Send, pokud přenos probíhá ze serveru na klienta, tak se dále volá metoda Receive.
-
-Odpovědí na zahájení přenosu je TransferId. Jedná se o jednoznačný identifikátor přenosu.</wsdl:documentation>
-			<soap:operation soapAction="http://www.lightcomp.com/ft/ws/v1/Begin" style="document"/>
-			<wsdl:input name="beginRequest">
-				<soap:body use="literal"/>
-			</wsdl:input>
-			<wsdl:output name="beginResponse">
-				<soap:body use="literal"/>
-			</wsdl:output>
-			<wsdl:fault name="fileTransferException">
-				<soap:fault name="fileTransferException" use="literal"/>
-			</wsdl:fault>
-		</wsdl:operation>
 		<wsdl:operation name="Finish">
-			<wsdl:documentation>Služba pro dokončení přenosu. Zavoláním metody znamená, že všechna data již byla přenesena a nebude následovat volání Send nebo Receive.
-Parametrem volání je identifikátor přenosu.
-Pokud metoda skončí úspěšně, tak tím i druhá strana potvrzuje úspěšné dokončení přenosu. Pokud metoda skončí chybou - dojde k výjimce, tak to znamená, že celý přenos se považuje za neúspěšný. Pokud je výjimka typu BUSY, tak by se volání služby mělo opakovat později.
-Výsledkem úspěšného zavolání metody ukončení přenosu je struktura GenericData. Tato struktura umožňuje předat ze serveru na klienta doplňující data odpovědi. Rozsah takto předávaných dat je předmětem specifikace daného užití služby. Typickým příkladem předaných dat může být identifikátor uložené entity.</wsdl:documentation>
+			<wsdl:documentation>Service to complete the transfer. Calling the method means that all data has already been transferred and will not be followed by a Send or Receive call.&#xD;
+The call parameter is the transfer identifier.&#xD;
+If the method completes successfully, the other side confirms the successful completion of the transfer. If the method ends with an error - an exception occurs, it means that the entire transfer is considered unsuccessful. If the exception is of type BUSY, the service call should be repeated later.&#xD;
+The result of a successful call to the transfer completion method is a GenericData structure. This structure allows additional response data to be passed from the server to the client. The scope of the data transferred in this way is subject to the specification of the service usage. A typical example of the data passed may be a stored entity identifier.</wsdl:documentation>
 			<soap:operation soapAction="http://www.lightcomp.com/ft/ws/v1/Finish" style="document"/>
 			<wsdl:input name="finishRequest">
 				<soap:body use="literal"/>
@@ -189,12 +163,12 @@ Výsledkem úspěšného zavolání metody ukončení přenosu je struktura Gene
 			</wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="Receive">
-			<wsdl:documentation>Služba pro přenos dat ze serveru na klienta. Metoda se volá po úspěšném zahájení přenosu voláním Begin a získání identifikátoru přenosu.
-Parametrem volání je identifikátor přenosu (výsledek metody Begin) a pořadové číslo rámce. První přenášený rámec má pořadové číslo 0. V průběhu přenosu je možné žádat o stávající nebo následující rámec. Například po přenosu rámce číslo 2 je možná opakovaně volat metodu pro přenos rámce číslo 2 nebo přenos následujícího rámce číslo 3. Přenos rámců musí probíhat jeden po druhém a nelze je přenášet v náhodném pořadí.
-
-Odpovědí na volání služby je rámec, struktura Frame. Součástí této struktury je příznak (element "last") určující, zda se jedná o poslední rámec v rámci přenosu. Po přenesení posledního rámce již nelze metodu volat a přenos by měl být ukončen. Ukončení přenosu se provede voláním finish.
-
-Při volání metody může dojít k výjimce FileTransferException. Volající musí respektovat stav BUSY a pokusit se o pokračování přenosu až to bude možné. V případě jiné výjimky se jedná o neobnovitelnou chybu přenosu.</wsdl:documentation>
+			<wsdl:documentation>A service for transferring data from the server to the client. The method is called after the transfer has been successfully initiated by calling "Begin" and obtaining the transfer identifier.&#xD;
+The call parameter is the transfer identifier (the result of the "Begin" method) and the frame sequence number. The first transmitted frame has sequence number 0. It is possible to request the current or the next frame during the transmission. For example, after frame number 2 has been transmitted, the method can be called repeatedly to transmit frame number 2 or to transmit the next frame number 3. The frames must be transmitted one after the other and cannot be transmitted in random order.&#xD;
+&#xD;
+The response to a service call is a frame, it means "Frame" structure. This structure includes a flag (attribute "last") indicating whether it is the last frame of the transmission. Once the last frame has been transmitted, the method can no longer be called and the transmission should be terminated. The transfer is completed by calling "Finish".&#xD;
+&#xD;
+A FileTransferException may occur when the method is called. The caller must respect the BUSY state and attempt to continue the transfer when possible. In case of any other exception, this is a non-recoverable transfer error and the transfer is terminated.</wsdl:documentation>
 			<soap:operation soapAction="http://www.lightcomp.com/ft/ws/v1/Receive" style="document"/>
 			<wsdl:input name="receiveRequest">
 				<soap:body use="literal"/>
@@ -207,9 +181,9 @@ Při volání metody může dojít k výjimce FileTransferException. Volající 
 			</wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="Status">
-			<wsdl:documentation>Služba pro získání informací o stavu přenosu. Metodu lze volat kdykoliv. Parametrem metody je identifikátor přenosu.
-Metoda umožňuje obnovení přenosu po předchozí chybě, ztrátě spojení. Výsledkem volání je informace o stavu přenosu a číslo posledního přeneseného rámce. Pokud byl přenos řádně ukončen, metoda také vrací data shodná s odpovědí na volání metody Finish. Doba dostupnosti informací o ukončeném přenosu závisí na konfiguraci konkrétní služby.
-Pokud některé z předchozích volání skončí výjimkou s kódem BUSY je možné metodu použít pro ověření opětovné dostupnosti serveru.</wsdl:documentation>
+			<wsdl:documentation>A service for obtaining information about the status of a transfer. The method can be called at any time. The method parameter is the transfer identifier.&#xD;
+The method allows to resume transfer after a previous transfer error or loss of connection. The result of the call is the transfer status information and the number of the last transmitted frame. If the transfer has been properly terminated, the method also returns data identical to the response to the "Finish" method call. The period of availability of the completed transfer information depends on the configuration of the specific service.&#xD;
+If any of the previous calls end with a BUSY exception, the method can be used to verify the server is available again.</wsdl:documentation>
 			<soap:operation soapAction="http://www.lightcomp.com/ft/ws/v1/Status" style="document"/>
 			<wsdl:input name="statusRequest">
 				<soap:body use="literal"/>
@@ -222,15 +196,15 @@ Pokud některé z předchozích volání skončí výjimkou s kódem BUSY je mo�
 			</wsdl:fault>
 		</wsdl:operation>
 		<wsdl:operation name="Send">
-			<wsdl:documentation>Služba pro přenos dat z klienta na server. Metoda se volá po úspěšném zahájení přenosu voláním Begin a získání identifikátoru přenosu.
-Metoda slouží pro přenos rámce s daty. Rámec obsahuje hlavičku a data tvořená streamem binárních dat souborů, bloky popisující přenášené složky a soubory.
-Parametrem metody je identifikátor přenosu a přenášený rámec. Jednotlivé rámce se přenášejí sekvenčně jeden za druhým. První přenášený rámec má číslo 0. Poslední přenášený rámec musí mít nastaven příznak last.
-V případě výpadku přenosu je možné poslední rámec zaslat opakovaně. Pokud volání metody skončí bez chyby, tak druhá strana rámec přijala a je možné zaslat další.
-
-Při volání metody může dojít k výjimce FileTransferException. Pokud je výjimka typu BUSY, tak by měl volající zaslat poslední rámec později. Pokud je výjimka jiného typu, tak to znamená selhání přenosu.</wsdl:documentation>
+			<wsdl:documentation>Service for transferring data from client to server. The method is called after the transfer has been successfully initiated by calling Begin and obtaining the transfer identifier.&#xD;
+The method is used to transfer a frame with data. The frame contains a header, blocks describing the folders and files to be transferred and data consisting of a stream of binary file data.&#xD;
+The parameters of the method are the transfer identifier and the frame to be transferred. Individual frames are transferred sequentially one after the other. The first frame is number 0. The last frame transferred must have the "last" flag set.&#xD;
+In case of a transmission failure, the last frame can be retransmitted. If the method call ends without error, the other side has received the frame and the next frame can be sent.&#xD;
+&#xD;
+A FileTransferException may occur when the method is called. If the exception is of type BUSY, the caller should resend the last frame later. If the exception is of any other type, it means the transfer has failed and the transfer will be terminated.</wsdl:documentation>
 			<soap:operation soapAction="http://www.lightcomp.com/ft/ws/v1/Send" style="document"/>
 			<wsdl:input name="sendRequest">
-				<wsdl:documentation>Přenášená data</wsdl:documentation>
+				<wsdl:documentation>Sent data</wsdl:documentation>
 				<soap:body use="literal"/>
 			</wsdl:input>
 			<wsdl:output name="sendResponse">
@@ -240,8 +214,33 @@ Při volání metody může dojít k výjimce FileTransferException. Pokud je v�
 				<soap:fault name="fileTransferException" use="literal"/>
 			</wsdl:fault>
 		</wsdl:operation>
+		<wsdl:operation name="Begin">
+			<wsdl:documentation>Service to start data transfer. The data transfer is initiated by the Begin call which includes the parameters of the requested transfer. Each transmission to be initiated is of a specific type. The type of transfer is specified by a string with a fixed meaning. Data is transferred in the form of a directory with files and always in one direction - either from server to client or from client to server. The direction of transfer is fixed to the type of transfer and agreed upon by both parties in advance.&#xD;
+The initiation of the transfer may include the transfer of optional user data. The requirements for the parameterisation of the initiation of the transfer are always defined separately within the documentation of the application that uses the FileTransfer service.&#xD;
+&#xD;
+The possible parameters of the method are:&#xD;
+	- transfer type - should always be specified, it is a text constant&#xD;
+	- identifier of the transferred data - optional identifier that specifies the transferred data. For example, for the transfer type "DOWNLOAD" the identifier could be the file name.&#xD;
+	- binary data - an optional part of the request can be binary data&#xD;
+	- XML data - an optional part of the request can be an XML document&#xD;
+&#xD;
+The service will evaluate the legitimacy of the request to start the transfer. If the transfer is initiated, a transfer identifier is returned. In case of an incorrect request, a FileTransferException is raised.&#xD;
+Once a transfer is successfully initiated, it is active until it completes, aborts, fails, or times out. If the transfer is from client to server, the Send method is called, if the transfer is from server to client, the Receive method is called.&#xD;
+The response to start the transfer is the TransferId. This is the unique identifier of the transfer.</wsdl:documentation>
+			<soap:operation soapAction="http://www.lightcomp.com/ft/ws/v1/Begin" style="document"/>
+			<wsdl:input name="beginRequest">
+				<soap:body use="literal"/>
+			</wsdl:input>
+			<wsdl:output name="beginResponse">
+				<soap:body use="literal"/>
+			</wsdl:output>
+			<wsdl:fault name="fileTransferException">
+				<soap:fault name="fileTransferException" use="literal"/>
+			</wsdl:fault>
+		</wsdl:operation>
 	</wsdl:binding>
 	<wsdl:service name="FileTransferService">
+		<wsdl:documentation>Web service FileTransfer</wsdl:documentation>
 		<wsdl:port name="Port" binding="tns:FileTransferSOAPBinding">
 			<soap:address location="http://www.lightcomp.com/ft/ws/v1"/>
 		</wsdl:port>
