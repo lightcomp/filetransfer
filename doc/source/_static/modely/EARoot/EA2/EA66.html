@@ -114,7 +114,7 @@
 		</tr>
 		<tr>
 			<td width="15%" class="ObjectDetailsTopic">Modified:</td>
-			<td width="85%" class="ObjectDetailsValue">21.08.2019 0:56:22</td>
+			<td width="85%" class="ObjectDetailsValue">06.05.2024 21:50:50</td>
 		</tr>
 		<tr style="padding-top: 10px;">
 			<td width="15%" class="ObjectDetailsTopic"><button onclick="switchProjectProperties()"><img src="../../images/plus03.gif" align="absmiddle" id="proj" /></button>Project:</td>
@@ -137,7 +137,7 @@
 			<td width="85%" class="ObjectDetailsValue">{513CA00A-4652-43fa-999C-189932D299C6}</td>
 		</tr>
 	</table>
-	<div class="ObjectDetailsNotes">Webová slu&#382;ba je tvoøena jedním rozhraním. Toto rozhraní umo&#382;òuje pøenos souborù na server nebo jejich pøíjem ze serveru na klienta. V rámci jednoho pøenosu probíhá tento v&#382;dy jedním smìrem a není mo&#382;né kombinovat oba smìry.&lt;br/&gt;&lt;br/&gt;Postup volální metod serveru:&lt;br/&gt;&lt;br/&gt;&lt;ol&gt;<br />&lt;li&gt;Zahájení pøenosu metodou `Begin`&lt;/li&gt;&lt;li&gt;Odeslání datových balíèkù metodou `Send` nebo vy&#382;ádání datových balíèkù pomocí metody `Receive`.&lt;/li&gt;&lt;li&gt;Dokonèení pøenosu&#160;&#160;metodou `Finish`&lt;/li&gt;&lt;/ol&gt;<br />&lt;br/&gt;Bìhem jednoho pøenosu nelze kombinovat metody `Send` a `Receive`. Povahu pøenosu (download/upload) si dohodne klient a server samostatnì vnì tohoto API. Smìr pøenosu musí obì strany znát a je pevný pro dohodnuté `requestId`.&lt;br/&gt;&lt;br/&gt;Stav probíhajícího pøenosu je mo&#382;né zjistit pomocí volání `Status`.&lt;br/&gt;&lt;br/&gt;Probíhající pøenos je mo&#382;né pøeru&#353;it pomocí metody `Abort`.&lt;br/&gt;&lt;br/&gt;Pokud pøedchozí operace nebyla plnì dokonèena dojde pøi volání dal&#353;í operace k výjimce s typem `BUSY`. V takovém &lt;br/&gt;pøípadì by se mìl klient o operaci pokusit pozdìji.&lt;br/&gt;</div>
+	<div class="ObjectDetailsNotes">The web service consists of a single interface. This interface allows files to be transferred to the server or received from the server to the client in a batch. The transfer is always in one direction and it is not possible to combine both directions in one batch.&lt;br/&gt;&lt;br/&gt;&lt;ol&gt;<br />&lt;li&gt;Starting the transfer by the `Begin` method&lt;/li&gt;&lt;li&gt;Sending a data packet using the `Send` method or requesting a data packet using the `Receive` method.&lt;/li&gt;&lt;li&gt;Finishing the transfer using the `Finish` method&lt;/li&gt;&lt;/ol&gt;<br />&lt;br/&gt;The `Send` and `Receive` methods cannot be combined during one transfer. The nature of the transfer (download/upload) must be specified separately outside this API. The direction of the transfer must be known by both parties and is fixed for the agreed `requestId`.&lt;br/&gt;It is possible to find out the status of the ongoing transfer by calling `Status`.&lt;br/&gt;The ongoing transfer can be interrupted using the `Abort` method.&lt;br/&gt;If the previous operation was not fully completed, an exception with type `BUSY` occurs when the next operation is called. In this case, the client should attempt the operation later.&lt;br/&gt;</div>
 
 </div>
 

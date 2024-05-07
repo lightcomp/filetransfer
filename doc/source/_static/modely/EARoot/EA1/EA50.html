@@ -97,7 +97,7 @@
 		</tr>
 		<tr>
 			<td class="ObjectDetailsTopic">Modified:</td>
-			<td class="ObjectDetailsValue">14.05.2018 14:53:13</td>
+			<td class="ObjectDetailsValue">06.05.2024 16:19:00</td>
 		</tr>
 		<tr style="height: 10px"><td colspan="2"></td></tr>
 		<tr>
@@ -149,7 +149,7 @@
 			<td class="ObjectDetailsValue"><a href="EA14.html">Frame</a>, <a href="EA18.html">Send</a></td>
 		</tr>
 	</table>
-	<div class="ObjectDetailsNotes">Rámec definuje pøená&#353;ené slo&#382;ky a soubory, pro data souborù obsahuje jeden datový stream (preferovaná implementace je MTOM). Jeden velký soubor mù&#382;e být rozlo&#382;en do nìkolika rámcù. Naopak nìkolik men&#353;ích souborù mù&#382;e být odesláno v jednom rámci. V&#353;e se odvíjí od definované max. velikosti rámce a max. poètu blokù (slo&#382;ky + soubory) v rámci.&lt;br/&gt;</div>
+	<div class="ObjectDetailsNotes">Description of the transmission frame. Frame is sequence of blocks and one data stream. Each frame has defined size, sequence number and flag indicating whether this is the last frame of the transfer.&lt;br/&gt;MTOM is the preferred implementation to transfer binary data .&lt;br/&gt;A single large file can be spread over several frames. Conversely, several smaller files can be sent in a single frame. It depends on the defined maximum frame size and the maximum number of blocks (folders + files) in the frame.&lt;br/&gt;</div>
 
 	<div class="TableGroup" id="TableGroup">
 		<ul class="ItemTitle">
@@ -186,7 +186,7 @@
 			<i>Notes: </i><span style="margin-left: .4cm;"> </span>
 		</td>
 		<td>
-			R&#225;mec definuje pøen&#225;&#353;en&#233; slo&#382;ky a soubory, pro data souborù obsahuje jeden datov&#253; stream (preferovan&#225; implementace je MTOM). Jeden velk&#253; soubor mù&#382;e b&#253;t rozlo&#382;en do nìkolika r&#225;mcù. Naopak nìkolik men&#353;&#237;ch souborù mù&#382;e b&#253;t odesl&#225;no v jednom r&#225;mci. V&#353;e se odv&#237;j&#237; od definovan&#233; max. velikosti r&#225;mce a max. poètu blokù (slo&#382;ky + soubory) v r&#225;mci.&lt;br/&gt;&lt;br/&gt;
+			A collection of blocks transmitted in a single frame.&lt;br/&gt;&lt;br/&gt;
 		</td>
 	</tr>
 </table></div>
@@ -240,7 +240,7 @@
 			<i>Notes: </i><span style="margin-left: .4cm;"> </span>
 		</td>
 		<td>
-			Velikost pøen&#225;&#353;en&#253;ch dat v r&#225;mci, tj. velikost dat v atributu data.&lt;br/&gt;&lt;br/&gt;Odpov&#237;daj&#237;c&#237; datov&#253; prvek v ISDP: CA0009&lt;br/&gt;
+			The size of the transmitted data in the frame, i.e. the size of the data in the data attribute.&lt;br/&gt;
 		</td>
 	</tr>
 </table></div>
@@ -267,7 +267,7 @@
 			<i>Notes: </i><span style="margin-left: .4cm;"> </span>
 		</td>
 		<td>
-			Pø&#237;znak, zda se jedn&#225; o posledn&#237; r&#225;mec pøenosu.&lt;br/&gt;&lt;br/&gt;Odpov&#237;daj&#237;c&#237; datov&#253; prvek v ISDP: CA0008&lt;br/&gt;
+			A flag indicating whether this is the last frame of the transfer.&lt;br/&gt;
 		</td>
 	</tr>
 </table></div>
@@ -294,7 +294,7 @@
 			<i>Notes: </i><span style="margin-left: .4cm;"> </span>
 		</td>
 		<td>
-			Sekvenèn&#237; è&#237;slo r&#225;mce. Prvn&#237; r&#225;mec m&#225; è&#237;slo 1.&lt;br/&gt;&lt;br/&gt;Odpov&#237;daj&#237;c&#237; datov&#253; prvek v ISDP: CA0009&lt;br/&gt;
+			Frame sequence number. The first frame has the number 1.&lt;br/&gt;
 		</td>
 	</tr>
 </table></div>

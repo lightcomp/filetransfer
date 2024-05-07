@@ -97,7 +97,7 @@
 		</tr>
 		<tr>
 			<td class="ObjectDetailsTopic">Modified:</td>
-			<td class="ObjectDetailsValue">14.05.2018 22:09:28</td>
+			<td class="ObjectDetailsValue">06.05.2024 22:00:25</td>
 		</tr>
 		<tr style="height: 10px"><td colspan="2"></td></tr>
 		<tr>
@@ -149,7 +149,7 @@
 			<td class="ObjectDetailsValue"><a href="EA95.html">Bindings</a>, <a href="../EA4/EA99.html">Services</a></td>
 		</tr>
 	</table>
-	<div class="ObjectDetailsNotes">FileTransferService, vazba pomocí SOAP&lt;br/&gt;</div>
+	<div class="ObjectDetailsNotes">FileTransferService, SOAP binding&lt;br/&gt;</div>
 
 	<div class="TableGroup" id="TableGroup">
 		<ul class="ItemTitle">
@@ -176,14 +176,14 @@ fileTransferException: <a href="../EA1/EA82.html">FileTransferException</a>,
 			<tr>
 				<td class="TableRowBottomDashed"  colspan="1">
 					<div class="DetailsDivParent">Details:</BR>
-						<div id="detailsDIVOperations175" class="DetailsDiv" >					
+						<div id="detailsDIVOperations176" class="DetailsDiv" >					
 					<div class="ObjectDetailsNotes"><table>
 	<tr>
 		<td valign="top">
 			<i>Notes: </i><span style="margin-left: .4cm;"> </span>
 		</td>
 		<td>
-			Klient po&#353;le po&#382;adavek na pøeru&#353;en&#237; pøenosu. Lze jej prov&#233;st pouze pokud je pøenos aktivn&#237;. Po pøeru&#353;en&#237; pøenosu ji&#382; v nìm nelze pokraèovat.&lt;br/&gt;&lt;br/&gt;Pøi po&#382;adavku na pøeru&#353;en&#237; pøenosu se jako jedin&#253; vstupn&#237; parametr zas&#237;l&#225; identifik&#225;tor pøenosu. Identifik&#225;tor pøenosu se z&#237;sk&#225; z odpovìdi na vol&#225;n&#237; Begin.&lt;br/&gt;&lt;br/&gt;Odpovìï: V pø&#237;padì &#250;spì&#353;n&#233;ho pøeru&#353;en&#237; pøenosu se vrac&#237; pr&#225;zdn&#225; odpovìï. Pokud ji&#382; pøenos nen&#237; mo&#382;n&#233; pøeru&#353;it nebo pøenos s dan&#253;m identifik&#225;torem nebyl na serveru nalezen, dojde k v&#253;jimce FileTransferException.&lt;br/&gt;&lt;br/&gt;
+			Service to interrupt a transfer in progress. The request to interrupt the transfer is sent by the client. The request can only be made if the transfer is still active. Once interrupted, the transfer cannot be resumed and continued.&lt;br/&gt;&lt;br/&gt;When a request for interrupting a transfer is made, the transfer identifier is sent as the only input parameter. The transfer identifier is obtained from the response to the Begin call.&lt;br/&gt;&lt;br/&gt;Response. If the transfer can no longer be aborted or the transfer with the given identifier is not found on the server, a FileTransferException occurs.&lt;br/&gt;&lt;br/&gt;
 		</td>
 	</tr>
 </table></div>
@@ -205,14 +205,14 @@ fileTransferException: <a href="../EA1/EA82.html">FileTransferException</a>,
 			<tr>
 				<td class="TableRowBottomDashed"  colspan="1">
 					<div class="DetailsDivParent">Details:</BR>
-						<div id="detailsDIVOperations176" class="DetailsDiv" >					
+						<div id="detailsDIVOperations177" class="DetailsDiv" >					
 					<div class="ObjectDetailsNotes"><table>
 	<tr>
 		<td valign="top">
 			<i>Notes: </i><span style="margin-left: .4cm;"> </span>
 		</td>
 		<td>
-			Slu&#382;ba pro zah&#225;jen&#237; pøenosu dat. Pøenos dat se zahajuje vol&#225;n&#237;m Begin jeho&#382; souè&#225;st&#237; jsou parametry po&#382;adovan&#233;ho pøenosu. Ka&#382;d&#253; zahajovan&#253; pøenos je urèit&#233;ho typu. Typ pøenosu se urèuje øetìzcem s pevnì definovan&#253;m v&#253;znamem. Data se pøen&#225;&#353;ej&#237; v podobì adres&#225;øe se soubory a to v&#382;dy jedn&#237;m smìrem - buï ze serveru na klienta nebo z klienta na server. Smìr pøenosu je pevnì spojen s typem pøenosu a pøedem obìma stranami dohodnut.&lt;br/&gt;Souè&#225;st&#237; zah&#225;jen&#237; pøenosu mù&#382;e b&#253;t pøed&#225;n&#237; voliteln&#253;ch u&#382;ivatelsk&#253;ch dat. Po&#382;adavky na parametrizace zah&#225;jen&#237; pøenosu jsou v&#382;dy definov&#225;ny samostatnì v r&#225;mci dokumentace celku, kter&#253; slu&#382;bu FileTransfer vyu&#382;&#237;v&#225;.&lt;br/&gt;&lt;br/&gt;Mo&#382;n&#233; parametry metody jsou:&lt;br/&gt;- typ pøenosu - mìl by se uv&#225;dìt v&#382;dy, jedn&#225; se o textovou konstantu&lt;br/&gt;- identifik&#225;tor pøen&#225;&#353;en&#253;ch dat - voliteln&#253; identifik&#225;tor, kter&#253; urèuje pøen&#225;&#353;en&#225; data. Napø&#237;klad pro typ pøenosu &quot;DOWNLOAD&quot; by identifik&#225;torem mohl b&#253;t n&#225;zev souboru.&lt;br/&gt;- bin&#225;rn&#237; data - volitelnou souè&#225;st&#237; po&#382;adavku mohou b&#253;t bin&#225;rn&#237; data&lt;br/&gt;- XML data - volitelnou souè&#225;st&#237; po&#382;adavku mù&#382;e b&#253;t XML dokument&lt;br/&gt;&lt;br/&gt;Slu&#382;ba vyhodnot&#237; opr&#225;vnìnost po&#382;adavku na zah&#225;jen&#237; pøenosu. V pø&#237;padì zah&#225;jen&#237; pøenosu je vr&#225;cen identifik&#225;tor pøenosu. V pø&#237;padì chybn&#233;ho po&#382;adavku dojde k v&#253;jimce FileTransferException.&lt;br/&gt;Po &#250;spì&#353;n&#233;m zah&#225;jen&#237; pøenosu je tento aktivn&#237; dokud nebude dokonèen, pøeru&#353;en, nesel&#382;e, nebo nedojde k vypr&#353;en&#237; èasov&#253;ch limitù. Pokud pøenos prob&#237;h&#225; z klienta na server, tak se d&#225;le vol&#225; metoda Send, pokud pøenos prob&#237;h&#225; ze serveru na klienta, tak se d&#225;le vol&#225; metoda Receive.&lt;br/&gt;&lt;br/&gt;Odpovìd&#237; na zah&#225;jen&#237; pøenosu je TransferId. Jedn&#225; se o jednoznaèn&#253; identifik&#225;tor pøenosu.&lt;br/&gt;&lt;br/&gt;
+			Service to start data transfer. The data transfer is initiated by the Begin call which includes the parameters of the requested transfer. Each transmission to be initiated is of a specific type. The type of transfer is specified by a string with a fixed meaning. Data is transferred in the form of a directory with files and always in one direction - either from server to client or from client to server. The direction of transfer is fixed to the type of transfer and agreed upon by both parties in advance.&lt;br/&gt;The initiation of the transfer may include the transfer of optional user data. The requirements for the parameterisation of the initiation of the transfer are always defined separately within the documentation of the application that uses the FileTransfer service.&lt;br/&gt;&lt;br/&gt;The possible parameters of the method are:&lt;br/&gt;&lt;ul&gt;<br />&lt;li&gt;transfer type - should always be specified, it is a text constant&lt;/li&gt;&lt;li&gt;identifier of the transferred data - optional identifier that specifies the transferred data. For example, for the transfer type &quot;DOWNLOAD&quot; the identifier could be the file name.&lt;/li&gt;&lt;li&gt;binary data - an optional part of the request can be binary data&lt;/li&gt;&lt;li&gt;XML data - an optional part of the request can be an XML document&lt;/li&gt;&lt;/ul&gt;<br />&lt;br/&gt;The service will evaluate the legitimacy of the request to start the transfer. If the transfer is initiated, a transfer identifier is returned. In case of an incorrect request, a FileTransferException is raised.&lt;br/&gt;Once a transfer is successfully initiated, it is active until it completes, aborts, fails, or times out. If the transfer is from client to server, the Send method is called, if the transfer is from server to client, the Receive method is called.&lt;br/&gt;The response to start the transfer is the TransferId. This is the unique identifier of the transfer.&lt;br/&gt;&lt;br/&gt;
 		</td>
 	</tr>
 </table></div>
@@ -234,14 +234,14 @@ fileTransferException: <a href="../EA1/EA82.html">FileTransferException</a>,
 			<tr>
 				<td class="TableRowBottomDashed"  colspan="1">
 					<div class="DetailsDivParent">Details:</BR>
-						<div id="detailsDIVOperations177" class="DetailsDiv" >					
+						<div id="detailsDIVOperations178" class="DetailsDiv" >					
 					<div class="ObjectDetailsNotes"><table>
 	<tr>
 		<td valign="top">
 			<i>Notes: </i><span style="margin-left: .4cm;"> </span>
 		</td>
 		<td>
-			Slu&#382;ba pro dokonèen&#237; pøenosu. Zavol&#225;n&#237;m metody znamen&#225;, &#382;e v&#353;echna data ji&#382; byla pøenesena a nebude n&#225;sledovat vol&#225;n&#237; Send nebo Receive.&lt;br/&gt;Parametrem vol&#225;n&#237; je identifik&#225;tor pøenosu.&lt;br/&gt;Pokud metoda skonè&#237; &#250;spì&#353;nì, tak t&#237;m i druh&#225; strana potvrzuje &#250;spì&#353;n&#233; dokonèen&#237; pøenosu. Pokud metoda skonè&#237; chybou - dojde k v&#253;jimce, tak to znamen&#225;, &#382;e cel&#253; pøenos se pova&#382;uje za ne&#250;spì&#353;n&#253;. Pokud je v&#253;jimka typu BUSY, tak by se vol&#225;n&#237; slu&#382;by mìlo opakovat pozdìji.&lt;br/&gt;V&#253;sledkem &#250;spì&#353;n&#233;ho zavol&#225;n&#237; metody ukonèen&#237; pøenosu je struktura GenericData. Tato struktura umo&#382;òuje pøedat ze serveru na klienta doplòuj&#237;c&#237; data odpovìdi. Rozsah takto pøed&#225;van&#253;ch dat je pøedmìtem specifikace dan&#233;ho u&#382;it&#237; slu&#382;by. Typick&#253;m pø&#237;kladem pøedan&#253;ch dat mù&#382;e b&#253;t identifik&#225;tor ulo&#382;en&#233; entity.&lt;br/&gt;&lt;br/&gt;&lt;br/&gt;
+			Service to complete the transfer. Calling the method means that all data has already been transferred and will not be followed by a Send or Receive call.&lt;br/&gt;The call parameter is the transfer identifier.&lt;br/&gt;If the method completes successfully, the other side confirms the successful completion of the transfer. If the method ends with an error - an exception occurs, it means that the entire transfer is considered unsuccessful. If the exception is of type BUSY, the service call should be repeated later.&lt;br/&gt;The result of a successful call to the transfer completion method is a GenericData structure. This structure allows additional response data to be passed from the server to the client. The scope of the data transferred in this way is subject to the specification of the service usage. A typical example of the data passed may be a stored entity identifier.&lt;br/&gt;&lt;br/&gt;
 		</td>
 	</tr>
 </table></div>
@@ -263,14 +263,14 @@ fileTransferException: <a href="../EA1/EA82.html">FileTransferException</a>,
 			<tr>
 				<td class="TableRowBottomDashed"  colspan="1">
 					<div class="DetailsDivParent">Details:</BR>
-						<div id="detailsDIVOperations178" class="DetailsDiv" >					
+						<div id="detailsDIVOperations179" class="DetailsDiv" >					
 					<div class="ObjectDetailsNotes"><table>
 	<tr>
 		<td valign="top">
 			<i>Notes: </i><span style="margin-left: .4cm;"> </span>
 		</td>
 		<td>
-			Slu&#382;ba pro pøenos dat ze serveru na klienta. Metoda se vol&#225; po &#250;spì&#353;n&#233;m zah&#225;jen&#237; pøenosu vol&#225;n&#237;m Begin a z&#237;sk&#225;n&#237; identifik&#225;toru pøenosu.&lt;br/&gt;Parametrem vol&#225;n&#237; je identifik&#225;tor pøenosu (v&#253;sledek metody Begin) a poøadov&#233; è&#237;slo r&#225;mce. Prvn&#237; pøen&#225;&#353;en&#253; r&#225;mec m&#225; poøadov&#233; è&#237;slo 0. V prùbìhu pøenosu je mo&#382;n&#233; &#382;&#225;dat o st&#225;vaj&#237;c&#237; nebo n&#225;sleduj&#237;c&#237; r&#225;mec. Napø&#237;klad po pøenosu r&#225;mce è&#237;slo 2 je mo&#382;n&#225; opakovanì volat metodu pro pøenos r&#225;mce è&#237;slo 2 nebo pøenos n&#225;sleduj&#237;c&#237;ho r&#225;mce è&#237;slo 3. Pøenos r&#225;mcù mus&#237; prob&#237;hat jeden po druh&#233;m a nelze je pøen&#225;&#353;et v n&#225;hodn&#233;m poøad&#237;.&lt;br/&gt;&lt;br/&gt;Odpovìd&#237; na vol&#225;n&#237; slu&#382;by je r&#225;mec, struktura Frame. Souè&#225;st&#237; t&#233;to struktury je pø&#237;znak (element &quot;last&quot;) urèuj&#237;c&#237;, zda se jedn&#225; o posledn&#237; r&#225;mec v r&#225;mci pøenosu. Po pøenesen&#237; posledn&#237;ho r&#225;mce ji&#382; nelze metodu volat a pøenos by mìl b&#253;t ukonèen. Ukonèen&#237; pøenosu se provede vol&#225;n&#237;m finish.&lt;br/&gt;&lt;br/&gt;Pøi vol&#225;n&#237; metody mù&#382;e doj&#237;t k v&#253;jimce FileTransferException. Volaj&#237;c&#237; mus&#237; respektovat stav BUSY a pokusit se o pokraèov&#225;n&#237; pøenosu a&#382; to bude mo&#382;n&#233;. V pø&#237;padì jin&#233; v&#253;jimky se jedn&#225; o neobnovitelnou chybu pøenosu.&lt;br/&gt;&lt;br/&gt;&lt;br/&gt;
+			A service for transferring data from the server to the client. The method is called after the transfer has been successfully initiated by calling &quot;Begin&quot; and obtaining the transfer identifier.&lt;br/&gt;The call parameter is the transfer identifier (the result of the &quot;Begin&quot; method) and the frame sequence number. The first transmitted frame has sequence number 0. It is possible to request the current or the next frame during the transmission. For example, after frame number 2 has been transmitted, the method can be called repeatedly to transmit frame number 2 or to transmit the next frame number 3. The frames must be transmitted one after the other and cannot be transmitted in random order.&lt;br/&gt;&lt;br/&gt;The response to a service call is a frame, it means &quot;Frame&quot; structure. This structure includes a flag (attribute &quot;last&quot;) indicating whether it is the last frame of the transmission. Once the last frame has been transmitted, the method can no longer be called and the transmission should be terminated. The transfer is completed by calling &quot;Finish&quot;.&lt;br/&gt;&lt;br/&gt;A FileTransferException may occur when the method is called. The caller must respect the BUSY state and attempt to continue the transfer when possible. In case of any other exception, this is a non-recoverable transfer error and the transfer is terminated.&lt;br/&gt;
 		</td>
 	</tr>
 </table></div>
@@ -292,14 +292,14 @@ fileTransferException: <a href="../EA1/EA82.html">FileTransferException</a>,
 			<tr>
 				<td class="TableRowBottomDashed"  colspan="1">
 					<div class="DetailsDivParent">Details:</BR>
-						<div id="detailsDIVOperations179" class="DetailsDiv" >					
+						<div id="detailsDIVOperations180" class="DetailsDiv" >					
 					<div class="ObjectDetailsNotes"><table>
 	<tr>
 		<td valign="top">
 			<i>Notes: </i><span style="margin-left: .4cm;"> </span>
 		</td>
 		<td>
-			Slu&#382;ba pro pøenos dat z klienta na server. Metoda se vol&#225; po &#250;spì&#353;n&#233;m zah&#225;jen&#237; pøenosu vol&#225;n&#237;m Begin a z&#237;sk&#225;n&#237; identifik&#225;toru pøenosu.&lt;br/&gt;Metoda slou&#382;&#237; pro pøenos r&#225;mce s daty. R&#225;mec obsahuje hlavièku a data tvoøen&#225; streamem bin&#225;rn&#237;ch dat souborù, bloky popisuj&#237;c&#237; pøen&#225;&#353;en&#233; slo&#382;ky a soubory.&lt;br/&gt;Parametrem metody je identifik&#225;tor pøenosu a pøen&#225;&#353;en&#253; r&#225;mec. Jednotliv&#233; r&#225;mce se pøen&#225;&#353;ej&#237; sekvenènì jeden za druh&#253;m. Prvn&#237; pøen&#225;&#353;en&#253; r&#225;mec m&#225; è&#237;slo 0. Posledn&#237; pøen&#225;&#353;en&#253; r&#225;mec mus&#237; m&#237;t nastaven pø&#237;znak last.&lt;br/&gt;V pø&#237;padì v&#253;padku pøenosu je mo&#382;n&#233; posledn&#237; r&#225;mec zaslat opakovanì. Pokud vol&#225;n&#237; metody skonè&#237; bez chyby, tak druh&#225; strana r&#225;mec pøijala a je mo&#382;n&#233; zaslat dal&#353;&#237;.&lt;br/&gt;&lt;br/&gt;Pøi vol&#225;n&#237; metody mù&#382;e doj&#237;t k v&#253;jimce FileTransferException. Pokud je v&#253;jimka typu BUSY, tak by mìl volaj&#237;c&#237; zaslat posledn&#237; r&#225;mec pozdìji. Pokud je v&#253;jimka jin&#233;ho typu, tak to znamen&#225; selh&#225;n&#237; pøenosu.&lt;br/&gt;&lt;br/&gt;
+			Service for transferring data from client to server. The method is called after the transfer has been successfully initiated by calling Begin and obtaining the transfer identifier.&lt;br/&gt;The method is used to transfer a frame with data. The frame contains a header, blocks describing the folders and files to be transferred and data consisting of a stream of binary file data.&lt;br/&gt;The parameters of the method are the transfer identifier and the frame to be transferred. Individual frames are transferred sequentially one after the other. The first frame is number 0. The last frame transferred must have the &quot;last&quot; flag set.&lt;br/&gt;In case of a transmission failure, the last frame can be retransmitted. If the method call ends without error, the other side has received the frame and the next frame can be sent.&lt;br/&gt;&lt;br/&gt;A FileTransferException may occur when the method is called. If the exception is of type BUSY, the caller should resend the last frame later. If the exception is of any other type, it means the transfer has failed and the transfer will be terminated.&lt;br/&gt;
 		</td>
 	</tr>
 </table></div>
@@ -321,14 +321,14 @@ fileTransferException: <a href="../EA1/EA82.html">FileTransferException</a>,
 			<tr>
 				<td class="TableRowBottomDashed"  colspan="1">
 					<div class="DetailsDivParent">Details:</BR>
-						<div id="detailsDIVOperations180" class="DetailsDiv" >					
+						<div id="detailsDIVOperations181" class="DetailsDiv" >					
 					<div class="ObjectDetailsNotes"><table>
 	<tr>
 		<td valign="top">
 			<i>Notes: </i><span style="margin-left: .4cm;"> </span>
 		</td>
 		<td>
-			Slu&#382;ba pro z&#237;sk&#225;n&#237; informac&#237; o stavu pøenosu. Metodu lze volat kdykoliv. Parametrem metody je identifik&#225;tor pøenosu.&lt;br/&gt;Metoda umo&#382;òuje obnoven&#237; pøenosu po pøedchoz&#237; chybì, ztr&#225;tì spojen&#237;. V&#253;sledkem vol&#225;n&#237; je informace o stavu pøenosu a è&#237;slo posledn&#237;ho pøenesen&#233;ho r&#225;mce. Pokud byl pøenos ø&#225;dnì ukonèen, metoda tak&#233; vrac&#237; data shodn&#225; s odpovìd&#237; na vol&#225;n&#237; metody Finish. Doba dostupnosti informac&#237; o ukonèen&#233;m pøenosu z&#225;vis&#237; na konfiguraci konkr&#233;tn&#237; slu&#382;by.&lt;br/&gt;Pokud nìkter&#233; z pøedchoz&#237;ch vol&#225;n&#237; skonè&#237; v&#253;jimkou s k&#243;dem BUSY je mo&#382;n&#233; metodu pou&#382;&#237;t pro ovìøen&#237; opìtovn&#233; dostupnosti serveru.&lt;br/&gt;&lt;br/&gt;
+			A service for obtaining information about the status of a transfer. The method can be called at any time. The method parameter is the transfer identifier.&lt;br/&gt;The method allows to resume transfer after a previous transfer error or loss of connection. The result of the call is the transfer status information and the number of the last transmitted frame. If the transfer has been properly terminated, the method also returns data identical to the response to the &quot;Finish&quot; method call. The period of availability of the completed transfer information depends on the configuration of the specific service.&lt;br/&gt;If any of the previous calls end with a BUSY exception, the method can be used to verify the server is available again.&lt;br/&gt;&lt;br/&gt;
 		</td>
 	</tr>
 </table></div>
@@ -363,8 +363,8 @@ fileTransferException: <a href="../EA1/EA82.html">FileTransferException</a>,
 				</tr>
 				<tr>
 					<td class="TableRowBottomDashed"  colspan="3">
-						<div class="DetailsDivParent"><button onclick="switchProjectProperties()"><img src="../../../images/minus03.gif" align="absmiddle" id="DetailsImageLink181" /></button>Details:
-							<div id="detailsDIVLink181" class="DetailsDiv" >
+						<div class="DetailsDivParent"><button onclick="switchProjectProperties()"><img src="../../../images/minus03.gif" align="absmiddle" id="DetailsImageLink182" /></button>Details:
+							<div id="detailsDIVLink182" class="DetailsDiv" >
 							&nbsp;
 							</div>
 						</div>
