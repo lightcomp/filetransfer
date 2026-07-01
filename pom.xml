@@ -214,7 +214,7 @@
 		</repository>
     <snapshotRepository>
 	<id>frnkRepo</id>
-	<url>http://10.2.0.2:8080/artifactory/libs-snapshot-local</url>
+	<url>https://mvn.lightcomp.cz/libs-snapshot</url>
     </snapshotRepository>
 
 	</distributionManagement>
