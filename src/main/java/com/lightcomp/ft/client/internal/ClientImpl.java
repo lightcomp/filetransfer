@@ -1,9 +1,14 @@
 package com.lightcomp.ft.client.internal;
 
+import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+
 import org.apache.commons.lang3.Validate;
+import org.apache.cxf.configuration.jsse.TLSClientParameters;
 import org.apache.cxf.ext.logging.LoggingFeature;
 import org.apache.cxf.frontend.ClientProxy;
 import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
@@ -113,6 +118,36 @@ public class ClientImpl implements Client {
         policy.setReceiveTimeout(msTimeout);
         conduit.setClient(policy);
 
+        if (!config.isTlsVerify()) {
+            conduit.setTlsClientParameters(createTrustAllTlsParameters());
+        }
+
         return service;
+    }
+
+    /**
+     * TLS parameters trusting any server certificate and skipping the host name check.
+     */
+    static TLSClientParameters createTrustAllTlsParameters() {
+        TLSClientParameters tls = new TLSClientParameters();
+        tls.setTrustManagers(new TrustManager[] { new TrustAllManager() });
+        tls.setDisableCNCheck(true);
+        return tls;
+    }
+
+    private static final class TrustAllManager implements X509TrustManager {
+
+        @Override
+        public void checkClientTrusted(X509Certificate[] chain, String authType) {
+        }
+
+        @Override
+        public void checkServerTrusted(X509Certificate[] chain, String authType) {
+        }
+
+        @Override
+        public X509Certificate[] getAcceptedIssuers() {
+            return new X509Certificate[0];
+        }
     }
 }

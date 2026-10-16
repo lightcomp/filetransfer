@@ -31,7 +31,9 @@ public final class ClientConfig implements SendConfig {
     private Algorithm checksumAlg = Algorithm.SHA_512;
 
     private boolean soapLogging;
-    
+
+    private boolean tlsVerify = true;
+
     private Authorization authorization;
 
     /**
@@ -168,7 +170,24 @@ public final class ClientConfig implements SendConfig {
     public void setSoapLogging(boolean soapLogging) {
         this.soapLogging = soapLogging;
     }
-    
+
+    /**
+     * @return When true (default) the TLS certificate of the server is verified.
+     */
+    public boolean isTlsVerify() {
+        return tlsVerify;
+    }
+
+    /**
+     * @param tlsVerify
+     *            when false, any server certificate is trusted and its host name is not
+     *            checked; intended for internal servers with a self-signed certificate,
+     *            the connection is then not protected against a man-in-the-middle
+     */
+    public void setTlsVerify(boolean tlsVerify) {
+        this.tlsVerify = tlsVerify;
+    }
+
     public Authorization getAuthorization() {
 		return authorization;
 	}
