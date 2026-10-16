@@ -210,7 +210,7 @@
 	<distributionManagement>
 		<repository>
 			<id>LightCompReleaseRepository</id>
-			<url>https://www.lightcomp.cz/releases/repository/lc-public-release</url>
+			<url>https://mvn.lightcomp.cz/libs-release</url>
 		</repository>
     <snapshotRepository>
 	<id>LightCompSnapshotRepository</id>
